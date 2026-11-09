@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="t">
+  <title id="t">CO-AGENT · v3 braces</title>
+  <rect x="8" y="8" width="496" height="496" rx="108" fill="#0A0E13"/>
+  <!-- { • • • } : a code block that holds a team of agents -->
+  <g fill="none" stroke="#C9D3DD" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M168 116 C120 116 120 150 120 190 L120 222 C120 244 104 256 84 256 C104 256 120 268 120 290 L120 322 C120 362 120 396 168 396"/>
+    <path d="M344 116 C392 116 392 150 392 190 L392 222 C392 244 408 256 428 256 C408 256 392 268 392 290 L392 322 C392 362 392 396 344 396"/>
+  </g>
+  <line x1="196" y1="256" x2="316" y2="256" stroke="#243140" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="196" cy="256" r="27" fill="#3EE88A"/>
+  <circle cx="256" cy="256" r="27" fill="#3CC8F5"/>
+  <circle cx="316" cy="256" r="27" fill="#B18CFF"/>
+</svg>

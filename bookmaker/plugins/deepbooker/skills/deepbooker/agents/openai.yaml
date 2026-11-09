@@ -1,0 +1,7 @@
+interface:
+  display_name: "Deepbooker"
+  short_description: "Merge two verified book reports into Word"
+  default_prompt: "Use $deepbooker to read this book, verify every chapter, and create two README reports and one Word file with Office CLI."
+
+policy:
+  allow_implicit_invocation: true

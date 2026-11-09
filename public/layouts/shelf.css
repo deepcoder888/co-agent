@@ -1,0 +1,2150 @@
+/* Materials and spacing from 07-shelf.dc.html; type from §6, spine bounds from §8. */
+[data-ui="shelf"] {
+  --bg:#2b2118;
+  --panel:#3a2d21;
+  --sidebar-bg:#2b2118;
+  --text:#f3e9d8;
+  --muted:#c9b89c;
+  --line:#6b5640;
+  --accent:#f2c879;
+  --accent-fg:#2b2118;
+  --focus:#f2c879;
+  --surface-2:#493726;
+  --nav-active-bg:#59422d;
+  --nav-active-text:#f3e9d8;
+  --radius:6px;
+  --font-ui:"Segoe UI", "Microsoft YaHei UI", sans-serif;
+  --font-title:Georgia, "Songti SC", "SimSun", serif;
+  --font-mono:"Cascadia Code", Consolas, "Microsoft YaHei UI", monospace;
+  --font-size:16px;
+  --shadow-card:none;
+  --danger:#ffd1c5;
+  --danger-text:#ffd1c5;
+  --danger-bg:#542a22;
+  --warning:#ffe0a6;
+  --warning-bg:#493726;
+  --success:#cfe8c4;
+  --writable-text:var(--warning);
+  --writable-bg:var(--warning-bg);
+  --writable-line:var(--warning);
+  --audit-text:var(--danger-text);
+  --danger-line:var(--danger);
+  --warning-line:var(--warning);
+  --limited-text:var(--warning);
+  --limited-line:var(--warning);
+  --description:var(--muted);
+  --reason:var(--danger);
+  --button-bg:var(--panel);
+  --button-line:var(--line);
+  --button-hover:var(--surface-2);
+  --nav-active-line:var(--accent);
+  --backdrop:#0009;
+  color-scheme:dark;
+}
+[data-ui="shelf"] .layout-shelf {
+  min-height:100vh;
+  width:100%;
+  padding:36px 48px 150px;
+  display:flex;
+  flex-direction:column;
+  gap:26px;
+}
+[data-ui="shelf"] .shelf-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+}
+[data-ui="shelf"] .shelf-title {
+  font:700 56px/1 var(--font-title);
+  margin:0;
+  color:#f3e9d8;
+}
+[data-ui="shelf"] .shelf-caption {
+  display:flex;
+  align-items:baseline;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-top:6px;
+}
+[data-ui="shelf"] .shelf-subtitle {
+  margin:0;
+  color:#c9b89c;
+  font-size:17px;
+  line-height:1.4;
+}
+[data-ui="shelf"] .shelf-tools {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+[data-ui="shelf"] #search {
+  box-sizing:content-box;
+  height:44px;
+  width:280px;
+  border:1px solid #6b5640;
+  background:#3a2d21;
+  color:#f3e9d8;
+  border-radius:6px;
+  padding:0 14px;
+  font:inherit;
+}
+[data-ui="shelf"] .shelf-primary {
+  height:44px;
+  padding:0 18px;
+  border:0;
+  border-radius:6px;
+  background:#f2c879;
+  color:#2b2118;
+  font-weight:600;
+}
+[data-ui="shelf"] .shelf-primary:hover:enabled {
+  background:#ffe0a6;
+}
+[data-ui="shelf"] .shelf-outline {
+  height:44px;
+  padding:0 18px;
+  border:1px solid #f2c879;
+  border-radius:6px;
+  background:transparent;
+  color:#f2c879;
+  font-weight:600;
+}
+[data-ui="shelf"] .shelf-settings {
+  padding:0;
+  height:32px;
+  width:32px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:#f2c879;
+  font-size:22px;
+}
+/* v0.28 D 烫金图标 (docs/design/v0.28-links): text links carry no underline; hover warms the text and lifts a faint gilt wash. */
+[data-ui="shelf"] .shelf-link {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:5px 10px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:#ead8b4;
+  text-decoration:none;
+  font-size:14px;
+  text-align:left;
+}
+[data-ui="shelf"] .shelf-link:hover:enabled {
+  color:#f2c879;
+  background:rgba(242,200,121,.09);
+}
+[data-ui="shelf"] .shelf-icon {
+  width:15px;
+  height:15px;
+  flex:none;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+[data-ui="shelf"] .shelf-nav {
+  display:flex;
+  align-items:center;
+  gap:2px;
+}
+[data-ui="shelf"] .shelf-nav .shelf-icon { color:#d4ae62; }
+[data-ui="shelf"] .shelf-nav .shelf-link:hover:enabled .shelf-icon { color:#f2c879; }
+[data-ui="shelf"] .shelf-reading-pill {
+  gap:6px;
+  padding:4px 12px 4px 10px;
+  border:1px solid #5a4330;
+  border-radius:16px;
+}
+[data-ui="shelf"] .shelf-reading-pill:hover:enabled { border-color:#d6b26a; }
+[data-ui="shelf"] .shelf-reading-pill b { color:#f2c879; font-weight:700; }
+[data-ui="shelf"] .shelf-live-dot {
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#9fd58a;
+  box-shadow:0 0 0 3px rgba(159,213,138,.18);
+}
+[data-ui="shelf"] .shelf-view-all { gap:6px; color:#d4ae62; }
+[data-ui="shelf"] .shelf-pinned .shelf-layer-heading h3::before { content:"★ "; color:#d4ae62; }
+[data-ui="shelf"] .shelf-chevron {
+  width:20px;
+  height:20px;
+  border:1px solid currentColor;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+[data-ui="shelf"] .shelf-chevron .shelf-icon { width:11px; height:11px; }
+[data-ui="shelf"] .candidate-notice {
+  margin:0;
+  padding:5px 10px;
+  border-radius:6px;
+  color:#d4ae62;
+}
+[data-ui="shelf"] .candidate-notice:hover:enabled {
+  color:#f2c879;
+  background:rgba(242,200,121,.09);
+}
+[data-ui="shelf"] #shelf-back {
+  align-self:flex-start;
+}
+[data-ui="shelf"] #catalog {
+  width:100%;
+}
+[data-ui="shelf"] #cards {
+  display:flex;
+  flex-direction:column;
+  gap:26px;
+}
+[data-ui="shelf"] .staff-row {
+  display:flex;
+  gap:12px;
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  padding-bottom:4px;
+  scrollbar-width:none;
+}
+/* Staff row arrows: the fade appears only on sides with hidden staff, and the arrow sits on the fade. */
+[data-ui="shelf"] .staff-strip { position:relative; }
+[data-ui="shelf"] .staff-strip.can-right .staff-row { mask-image:linear-gradient(to right, #000 calc(100% - 72px), transparent); }
+[data-ui="shelf"] .staff-strip.can-left .staff-row { mask-image:linear-gradient(to left, #000 calc(100% - 72px), transparent); }
+[data-ui="shelf"] .staff-strip.can-left.can-right .staff-row { mask-image:linear-gradient(to right, transparent, #000 72px, #000 calc(100% - 72px), transparent); }
+[data-ui="shelf"] .staff-arrow {
+  position:absolute; top:50%; z-index:2;
+  width:40px; height:40px; margin-top:-22px; border-radius:50%;
+  border:1px solid rgba(242,200,121,.55); background:#3a2c20; color:#f2c879;
+  font:600 24px/1 Georgia, 'Songti SC', serif; display:grid; place-items:center; cursor:pointer;
+  box-shadow:0 4px 14px rgba(0,0,0,.45);
+  transition:transform .15s, background .15s;
+}
+[data-ui="shelf"] .staff-arrow[hidden] { display:none; }
+[data-ui="shelf"] .staff-arrow-prev { left:-6px; }
+[data-ui="shelf"] .staff-arrow-next { right:-6px; }
+[data-ui="shelf"] .staff-arrow:hover { background:#4a3828; transform:scale(1.06); }
+[data-ui="shelf"] .staff-arrow:focus-visible { outline:3px solid #f2c879; outline-offset:2px; }
+@media (prefers-reduced-motion:reduce) { [data-ui="shelf"] .staff-arrow { transition:none; } [data-ui="shelf"] .staff-arrow:hover { transform:none; } }
+[data-ui="shelf"] .staff-row::-webkit-scrollbar {
+  display:none;
+}
+/* The room still scrolls by wheel, keys and touchpad; only the page scrollbar is hidden (2026-10-15). */
+[data-ui="shelf"],
+[data-ui="shelf"] body {
+  scrollbar-width:none;
+}
+[data-ui="shelf"]::-webkit-scrollbar,
+[data-ui="shelf"] body::-webkit-scrollbar {
+  display:none;
+}
+/* Every popup (dialogs such as the reading mode, detail, builders, settings and confirmations, plus popover menus)
+   and the lists inside them scroll without visible scrollbars too. */
+[data-ui="shelf"] dialog,
+[data-ui="shelf"] dialog *,
+[data-ui="shelf"] [popover],
+[data-ui="shelf"] [popover] * {
+  scrollbar-width:none;
+}
+[data-ui="shelf"] dialog::-webkit-scrollbar,
+[data-ui="shelf"] dialog *::-webkit-scrollbar,
+[data-ui="shelf"] [popover]::-webkit-scrollbar,
+[data-ui="shelf"] [popover] *::-webkit-scrollbar {
+  display:none;
+}
+[data-ui="shelf"] .staff-row .shelf-item {
+  flex:none;
+  width:148px;
+}
+/* v0.26 A 胡桃木书柜 (2026-10-18; docs/design/v0.26-shelf): colleagues are walnut plaques with a gilt inlay. */
+[data-ui="shelf"] .staff-badge {
+  --plaque:linear-gradient(160deg, #46301d, #3a2717 45%, #2e1e12);
+  --plaque-shadow:inset 0 0 0 3px #2e1e12, inset 0 0 0 4px rgba(214,178,106,.24), inset 0 1px 0 rgba(255,230,190,.12);
+  background:var(--plaque);
+  color:#ead8b4;
+  border:1px solid rgba(214,178,106,.45);
+  border-radius:6px;
+  padding:10px 14px;
+  min-width:148px;
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  box-shadow:var(--plaque-shadow), 0 6px 12px -4px rgba(0,0,0,.7);
+  text-align:left;
+  line-height:1.2;
+}
+[data-ui="shelf"] .staff-badge small {
+  font-size:11px;
+  letter-spacing:0.12em;
+  color:#d4ae62;
+}
+[data-ui="shelf"] .staff-badge strong {
+  font-size:18px;
+  font-weight:600;
+}
+[data-ui="shelf"] .staff-badge span {
+  font-size:14px;
+  color:#c9b89c;
+  white-space:nowrap;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+[data-ui="shelf"] .staff-badge:hover:enabled {
+  background:var(--plaque);
+}
+[data-ui="shelf"] .shelf-layers {
+  display:flex;
+  flex-direction:column;
+  gap:26px;
+}
+[data-ui="shelf"] .shelf-layer {
+  display:flex;
+  flex-direction:column;
+}
+[data-ui="shelf"] .shelf-layer-heading {
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:16px;
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid #6b4f31;
+}
+[data-ui="shelf"] .shelf-layer-heading h3 {
+  font:700 30px/1.2 var(--font-title);
+  margin:0;
+  color:#ead8b4;
+}
+[data-ui="shelf"] .shelf-view-all {
+  flex:none;
+}
+/* A full row continues on the next one instead of scrolling. Every book stands in an equal-height slot, so one
+   repeating tile (back wall shading, plank top, bevelled front, gap) paints a plank under each row at any width. */
+[data-ui="shelf"] .book-row {
+  --slot:276px;
+  --plank:36px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  column-gap:6px;
+  row-gap:var(--plank);
+  padding:0 18px var(--plank);
+  border-left:18px solid #3a2617;
+  border-right:18px solid #3a2617;
+  border-radius:4px 4px 0 0;
+  box-shadow:inset 18px 0 22px -14px #000, inset -18px 0 22px -14px #000;
+  background-image:linear-gradient(to bottom,
+    #0c0806 0, #170f0a 26px, #1f150e 90px, #22170f calc(var(--slot) - 1px),
+    #8a6038 var(--slot), #6b4628 calc(var(--slot) + 7px),
+    #4a2f19 calc(var(--slot) + 8px), #3a2413 calc(var(--slot) + 24px), #2a1a0d calc(var(--slot) + 25px),
+    #0b0705 calc(var(--slot) + 26px), #140d08 calc(var(--slot) + var(--plank)));
+  background-repeat:repeat-y;
+  background-size:100% calc(var(--slot) + var(--plank));
+}
+[data-ui="shelf"] .book-row > .shelf-item,
+[data-ui="shelf"] .book-row > p {
+  height:var(--slot);
+  display:flex;
+  align-items:flex-end;
+  margin:0;
+}
+[data-ui="shelf"] .book-row > p {
+  align-items:center;
+}
+[data-ui="shelf"] .shelf-item {
+  position:relative;
+  flex:none;
+}
+[data-ui="shelf"] .book-spine {
+  flex:none;
+  box-sizing:border-box;
+  width:52px;
+  height:240px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  writing-mode:vertical-rl;
+  font:700 18px/1.35 var(--font-title);
+  letter-spacing:0.08em;
+  /* Rounded cloth spine: dark edges, a soft highlight, the shelf's shared palette (spinePalette in shelf.js). */
+  position:relative;
+  background:var(--spine-shade), var(--book-color,#24324a);
+  --spine-shade:linear-gradient(90deg, rgba(0,0,0,.5), rgba(255,240,210,.12) 20%, rgba(255,240,210,.03) 46%, rgba(0,0,0,.2) 78%, rgba(0,0,0,.55));
+  color:#e6c98a;
+  border:0;
+  border-radius:3px 3px 1px 1px;
+  padding:24px 0;
+  box-shadow:7px 0 10px -3px rgba(0,0,0,.65), inset 0 3px 0 rgba(255,230,190,.10);
+  text-shadow:0 1px 0 rgba(0,0,0,.6);
+}
+/* Gilt double bands near the head and the tail of every spine. */
+[data-ui="shelf"] .book-spine::before,
+[data-ui="shelf"] .book-spine::after {
+  content:"";
+  position:absolute;
+  left:3px;
+  right:3px;
+  height:5px;
+  border-top:1px solid rgba(214,178,106,.7);
+  border-bottom:1px solid rgba(214,178,106,.7);
+  pointer-events:none;
+}
+[data-ui="shelf"] .book-spine::before { top:10px; }
+[data-ui="shelf"] .book-spine::after { bottom:10px; }
+[data-ui="shelf"] .spine-title {
+  display:block;
+  flex:none;
+  height:100%;
+  width:fit-content;
+  max-width:2.7em;
+  writing-mode:vertical-rl;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  text-align:center;
+}
+[data-ui="shelf"] .book-spine:hover:enabled {
+  background:var(--spine-shade), var(--book-color,#24324a);
+}
+[data-ui="shelf"] .book-spine:focus-visible {
+  outline-offset:-3px;
+}
+/* The cabinet's plinth under the last plank. */
+[data-ui="shelf"] .wood-edge {
+  height:14px;
+  flex:none;
+  background:linear-gradient(#4a3020, #2e1d12);
+  border-radius:0 0 4px 4px;
+  box-shadow:0 6px 0 #1a130d;
+}
+[data-ui="shelf"] .shelf-item .put-on-desk {
+  position:absolute;
+  bottom:8px;
+  left:4px;
+  right:4px;
+  padding:4px 2px;
+  border:0;
+  border-radius:3px;
+  background:#f3e9d8;
+  color:#2b2118;
+  font-size:11px;
+  font-weight:600;
+  opacity:0;
+  pointer-events:none;
+}
+[data-ui="shelf"] .shelf-item:hover .put-on-desk,
+[data-ui="shelf"] .shelf-item:focus-within .put-on-desk {
+  opacity:1;
+  pointer-events:auto;
+}
+[data-ui="shelf"] .shelf-item .put-on-desk:disabled {
+  color:#5c4b38;
+}
+[data-ui="shelf"] .desk-tray {
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:5;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:16px 48px;
+  background:#3a2d21;
+  border-top:1px solid #6b5640;
+  box-shadow:0 -8px 24px #0003;
+}
+[data-ui="shelf"] #tray-selected {
+  flex:1;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  overflow-x:auto;
+}
+[data-ui="shelf"] #tray-selected .muted {
+  font-size:14px;
+}
+[data-ui="shelf"] .desk-tag {
+  flex:none;
+  white-space:nowrap;
+  padding:6px 10px;
+  font-size:13px;
+  border:0;
+  border-radius:6px;
+  background:#f3e9d8;
+  color:#2b2118;
+}
+[data-ui="shelf"] .desk-tag:hover:enabled {
+  background:#f3e9d8;
+}
+[data-ui="shelf"] .desk-actions {
+  display:flex;
+  gap:12px;
+  flex:none;
+}
+[data-ui="shelf"] .shelf-services {
+  display:flex;
+  gap:18px;
+  align-items:center;
+}
+[data-ui="shelf"] .shelf-panel {
+  padding:24px;
+  background:#3a2d21;
+  border:1px solid #6b5640;
+  border-radius:6px;
+}
+[data-ui="shelf"] .shelf-panel h2 {
+  font:700 30px/1.2 var(--font-title);
+  margin-bottom:18px;
+}
+[data-ui="shelf"] #history-panel {
+  background:transparent;
+  border:0;
+  padding:0;
+}
+[data-ui="shelf"] .lending-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));
+  gap:20px;
+}
+[data-ui="shelf"] .lending-card,
+[data-ui="shelf"] .recommend-card {
+  padding:24px;
+  border-radius:6px;
+  background:#f3e9d8;
+  color:#2b2118;
+  box-shadow:0 2px 0 #1a130d;
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] .lending-stamps {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  margin-bottom:18px;
+}
+[data-ui="shelf"] .lending-stamp {
+  display:block;
+  width:fit-content;
+  border:1px solid #7a6650;
+  padding:5px 8px;
+  color:#5c4b38;
+  font:600 13px var(--font-mono);
+}
+[data-ui="shelf"] .lending-type {
+  border:1px solid #7a6650;
+  padding:5px 8px;
+  background:#eadfc8;
+  color:#5c4b38;
+  font:600 13px var(--font-mono);
+  letter-spacing:.06em;
+  white-space:nowrap;
+}
+[data-ui="shelf"] .lending-state {
+  display:inline-block;
+  padding:3px 8px;
+  border-radius:3px;
+  font-weight:600;
+  white-space:nowrap;
+}
+[data-ui="shelf"] .lending-state[data-tone="ok"] { background:#dce8ce; color:#35502c; }
+[data-ui="shelf"] .lending-state[data-tone="fail"] { background:#eed4ca; color:#853b2d; }
+[data-ui="shelf"] .lending-state[data-tone="running"] { background:#dce5eb; color:#34566a; }
+[data-ui="shelf"] .lending-state[data-tone="pending"] { background:#eadfc8; color:#655238; }
+[data-ui="shelf"] .lending-state[data-tone="neutral"] { background:#e7e0d4; color:#5e5547; }
+[data-ui="shelf"] .running-close-button,
+[data-ui="shelf"] .running-close-all { border:1px solid #a59476; border-radius:6px; padding:6px 12px; color:#5e5547; background:#f4eddc; font-size:13px; }
+[data-ui="shelf"] .lending-members,
+[data-ui="shelf"] .recommend-member {
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#2b2118;
+  font:700 22px/1.4 var(--font-title);
+  text-align:left;
+}
+[data-ui="shelf"] .lending-members:hover:enabled,
+[data-ui="shelf"] .recommend-member:hover:enabled {
+  background:transparent;
+  text-decoration:underline;
+}
+[data-ui="shelf"] .lending-meta {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  color:#5c4b38;
+  margin:12px 0;
+  font-size:13px;
+}
+[data-ui="shelf"] .history-preview {
+  white-space:pre-wrap;
+}
+[data-ui="shelf"] .lending-card .actions {
+  margin:18px 0 0;
+}
+[data-ui="shelf"] .lending-card button,
+[data-ui="shelf"] .shelf-detail button {
+  background:transparent;
+  color:#2b2118;
+  border-color:#7a6650;
+}
+[data-ui="shelf"] .lending-card .actions button:first-child,
+[data-ui="shelf"] .shelf-detail .actions button:first-child {
+  background:#2b2118;
+  color:#f3e9d8;
+}
+[data-ui="shelf"] .lending-card button:disabled,
+[data-ui="shelf"] .shelf-detail button:disabled,
+[data-ui="shelf"] .lending-card .actions button:disabled,
+[data-ui="shelf"] .shelf-detail .actions button:disabled {
+  background:#e8d8bd;
+  color:#5c4b38;
+}
+[data-ui="shelf"] .lending-card .reason,
+[data-ui="shelf"] .recommend-card .reason,
+[data-ui="shelf"] .shelf-detail .reason,
+[data-ui="shelf"] .shelf-builder .builder-row .reason {
+  color:#8c2f39;
+}
+[data-ui="shelf"] .lending-card button:focus-visible,
+[data-ui="shelf"] .recommend-card :focus-visible,
+[data-ui="shelf"] .shelf-detail :focus-visible,
+[data-ui="shelf"] .shelf-builder .builder-row :focus-visible {
+  outline-color:#2f4a6d;
+}
+[data-ui="shelf"] .shelf-detail {
+  position:fixed;
+  inset:0;
+  margin:auto;
+  width:min(800px,calc(100% - 32px));
+  height:fit-content;
+  max-height:85dvh;
+  padding:28px;
+  border:0;
+  border-radius:6px;
+  background:#f3e9d8;
+  color:#2b2118;
+  color-scheme:light;
+}
+[data-ui="shelf"] .shelf-detail h2 {
+  font:700 30px/1.2 var(--font-title);
+}
+[data-ui="shelf"] .detail-identity {
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+[data-ui="shelf"] .shelf-detail h3 {
+  margin-top:22px;
+}
+[data-ui="shelf"] .shelf-detail details {
+  border-top:1px solid #c9b89c;
+  padding:14px 0;
+}
+[data-ui="shelf"] .shelf-detail summary {
+  cursor:pointer;
+  font-weight:600;
+}
+[data-ui="shelf"] .shelf-detail dd {
+  margin:6px 0 14px;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] .shelf-detail dt,
+[data-ui="shelf"] .detail-stats,
+[data-ui="shelf"] .detail-book {
+  color:#5c4b38;
+  font-size:14px;
+}
+[data-ui="shelf"] .detail-chips {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin:14px 0;
+}
+[data-ui="shelf"] .detail-chip {
+  background:#e8d8bd;
+  padding:4px 8px;
+  border-radius:3px;
+  font-size:13px;
+}
+[data-ui="shelf"] .description,
+[data-ui="shelf"] .full-description {
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  line-height:1.7;
+}
+[data-ui="shelf"] .shelf-builder {
+  background:#3a2d21;
+  color:#f3e9d8;
+  border:1px solid #6b5640;
+  border-radius:6px;
+}
+[data-ui="shelf"] .shelf-builder h2 {
+  font:700 30px/1.2 var(--font-title);
+}
+[data-ui="shelf"] .shelf-builder .builder-results {
+  border:0;
+  padding:0 4px 4px 0;
+}
+/* Category headings stay visible while the list scrolls (grouped like the shelf). */
+[data-ui="shelf"] .shelf-builder .builder-group-title {
+  position:sticky;
+  top:0;
+  z-index:1;
+  margin:0;
+  padding:8px 2px 6px;
+  background:var(--panel);
+  color:#c9b89c;
+  opacity:1;
+}
+[data-ui="shelf"] .shelf-builder .builder-row {
+  background:#f3e9d8;
+  color:#2b2118;
+  border-radius:6px;
+  padding:10px 14px;
+  margin-bottom:8px;
+  box-shadow:0 2px 0 #1a130d;
+}
+[data-ui="shelf"] .shelf-builder .builder-row .muted {
+  color:#5c4b38;
+}
+[data-ui="shelf"] .shelf-builder .selection-chip button {
+  background:#f3e9d8;
+  color:#2b2118;
+  border:0;
+}
+[data-ui="shelf"] #builder-submit:enabled,
+[data-ui="shelf"] #confirm-accept {
+  background:#f2c879;
+  color:#2b2118;
+  font-weight:600;
+}
+[data-ui="shelf"] .recommend-cards {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));
+  gap:16px;
+}
+[data-ui="shelf"] .recommend-card p {
+  font-size:14px;
+  margin:12px 0;
+}
+[data-ui="shelf"] .recommend-card label {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+[data-ui="shelf"] #recommend-count,
+[data-ui="shelf"] #recommend-model,
+[data-ui="shelf"] #recommend-disabled-reason,
+[data-ui="shelf"] #joint-disabled-reason {
+  color:#c9b89c;
+  font-size:13px;
+}
+[data-ui="shelf"] .status,
+[data-ui="shelf"] .joint-card,
+[data-ui="shelf"] .recent-recommend {
+  margin:14px 0;
+  padding:14px;
+  border:1px solid #6b5640;
+  border-radius:6px;
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] pre {
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  font:13px/1.6 var(--font-mono);
+}
+[data-ui="shelf"] #stats-coverage,
+[data-ui="shelf"] #scan {
+  margin-top:18px;
+}
+[data-ui="shelf"] .error,
+[data-ui="shelf"] .audit-error {
+  background:#542a22;
+  color:#ffd1c5;
+  padding:12px;
+}
+[data-ui="shelf"] .scope-info {
+  cursor:help;
+}
+[data-ui="shelf"] .preview-card {
+  border-bottom:8px solid #6b4a2b;
+}
+/* The bookmark, reading paper and loan cards use the room's existing materials. */
+[data-ui="shelf"] .shelf-bookmark,
+[data-ui="shelf"] .shelf-concept-paper,
+[data-ui="shelf"] .shelf-concept-loan,
+[data-ui="shelf"] .shelf-perspective-note {
+  --muted:#5c4b38;
+  --line:#c9b89c;
+  --surface-2:#eadfc8;
+  --focus:#2f4a6d;
+  background:#f3e9d8;
+  color:#2b2118;
+  border-radius:6px;
+  box-shadow:0 2px 0 #1a130d;
+  overflow-wrap:anywhere;
+  min-width:0;
+}
+[data-ui="shelf"] .shelf-bookmark {
+  border-left:6px solid #b5653b;
+}
+[data-ui="shelf"] .shelf-bookmark-open {
+  display:grid;
+  gap:6px;
+  width:100%;
+  padding:20px 24px;
+  border:0;
+  background:transparent;
+  text-align:left;
+}
+[data-ui="shelf"] .shelf-bookmark-open:hover:enabled {
+  background:#eadfc8;
+}
+[data-ui="shelf"] .shelf-bookmark-open strong {
+  font:700 22px/1.4 var(--font-title);
+}
+[data-ui="shelf"] .shelf-bookmark-caption {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-size:11px;
+  letter-spacing:.12em;
+  color:#7a6650;
+}
+[data-ui="shelf"] .shelf-today-badge {
+  display:inline-block;
+  width:fit-content;
+  padding:3px 8px;
+  border-radius:3px;
+  background:#f2c879;
+  color:#2b2118;
+  font:600 13px/1.4 var(--font-ui);
+  letter-spacing:0;
+}
+[data-ui="shelf"] .shelf-bookmark-summary {
+  font-size:16px;
+  line-height:1.65;
+}
+[data-ui="shelf"] .shelf-bookmark-foot {
+  color:#5c4b38;
+  font-size:13px;
+}
+[data-ui="shelf"] .shelf-reading-desk {
+  min-width:0;
+}
+[data-ui="shelf"] .shelf-concept-toolbar {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:16px;
+  margin-bottom:26px;
+}
+[data-ui="shelf"] .shelf-concept-toolbar h2 {
+  margin:0;
+  font:700 30px/1.2 var(--font-title);
+}
+[data-ui="shelf"] .shelf-concept-eyebrow {
+  margin:0 0 6px;
+  color:#c9b89c;
+  font-size:13px;
+  letter-spacing:.06em;
+}
+[data-ui="shelf"] .shelf-reading-layout {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 280px;
+  align-items:start;
+  gap:26px;
+}
+[data-ui="shelf"] .shelf-reading-pages {
+  display:grid;
+  gap:26px;
+  min-width:0;
+}
+[data-ui="shelf"] .shelf-concept-paper {
+  padding:28px;
+  line-height:1.8;
+}
+[data-ui="shelf"] #concepts-heading h3 {
+  margin:12px 0;
+  font:700 30px/1.2 var(--font-title);
+}
+[data-ui="shelf"] .shelf-concept-meta {
+  color:#5c4b38;
+  font-size:14px;
+  line-height:1.65;
+}
+[data-ui="shelf"] .shelf-concept-status {
+  color:#c9b89c;
+  font-size:14px;
+}
+[data-ui="shelf"] .shelf-concept-lead {
+  font-size:17px;
+  line-height:1.7;
+}
+[data-ui="shelf"] .shelf-concept-why {
+  background:#eadfc8;
+  border-left:3px solid #b5653b;
+  padding:14px 16px;
+  margin:18px 0;
+}
+[data-ui="shelf"] .shelf-concept-why p {
+  margin:6px 0 0;
+}
+[data-ui="shelf"] .shelf-concept-paper .shelf-outline {
+  color:#2b2118;
+  border-color:#7a6650;
+}
+[data-ui="shelf"] .shelf-concept-paper button:disabled {
+  background:#e8d8bd;
+  color:#5c4b38;
+  border-color:#c9b89c;
+}
+[data-ui="shelf"] .shelf-concept-marks {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:18px;
+}
+[data-ui="shelf"] .shelf-concept-marks p {
+  padding:6px 10px;
+  border:1px solid #7a6650;
+  border-radius:3px;
+  margin:0 0 12px;
+  font-size:13px;
+}
+[data-ui="shelf"] .shelf-reading-desk .concept-warning {
+  border:1px solid #8c2f39;
+  border-left-width:3px;
+  border-radius:3px;
+  padding:10px 14px;
+  background:#eed4ca;
+  color:#853b2d;
+  font-size:14px;
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] .shelf-concept-paper .concept-markdown,
+[data-ui="shelf"] .shelf-perspective-note .concept-markdown {
+  font:17px/1.8 var(--font-title);
+}
+[data-ui="shelf"] .shelf-concept-paper .concept-markdown p,
+[data-ui="shelf"] .shelf-perspective-note .concept-markdown p {
+  line-height:1.8;
+}
+[data-ui="shelf"] .shelf-concept-paper .concept-markdown h1 {
+  font-size:30px;
+  line-height:1.3;
+}
+[data-ui="shelf"] .shelf-concept-paper .concept-markdown h2 {
+  font-size:24px;
+}
+[data-ui="shelf"] .shelf-concept-paper .concept-markdown h3 {
+  font-size:22px;
+  margin-top:26px;
+}
+[data-ui="shelf"] .shelf-concept-paper .concept-markdown a {
+  color:#2f4a6d;
+}
+[data-ui="shelf"] .shelf-concept-paper .concept-response button {
+  background:transparent;
+  color:#2f4a6d;
+  border-color:#8b7055;
+}
+[data-ui="shelf"] .shelf-concept-paper .concept-response button:hover:enabled { background:#e9dcc2; }
+[data-ui="shelf"] .shelf-perspective-note .concept-markdown a {
+  color:#2f4a6d;
+}
+[data-ui="shelf"] .shelf-reading-desk .concept-markdown code {
+  font:13px/1.6 var(--font-mono);
+}
+[data-ui="shelf"] .shelf-reading-desk .concept-markdown pre {
+  white-space:pre;
+  overflow:auto;
+}
+[data-ui="shelf"] .shelf-concept-archive h3,
+[data-ui="shelf"] .shelf-perspectives > h3 {
+  font:700 24px/1.3 var(--font-title);
+  margin:0 0 18px;
+}
+[data-ui="shelf"] .shelf-concept-loans {
+  display:grid;
+  gap:16px;
+}
+[data-ui="shelf"] .shelf-concept-loan {
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  padding:18px;
+  border:2px solid transparent;
+  text-align:left;
+}
+[data-ui="shelf"] .shelf-concept-loan strong {
+  font:700 22px/1.4 var(--font-title);
+}
+[data-ui="shelf"] .shelf-concept-loan .lending-stamps {
+  margin:0 0 6px;
+}
+[data-ui="shelf"] .shelf-concept-loan:hover:enabled {
+  background:#eadfc8;
+}
+[data-ui="shelf"] .shelf-concept-loan[aria-current="page"] {
+  border-color:#b5653b;
+}
+[data-ui="shelf"] .shelf-perspective-run {
+  margin-bottom:26px;
+}
+[data-ui="shelf"] .shelf-perspective-run > h4 {
+  margin:0 0 8px;
+  font-weight:600;
+}
+[data-ui="shelf"] .shelf-perspective-run > .shelf-concept-meta {
+  color:#c9b89c;
+}
+[data-ui="shelf"] .shelf-perspective-notes {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));
+  gap:16px;
+  margin-top:18px;
+}
+[data-ui="shelf"] .shelf-perspective-note {
+  padding:24px;
+  border-top:6px solid #c9a24a;
+}
+[data-ui="shelf"] .shelf-perspective-note h4 {
+  font:700 22px/1.4 var(--font-title);
+  margin:0 0 14px;
+}
+[data-ui="shelf"] .shelf-builder.perspective-dialog {
+  padding:28px;
+}
+[data-ui="shelf"] .shelf-builder.perspective-dialog #perspective-continue {
+  background:transparent;
+  color:#f2c879;
+  border-color:#f2c879;
+}
+@media (max-width:900px) {
+  [data-ui="shelf"] .shelf-reading-layout { grid-template-columns:minmax(0,1fr); }
+  [data-ui="shelf"] .shelf-concept-loans { grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); }
+}
+@media (max-width:600px) {
+  [data-ui="shelf"] .shelf-concept-paper { padding:20px; }
+  [data-ui="shelf"] .shelf-bookmark-open { padding:18px; }
+  [data-ui="shelf"] .shelf-builder.perspective-dialog { padding:20px; }
+}
+/* The statistics board uses the room's paper, wood and book-spine materials. */
+[data-ui="shelf"] .shelf-stats-board,
+[data-ui="shelf"] .shelf-stats-content {
+  display:grid;
+  gap:26px;
+}
+[data-ui="shelf"] .shelf-stats-toolbar {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:18px;
+  flex-wrap:wrap;
+}
+[data-ui="shelf"] .shelf-stats-toolbar h2 {
+  font:700 30px/1.2 var(--font-title);
+  margin:0;
+}
+[data-ui="shelf"] .shelf-stats-toolbar .workflow-actions { margin:0; }
+[data-ui="shelf"] .shelf-stats-controls {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+[data-ui="shelf"] .shelf-stats-controls button {
+  padding:8px 16px;
+  font-size:14px;
+}
+[data-ui="shelf"] .shelf-stats-controls [aria-pressed="true"] {
+  color:var(--accent-fg);
+  background:var(--accent);
+  border-color:var(--accent);
+}
+[data-ui="shelf"] .shelf-stats-summary {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:18px 36px;
+  border-top:1px solid #6b5640;
+  border-bottom:1px solid #6b5640;
+  padding:20px 0;
+}
+[data-ui="shelf"] .shelf-stats-label {
+  display:block;
+  font-size:14px;
+  color:#c9b89c;
+}
+[data-ui="shelf"] .shelf-stats-summary strong {
+  font:700 56px/1.1 var(--font-title);
+  color:#f2c879;
+  font-variant-numeric:tabular-nums;
+}
+[data-ui="shelf"] .shelf-stats-note {
+  color:var(--muted);
+  font-size:13px;
+  margin:0;
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] .shelf-stats-sources {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px 18px;
+  margin:0;
+  font-size:13px;
+}
+[data-ui="shelf"] .shelf-stats-sources span::before,
+[data-ui="shelf"] .shelf-stats-board .chart-legend button::before {
+  content:"";
+  display:inline-block;
+  width:8px;
+  height:16px;
+  border-radius:2px;
+  background:var(--chart-ink);
+  flex:none;
+}
+[data-ui="shelf"] .shelf-stats-sources span {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+[data-ui="shelf"] .shelf-stats-summary .shelf-stats-note { margin-top:8px; }
+[data-ui="shelf"] .shelf-stats-donuts {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);
+  gap:26px;
+}
+[data-ui="shelf"] .shelf-stats-card {
+  --text:#2b2118;
+  --muted:#5c4b38;
+  --panel:#f3e9d8;
+  --line:#c9b89c;
+  --surface-2:#eadfc8;
+  --accent:#2f4a6d;
+  --accent-fg:#f3e9d8;
+  --focus:#2f4a6d;
+  color-scheme:light;
+  color:#2b2118;
+  background:#f3e9d8;
+  border-radius:6px;
+  padding:28px;
+  box-shadow:0 2px 0 #1a130d;
+}
+[data-ui="shelf"] .shelf-stats-card h3 {
+  font:700 24px/1.3 var(--font-title);
+  margin:0 0 8px;
+}
+[data-ui="shelf"] .shelf-stats-card .chart-donut {
+  display:grid;
+  grid-template-columns:180px minmax(0,1fr);
+  align-items:center;
+  gap:18px;
+  margin-top:20px;
+}
+[data-ui="shelf"] .shelf-stats-board .chart-center-value { font:700 30px var(--font-title); }
+[data-ui="shelf"] .shelf-stats-board .chart-center-label { font:13px var(--font-ui); }
+[data-ui="shelf"] .shelf-stats-board .chart-legend {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:6px;
+  margin:0;
+}
+[data-ui="shelf"] .shelf-stats-board .chart-legend button {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:5px 8px;
+  border:1px solid transparent;
+  border-radius:3px;
+  font-size:13px;
+  text-align:left;
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] .shelf-stats-board .chart-legend [aria-pressed="true"] {
+  border-color:#2f4a6d;
+  background:#eadfc8;
+}
+[data-ui="shelf"] .shelf-stats-board .chart-slice[aria-pressed="true"] { stroke:#2b2118; stroke-width:4px; }
+[data-ui="shelf"] .shelf-stats-board .chart-empty { grid-column:1/-1; margin:0; font-size:14px; }
+[data-ui="shelf"] .shelf-stats-limited,
+[data-ui="shelf"] .shelf-stats-status,
+[data-ui="shelf"] .shelf-stats-empty {
+  margin:0;
+  padding:14px 18px;
+  border:1px solid #c9a24a;
+  border-left-width:4px;
+  border-radius:6px;
+  background:#493726;
+  color:#ffe0a6;
+  font-size:14px;
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] .shelf-stats-limited ul { margin:6px 0 0; padding-left:20px; }
+[data-ui="shelf"] .shelf-stats-trend .chart-columns { margin-top:20px; }
+[data-ui="shelf"] .shelf-stats-dates {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  font:12px var(--font-mono);
+  color:#5c4b38;
+  margin:0 0 12px;
+}
+[data-ui="shelf"] .shelf-stats-ranking .shelf-stats-controls { margin:18px 0; }
+[data-ui="shelf"] .shelf-stats-spines { margin:18px 0; }
+[data-ui="shelf"] .shelf-stats-ranking .chart-bar-list { gap:10px; }
+[data-ui="shelf"] .shelf-stats-ranking .chart-bar-row {
+  display:grid;
+  grid-template-columns:minmax(100px,1fr) minmax(150px,2fr) minmax(100px,3fr) 5ch;
+  gap:18px;
+  padding:12px 18px;
+  border:1px solid #c9b89c;
+  border-left:6px solid #2f4a6d;
+  border-radius:3px 6px 6px 3px;
+  background:#eadfc8;
+  box-shadow:0 2px 0 #c9b89c;
+}
+[data-ui="shelf"] .shelf-stats-ranking .chart-bar-row:hover:enabled { background:#e8d8bd; }
+[data-ui="shelf"] .shelf-stats-ranking .chart-row-label {
+  font:700 18px/1.35 var(--font-title);
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] .shelf-stats-ranking .chart-row-sublabel { overflow-wrap:anywhere; }
+[data-ui="shelf"] .shelf-stats-ranking .chart-bar-row strong { text-align:right; font:700 22px/1.2 var(--font-title); }
+[data-ui="shelf"] .shelf-stats-ranking .chart-bar-row svg { height:12px; border-radius:2px; }
+[data-ui="shelf"] .shelf-stats-zero { margin-top:20px; color:#5c4b38; }
+[data-ui="shelf"] .shelf-stats-zero h4 { font-size:14px; font-weight:400; margin:0 0 12px; }
+[data-ui="shelf"] .shelf-stats-zero .chart-bar-row { border-left-color:#7a6650; background:transparent; box-shadow:none; }
+[data-ui="shelf"] .shelf-chart-claude,
+[data-ui="shelf"] .shelf-chart-0 { --chart-ink:#35609a; fill:var(--chart-ink); }
+[data-ui="shelf"] .shelf-chart-codex,
+[data-ui="shelf"] .shelf-chart-1 { --chart-ink:#b5653b; fill:var(--chart-ink); }
+[data-ui="shelf"] .shelf-chart-2 { --chart-ink:#8c2f39; fill:var(--chart-ink); }
+[data-ui="shelf"] .shelf-chart-3 { --chart-ink:#3d3a5a; fill:var(--chart-ink); }
+[data-ui="shelf"] .shelf-chart-4 { --chart-ink:#7a4a6d; fill:var(--chart-ink); }
+[data-ui="shelf"] .shelf-chart-5 { --chart-ink:#7a2f2f; fill:var(--chart-ink); }
+[data-ui="shelf"] .shelf-chart-6 { --chart-ink:#2f5a4a; fill:var(--chart-ink); }
+[data-ui="shelf"] .shelf-chart-7 { --chart-ink:#1f3a5a; fill:var(--chart-ink); }
+[data-ui="shelf"] .shelf-chart-8 { --chart-ink:#2f4a3a; fill:var(--chart-ink); }
+[data-ui="shelf"] .shelf-chart-9 { --chart-ink:#c9a24a; fill:var(--chart-ink); }
+[data-ui="shelf"] .shelf-chart-10 { --chart-ink:#6b5640; fill:var(--chart-ink); }
+@media (max-width:1100px) {
+  [data-ui="shelf"] .shelf-stats-card .chart-donut { grid-template-columns:minmax(0,1fr); }
+}
+@media (max-width:900px) {
+  [data-ui="shelf"] .shelf-stats-donuts { grid-template-columns:minmax(0,1fr); }
+  [data-ui="shelf"] .shelf-stats-card .chart-donut { grid-template-columns:180px minmax(0,1fr); }
+  [data-ui="shelf"] .shelf-stats-ranking .chart-bar-row { grid-template-columns:minmax(0,1fr) minmax(0,1fr) 4ch; gap:10px; }
+  [data-ui="shelf"] .shelf-stats-ranking .chart-row-sublabel { grid-column:1/-1; grid-row:2; }
+}
+@media (max-width:600px) {
+  [data-ui="shelf"] .shelf-stats-card { padding:20px; }
+  [data-ui="shelf"] .shelf-stats-card .chart-donut { grid-template-columns:minmax(0,1fr); }
+  [data-ui="shelf"] .shelf-stats-ranking .chart-bar-row { padding:10px 12px; }
+}
+/* Trilingual terms keep the room's fine gold lettering, with darker ink on paper. */
+[data-ui="shelf"] .shelf-term-translations {
+  display:block;
+  color:var(--term-gold,#f2c879);
+  font-size:13px;
+  font-weight:400;
+  line-height:1.6;
+  letter-spacing:.04em;
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] .shelf-concept-paper,
+[data-ui="shelf"] .shelf-concept-loan,
+[data-ui="shelf"] .shelf-bookmark { --term-gold:#80611f; }
+[data-ui="shelf"] .shelf-term-translations:empty { display:none; }
+[data-ui="shelf"] .shelf-term-archive .shelf-term-translations { display:inline; }
+[data-ui="shelf"] .shelf-term-subtitle {
+  display:block;
+  color:var(--muted);
+  font:400 16px/1.65 var(--font-ui);
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] #concepts-heading .shelf-term-subtitle { margin:10px 0; }
+[data-ui="shelf"] .shelf-concept-loan .shelf-term-subtitle { font-size:14px; }
+[data-ui="shelf"] .desk-actions { flex-wrap:wrap; }
+[data-ui="shelf"] .shelf-builder.seminar-dialog { padding:28px; }
+@media (max-width:600px) {
+  [data-ui="shelf"] .shelf-builder.seminar-dialog { padding:20px; }
+}
+@media (hover:none) {
+  [data-ui="shelf"] .shelf-item .put-on-desk { opacity:1; pointer-events:auto; }
+}
+@media (max-width:900px) {
+  [data-ui="shelf"] .shelf-title { font-size:44px; }
+  [data-ui="shelf"] .desk-tray { padding:16px 24px; flex-wrap:wrap; }
+  [data-ui="shelf"] #tray-selected { flex-basis:100%; }
+  [data-ui="shelf"] .layout-shelf { padding-bottom:190px; }
+}
+@media (max-width:600px) {
+  [data-ui="shelf"] .layout-shelf { padding:24px 16px 210px; }
+  [data-ui="shelf"] .shelf-title { font-size:36px; }
+  [data-ui="shelf"] .shelf-tools { width:100%; }
+  [data-ui="shelf"] #search-control { flex-basis:100%; }
+  [data-ui="shelf"] #search { box-sizing:border-box; width:100%; }
+  [data-ui="shelf"] .desk-tray { padding:12px 16px; }
+  [data-ui="shelf"] .desk-actions { width:100%; flex-wrap:wrap; }
+  [data-ui="shelf"] .desk-actions button { padding:0 12px; font-size:14px; }
+  [data-ui="shelf"] .shelf-layer-heading h3 { font-size:24px; }
+  [data-ui="shelf"] .shelf-detail { padding:20px; }
+}
+
+/* ===== v0.16 shelf polish ===== */
+[data-ui="shelf"] .book-spine { transition:transform .15s, filter .15s; }
+[data-ui="shelf"] .book-spine:hover { transform:translateY(-6px); filter:brightness(1.08); }
+[data-ui="shelf"] .staff-badge { transition:transform .15s, box-shadow .15s; }
+[data-ui="shelf"] .staff-badge:hover { transform:translateY(-2px); box-shadow:var(--plaque-shadow), 0 10px 18px -4px rgba(0,0,0,.75); }
+[data-ui="shelf"] .staff-badge:focus-visible { outline:2px solid #f2c879; outline-offset:2px; }
+@media (prefers-reduced-motion:reduce) { [data-ui="shelf"] .book-spine,[data-ui="shelf"] .staff-badge { transition:none; } [data-ui="shelf"] .book-spine:hover,[data-ui="shelf"] .staff-badge:hover { transform:none; } }
+/* v0.20 reading mode: design B's printed page (docs/design/v0.20-reading-mode) with design D's collapsible outline. */
+[data-ui="shelf"] .shelf-reader-entry-row {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+}
+[data-ui="shelf"] .shelf-reader-entry-row > header {
+  min-width:0;
+}
+[data-ui="shelf"] .shelf-reader-open {
+  flex:none;
+  margin-top:4px;
+  border-radius:999px;
+}
+[data-ui="shelf"] dialog.shelf-reader {
+  --reader-paper:#f4ecdc;
+  --reader-ink:#2a2119;
+  --reader-muted:#5c4b38;
+  --reader-accent:#b5653b;
+  --reader-rule:#c9b89c;
+  --reader-song:"Songti SC","Noto Serif SC","Source Han Serif SC","SimSun",serif;
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100dvh;
+  max-width:none;
+  max-height:none;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  overflow:auto;
+  scroll-behavior:smooth;
+  background:var(--reader-paper);
+  color:var(--reader-ink);
+}
+[data-ui="shelf"] dialog.shelf-reader::backdrop {
+  background:var(--reader-paper, #f4ecdc);
+}
+[data-ui="shelf"] .shelf-reader-exit {
+  position:fixed;
+  top:22px;
+  left:22px;
+  z-index:2;
+  padding:6px 10px;
+  border:0;
+  border-radius:6px;
+  background:var(--reader-paper);
+  color:var(--reader-muted);
+  font:500 14px var(--font-ui);
+  cursor:pointer;
+}
+[data-ui="shelf"] .shelf-reader-exit:hover {
+  color:var(--reader-ink);
+  text-decoration:underline;
+}
+[data-ui="shelf"] .shelf-reader-exit kbd {
+  margin-left:8px;
+  font:12px var(--font-ui);
+  opacity:.7;
+}
+[data-ui="shelf"] .shelf-reader-exit.is-compact {
+  left:8px;
+  width:36px;
+  padding:6px 0;
+  text-align:center;
+  font-size:16px;
+}
+[data-ui="shelf"] .shelf-reader-exit.is-compact .shelf-reader-exit-label,
+[data-ui="shelf"] .shelf-reader-exit.is-compact kbd {
+  display:none;
+}
+[data-ui="shelf"] dialog.shelf-reader :focus-visible {
+  outline:2px solid var(--reader-accent);
+  outline-offset:3px;
+}
+[data-ui="shelf"] .shelf-reader-grid {
+  display:grid;
+  grid-template-columns:260px minmax(0,1fr);
+  min-height:100dvh;
+  transition:grid-template-columns .25s ease;
+}
+[data-ui="shelf"] .shelf-reader-grid.is-toc-collapsed {
+  grid-template-columns:52px minmax(0,1fr);
+}
+[data-ui="shelf"] .shelf-reader-toc {
+  position:sticky;
+  top:0;
+  align-self:start;
+  height:100dvh;
+  overflow:auto;
+  padding:84px 14px 40px;
+  border-right:1px solid var(--reader-rule);
+  background:#efe4cf;
+  font:14px/1.4 var(--font-ui);
+}
+[data-ui="shelf"] .is-toc-collapsed .shelf-reader-toc {
+  overflow:hidden;
+  padding:84px 8px 40px;
+}
+[data-ui="shelf"] .shelf-reader-toc-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin:0 0 12px;
+  padding-left:10px;
+}
+[data-ui="shelf"] .shelf-reader-toc-heading {
+  color:var(--reader-muted);
+  font:700 12px var(--font-ui);
+  letter-spacing:.2em;
+}
+[data-ui="shelf"] .shelf-reader-toc-toggle {
+  flex:none;
+  min-width:30px;
+  height:30px;
+  padding:0 8px;
+  border:1px solid var(--reader-rule);
+  border-radius:6px;
+  background:var(--reader-paper);
+  color:var(--reader-muted);
+  font:600 15px var(--font-ui);
+  cursor:pointer;
+}
+[data-ui="shelf"] .is-toc-collapsed .shelf-reader-toc-head {
+  justify-content:center;
+  padding:0;
+}
+[data-ui="shelf"] .is-toc-collapsed .shelf-reader-toc-toggle {
+  height:auto;
+  padding:12px 0;
+  writing-mode:vertical-rl;
+  text-orientation:upright;
+  font-size:13px;
+  letter-spacing:.2em;
+}
+[data-ui="shelf"] .shelf-reader-toc-toggle:hover {
+  background:#eadfc8;
+  color:var(--reader-ink);
+}
+[data-ui="shelf"] .shelf-reader-toc-item {
+  display:block;
+  width:100%;
+  padding:5px 10px;
+  border:0;
+  border-left:2px solid transparent;
+  background:transparent;
+  color:var(--reader-muted);
+  font:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+[data-ui="shelf"] .shelf-reader-toc-item.is-sub {
+  padding-left:22px;
+  font-size:13px;
+}
+[data-ui="shelf"] .shelf-reader-toc-item:hover,
+[data-ui="shelf"] .shelf-reader-toc-item[aria-current="true"] {
+  border-left-color:var(--reader-accent);
+  background:#eadfc8;
+  color:var(--reader-ink);
+}
+[data-ui="shelf"] .shelf-reader-page {
+  box-sizing:content-box;
+  min-width:0;
+  max-width:700px;
+  margin:0 auto;
+  padding:120px 48px 140px;
+  transition:max-width .25s ease;
+}
+[data-ui="shelf"] .is-toc-collapsed .shelf-reader-page {
+  max-width:920px;
+}
+[data-ui="shelf"] .shelf-reader-masthead {
+  text-align:center;
+  padding-bottom:56px;
+  margin-bottom:56px;
+  border-bottom:1px solid #2a211933;
+}
+[data-ui="shelf"] .shelf-reader-masthead p {
+  margin:0;
+}
+[data-ui="shelf"] .shelf-reader-eyebrow {
+  font:15px var(--reader-song);
+  letter-spacing:.25em;
+  color:#8a6a2f;
+}
+[data-ui="shelf"] .shelf-reader-title {
+  margin:30px 0 14px;
+  font:56px/1.25 var(--reader-song);
+  letter-spacing:.06em;
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] .shelf-reader-term {
+  font:italic 15px Georgia,var(--reader-song);
+  color:var(--reader-muted);
+}
+[data-ui="shelf"] .shelf-reader-lead {
+  max-width:560px;
+  margin:40px auto 0 !important;
+  font:22px/1.8 var(--reader-song);
+}
+[data-ui="shelf"] .shelf-reader-lead::before,
+[data-ui="shelf"] .shelf-reader-lead::after {
+  content:"—";
+  margin:0 .6em;
+  color:var(--reader-accent);
+}
+[data-ui="shelf"] .shelf-reader-source {
+  margin-top:22px !important;
+  font:15px var(--reader-song);
+  letter-spacing:.1em;
+  color:var(--reader-muted);
+}
+[data-ui="shelf"] .shelf-reader-body .concept-markdown {
+  font:19px/2.05 var(--reader-song);
+}
+[data-ui="shelf"] .shelf-reader-body p {
+  margin:0 0 .6em;
+  text-indent:2em;
+}
+[data-ui="shelf"] .shelf-reader-body li p,
+[data-ui="shelf"] .shelf-reader-body blockquote p,
+[data-ui="shelf"] .shelf-reader-body td p {
+  text-indent:0;
+}
+[data-ui="shelf"] .shelf-reader-body h2 {
+  margin:72px 0 28px;
+  text-align:center;
+  font:24px var(--reader-song);
+  letter-spacing:.12em;
+  scroll-margin-top:32px;
+}
+[data-ui="shelf"] .shelf-reader-body h2::before {
+  content:"❦";
+  display:block;
+  margin-bottom:10px;
+  color:var(--reader-accent);
+  font-size:20px;
+  letter-spacing:0;
+}
+[data-ui="shelf"] .shelf-reader-body h3 {
+  margin:44px 0 14px;
+  font:700 21px var(--reader-song);
+  scroll-margin-top:32px;
+}
+[data-ui="shelf"] .shelf-reader-body h4 {
+  margin:34px 0 12px;
+  font:700 18px var(--reader-song);
+  scroll-margin-top:32px;
+}
+[data-ui="shelf"] .shelf-reader-body h5,
+[data-ui="shelf"] .shelf-reader-body h6 {
+  margin:26px 0 10px;
+  color:var(--reader-muted);
+  font:700 16px var(--font-ui);
+}
+[data-ui="shelf"] .shelf-reader-lead:empty,
+[data-ui="shelf"] .shelf-reader-source:empty {
+  display:none;
+}
+[data-ui="shelf"] .shelf-reader-status,
+[data-ui="shelf"] .shelf-reader-notice {
+  margin:0 0 16px;
+  text-align:center;
+  text-indent:0;
+  color:var(--reader-muted);
+  font:15px var(--font-ui);
+}
+[data-ui="shelf"] .shelf-reader-body h2:focus,
+[data-ui="shelf"] .shelf-reader-body h3:focus {
+  outline:none;
+}
+[data-ui="shelf"] .shelf-reader-body table {
+  display:table;
+  width:100%;
+  margin:20px 0 28px;
+  border-collapse:collapse;
+  border-top:2px solid var(--reader-ink);
+  border-bottom:2px solid var(--reader-ink);
+  font:15px/1.7 var(--font-ui);
+}
+[data-ui="shelf"] .shelf-reader-body .concept-markdown {
+  overflow-wrap:break-word;
+}
+[data-ui="shelf"] .shelf-reader-body th,
+[data-ui="shelf"] .shelf-reader-body td {
+  border:0;
+}
+[data-ui="shelf"] .shelf-reader-body th {
+  padding:8px 10px;
+  border-bottom:1px solid var(--reader-ink);
+  text-align:left;
+  font-weight:600;
+}
+[data-ui="shelf"] .shelf-reader-body td {
+  padding:8px 10px;
+  vertical-align:top;
+  border-bottom:1px solid #2a21191a;
+}
+[data-ui="shelf"] .shelf-reader-body blockquote {
+  margin:24px 2em;
+  color:#4a3b2b;
+  font-style:italic;
+}
+[data-ui="shelf"] .shelf-reader-body code {
+  font-family:var(--font-mono);
+  font-size:.82em;
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] .shelf-reader-fold {
+  margin:56px 0 0;
+  padding:14px 18px;
+  border:1px solid var(--reader-rule);
+  border-radius:6px;
+  font:15px/1.8 var(--font-ui);
+}
+[data-ui="shelf"] .shelf-reader-fold > summary {
+  color:var(--reader-muted);
+  font:600 15px var(--font-ui);
+  letter-spacing:.08em;
+  cursor:pointer;
+  scroll-margin-top:32px;
+}
+[data-ui="shelf"] .shelf-reader-fold[open] > summary {
+  margin-bottom:12px;
+}
+[data-ui="shelf"] .shelf-reader-fold p {
+  text-indent:0;
+}
+@media (max-width:900px) {
+  [data-ui="shelf"] .shelf-reader-grid,
+  [data-ui="shelf"] .shelf-reader-grid.is-toc-collapsed {
+    grid-template-columns:minmax(0,1fr);
+  }
+  [data-ui="shelf"] .shelf-reader-toc,
+  [data-ui="shelf"] .is-toc-collapsed .shelf-reader-toc {
+    position:static;
+    height:auto;
+    padding:72px 18px 12px;
+    border-right:0;
+    border-bottom:1px solid var(--reader-rule);
+  }
+  [data-ui="shelf"] .is-toc-collapsed .shelf-reader-toc-head {
+    justify-content:flex-start;
+  }
+  [data-ui="shelf"] .is-toc-collapsed .shelf-reader-toc-toggle {
+    height:30px;
+    padding:0 10px;
+    writing-mode:horizontal-tb;
+  }
+  [data-ui="shelf"] .shelf-reader-page {
+    padding:48px 18px 140px;
+  }
+  [data-ui="shelf"] .shelf-reader-exit.is-compact {
+    left:22px;
+    width:auto;
+    padding:6px 10px;
+    font-size:14px;
+  }
+  [data-ui="shelf"] .shelf-reader-exit.is-compact .shelf-reader-exit-label,
+  [data-ui="shelf"] .shelf-reader-exit.is-compact kbd {
+    display:inline;
+  }
+  [data-ui="shelf"] .shelf-reader-body h2,
+  [data-ui="shelf"] .shelf-reader-body h3,
+  [data-ui="shelf"] .shelf-reader-fold > summary {
+    scroll-margin-top:72px;
+  }
+  [data-ui="shelf"] .shelf-reader-title {
+    font-size:40px;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  [data-ui="shelf"] dialog.shelf-reader {
+    scroll-behavior:auto;
+  }
+  [data-ui="shelf"] .shelf-reader-grid,
+  [data-ui="shelf"] .shelf-reader-page {
+    transition:none;
+  }
+}
+
+[data-ui="shelf"] .concept-map-page { background:var(--bg); color:var(--text); font-family:var(--font-title); --radius:6px; }
+
+/* ===== v0.38 书房动效与质感 (docs/design/v0.38/shelf-motion.html) ===== */
+/* Spines: hover lifts the book and tips its head forward, showing the page edge; the last book of a row leans
+   (shelf.js leanLastBook) on its bottom-left corner, so every transform keeps rotate(var(--lean)). */
+[data-ui="shelf"] .book-spine {
+  transform-origin:0 100%;
+  transform:rotate(var(--lean,0deg));
+  transition:transform .24s var(--ease-spring), filter .2s, box-shadow .2s var(--ease-out);
+}
+[data-ui="shelf"] .book-spine:hover,
+[data-ui="shelf"] .book-spine:focus-visible {
+  transform:perspective(800px) translateY(-10px) rotate(var(--lean,0deg)) rotateX(-8deg);
+  filter:brightness(1.08) saturate(1.05);
+  box-shadow:0 14px 18px -8px rgba(0,0,0,.8), inset 0 3px 0 rgba(255,230,190,.14);
+  z-index:2;
+}
+[data-ui="shelf"] .book-spine:active:enabled {
+  transform:perspective(800px) translateY(-5px) rotate(var(--lean,0deg)) rotateX(-4deg);
+  transition-duration:80ms;
+}
+/* The head of the lifted book, seen from just above the spine (2026-11-01: make it look real): a narrow top
+   face that narrows toward the far edge, the cloth boards on both sides standing a little proud of the text block,
+   the shadow under the headcap, a small headband at the spine (mostly white, tinted toward the spine colour; 2026-11-01), and fine, uneven leaves in warm aged paper. */
+[data-ui="shelf"] .spine-edge {
+  position:absolute;
+  left:1px;
+  right:1px;
+  bottom:100%;
+  height:8px;
+  background:
+    linear-gradient(180deg, rgba(255,236,200,.22), transparent 2px),
+    linear-gradient(90deg, rgba(0,0,0,.35) 0 1px, transparent 1px calc(100% - 1px), rgba(0,0,0,.35) calc(100% - 1px)),
+    linear-gradient(90deg, var(--book-color,#24324a) 0 3.5px, transparent 3.5px calc(100% - 3.5px), var(--book-color,#24324a) calc(100% - 3.5px)),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--book-color,#24324a) 45%, #efe6d0) 0 .9px, color-mix(in srgb, var(--book-color,#24324a) 10%, #f2e9d4) .9px 2.6px) 0 100% / 100% 1.5px no-repeat,
+    linear-gradient(0deg, rgba(52,32,14,.38), rgba(52,32,14,.1) 50%, transparent 80%),
+    linear-gradient(90deg, rgba(52,32,14,.32), transparent 24%, transparent 76%, rgba(52,32,14,.32)),
+    repeating-linear-gradient(90deg, rgba(104,78,44,.09) 0 .6px, transparent .6px 1.3px),
+    repeating-linear-gradient(90deg, transparent 0 1.9px, rgba(104,78,44,.08) 1.9px 2.5px, transparent 2.5px 4.7px),
+    repeating-linear-gradient(90deg, rgba(255,250,236,.14) 0 1px, transparent 1px 6.1px),
+    repeating-linear-gradient(90deg, transparent 0 9px, rgba(90,66,36,.1) 9px 10px, transparent 10px 17px),
+    linear-gradient(180deg, #d4c19c, #e6d6b4 55%, #ecdfc2);
+  clip-path:polygon(6% 0, 94% 0, 100% 100%, 0 100%);
+  transform-origin:50% 100%;
+  transform:scaleY(0);
+  opacity:0;
+  transition:transform .24s var(--ease-spring), opacity .16s;
+  pointer-events:none;
+}
+[data-ui="shelf"] .book-spine:hover .spine-edge,
+[data-ui="shelf"] .book-spine:focus-visible .spine-edge { transform:scaleY(1); opacity:1; }
+[data-ui="shelf"] .book-spine.is-out { visibility:hidden; transition:none; }
+/* 放上书桌 stays above its lifted spine (z-index 2 on hover) and tilts with a leaning book about the same
+   bottom-left pivot: the item's corner, 4px left of and 8px below the button. */
+[data-ui="shelf"] .shelf-item .put-on-desk {
+  z-index:3;
+  transform-origin:-4px calc(100% + 8px);
+  transform:rotate(var(--lean,0deg));
+}
+[data-ui="shelf"] .shelf-layers.ui-enter .book-spine,
+[data-ui="shelf"] .ui-enter .shelf-layers .book-spine {
+  animation:shelf-book-in .32s var(--ease-out) backwards;
+  animation-delay:calc(var(--i, 0) * 14ms);
+}
+[data-ui="shelf"] .ui-enter .staff-badge { animation:ui-rise .24s var(--ease-out) backwards; }
+
+/* The pulled-out book: a stage over the dimmed room, holding a 3D box whose spine, pages, top and cover face out. */
+[data-ui="shelf"] .shelf-book-stage {
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100dvh;
+  max-width:none;
+  max-height:none;
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  overflow:hidden;
+  perspective:1700px;
+  color:#f3e9d8;
+  outline:none;
+}
+[data-ui="shelf"] .shelf-book-stage[open] { animation:none; }
+[data-ui="shelf"] .shelf-book-stage::backdrop {
+  background:rgba(11,7,5,.66);
+  backdrop-filter:blur(3px);
+  animation:ui-fade .25s ease-out backwards;
+}
+/* Putting the book back, the room brightens while it flies home instead of all at once when it lands. */
+[data-ui="shelf"] .shelf-book-stage.is-closing::backdrop { opacity:0; transition:opacity .7s cubic-bezier(.4,0,.2,1); }
+[data-ui="shelf"]:has(.shelf-book-stage[open]) { overflow:hidden; scrollbar-gutter:stable; }
+[data-ui="shelf"] .book-3d {
+  position:absolute;
+  left:0;
+  top:0;
+  width:var(--book-w);
+  height:var(--book-h);
+  transform-style:preserve-3d;
+  cursor:pointer;
+  outline:none;
+  will-change:transform;
+}
+[data-ui="shelf"] .book-3d:focus-visible .book-front { box-shadow:0 0 0 3px #f2c879, inset 0 0 0 1px rgba(0,0,0,.25); }
+[data-ui="shelf"] .book-face { position:absolute; backface-visibility:hidden; }
+[data-ui="shelf"] .book-front {
+  inset:0;
+  transform:translateZ(calc(var(--book-d) / 2));
+  border-radius:2px 5px 5px 2px;
+  overflow:hidden;
+  color:#f3e3bf;
+  /* Hinge shading by the spine, a soft sheen and a fine cloth weave over the spine's own colour. */
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.35) 0, rgba(255,255,255,.12) 2.4%, rgba(0,0,0,.24) 4.6%, transparent 7.5%, transparent 93%, rgba(0,0,0,.15) 100%),
+    radial-gradient(120% 85% at 28% 18%, rgba(255,255,255,.14), transparent 62%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.03) 0 2px, transparent 2px 4px),
+    var(--book-color);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);
+}
+[data-ui="shelf"] .book-back {
+  inset:0;
+  transform:rotateY(180deg) translateZ(calc(var(--book-d) / 2));
+  border-radius:5px 2px 2px 5px;
+  background:linear-gradient(90deg, transparent 0 92%, rgba(0,0,0,.35) 100%), var(--book-color);
+  filter:brightness(.82);
+}
+/* The spine face repeats the shelf spine at the book's scale (--book-k), so the turn starts from what was on the shelf. */
+[data-ui="shelf"] .book-spine-face {
+  top:0;
+  height:100%;
+  width:var(--book-d);
+  left:calc((var(--book-w) - var(--book-d)) / 2);
+  transform:rotateY(-90deg) translateZ(calc(var(--book-w) / 2));
+  border-radius:3px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:calc(24px * var(--book-k)) 0;
+  box-sizing:border-box;
+  background:linear-gradient(90deg, rgba(0,0,0,.5), rgba(255,240,210,.12) 20%, rgba(255,240,210,.03) 46%, rgba(0,0,0,.2) 78%, rgba(0,0,0,.55)), var(--book-color);
+}
+[data-ui="shelf"] .book-spine-face::before,
+[data-ui="shelf"] .book-spine-face::after {
+  content:"";
+  position:absolute;
+  left:calc(3px * var(--book-k));
+  right:calc(3px * var(--book-k));
+  height:calc(5px * var(--book-k));
+  border-top:calc(1px * var(--book-k)) solid rgba(214,178,106,.7);
+  border-bottom:calc(1px * var(--book-k)) solid rgba(214,178,106,.7);
+}
+[data-ui="shelf"] .book-spine-face::before { top:calc(10px * var(--book-k)); }
+[data-ui="shelf"] .book-spine-face::after { bottom:calc(10px * var(--book-k)); }
+[data-ui="shelf"] .book-spine-title {
+  writing-mode:vertical-rl;
+  height:100%;
+  max-width:var(--spine-title-w, 2.7em);
+  font:700 var(--spine-font)/1.35 var(--font-title);
+  letter-spacing:.08em;
+  color:#e6c98a;
+  text-shadow:0 1px 0 rgba(0,0,0,.6);
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] .book-pages {
+  top:4px;
+  height:calc(100% - 8px);
+  width:calc(var(--book-d) - 6px);
+  left:calc((var(--book-w) - var(--book-d)) / 2 + 3px);
+  transform:rotateY(90deg) translateZ(calc(var(--book-w) / 2 - 4px));
+  background:
+    linear-gradient(90deg, rgba(52,32,14,.3), transparent 22%, transparent 78%, rgba(52,32,14,.3)),
+    linear-gradient(180deg, rgba(52,32,14,.18), transparent 8%, transparent 92%, rgba(52,32,14,.22)),
+    repeating-linear-gradient(90deg, rgba(104,78,44,.1) 0 .6px, transparent .6px 1.3px),
+    repeating-linear-gradient(90deg, transparent 0 1.9px, rgba(104,78,44,.08) 1.9px 2.5px, transparent 2.5px 4.7px),
+    repeating-linear-gradient(90deg, rgba(255,250,236,.14) 0 1px, transparent 1px 6.1px),
+    repeating-linear-gradient(90deg, transparent 0 9px, rgba(90,66,36,.1) 9px 10px, transparent 10px 17px),
+    linear-gradient(90deg, #d9c8a5, #ebdfc4 50%, #d9c8a5);
+}
+[data-ui="shelf"] .book-top,
+[data-ui="shelf"] .book-bottom {
+  left:4px;
+  width:calc(100% - 8px);
+  height:calc(var(--book-d) - 6px);
+  top:calc((var(--book-h) - var(--book-d)) / 2 + 3px);
+  transform:rotateX(90deg) translateZ(calc(var(--book-h) / 2 - 3px));
+  background:
+    linear-gradient(0deg, rgba(52,32,14,.3), transparent 22%, transparent 78%, rgba(52,32,14,.3)),
+    repeating-linear-gradient(0deg, rgba(104,78,44,.1) 0 .6px, transparent .6px 1.3px),
+    repeating-linear-gradient(0deg, transparent 0 1.9px, rgba(104,78,44,.08) 1.9px 2.5px, transparent 2.5px 4.7px),
+    repeating-linear-gradient(0deg, rgba(255,250,236,.14) 0 1px, transparent 1px 6.1px),
+    repeating-linear-gradient(0deg, transparent 0 9px, rgba(90,66,36,.1) 9px 10px, transparent 10px 17px),
+    linear-gradient(90deg, #d4c19c, #e9dcbf 18%, #ecdfc2 80%, #dccaa6);
+}
+[data-ui="shelf"] .book-ground {
+  position:absolute;
+  left:0;
+  top:0;
+  width:var(--book-w,258px);
+  height:40px;
+  border-radius:50%;
+  background:radial-gradient(closest-side, rgba(0,0,0,.65), transparent);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .4s;
+}
+[data-ui="shelf"] .book-ground.on { opacity:1; }
+/* Generated covers: three designs in gilt on the book's cloth (shelf.js bookCover). */
+[data-ui="shelf"] .book-cover {
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  padding:12% 13% 10% 15%;
+}
+[data-ui="shelf"] .cover-title {
+  font:700 var(--cover-title)/1.15 var(--font-title);
+  letter-spacing:.02em;
+  text-shadow:0 1px 0 rgba(0,0,0,.45);
+  overflow-wrap:anywhere;
+}
+[data-ui="shelf"] .cover-author {
+  font:600 12px/1.3 var(--font-ui, "Segoe UI", "Microsoft YaHei UI", sans-serif);
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  opacity:.92;
+}
+[data-ui="shelf"] .cover-ornament { color:#e2c27a; font-size:15px; letter-spacing:.6em; margin:14px 0; }
+[data-ui="shelf"] .cover-frame::before,
+[data-ui="shelf"] .cover-frame::after { content:""; position:absolute; border:1.5px solid rgba(226,194,122,.8); pointer-events:none; }
+[data-ui="shelf"] .cover-frame::before { inset:16px 14px 16px 22px; }
+[data-ui="shelf"] .cover-frame::after { inset:22px 20px 22px 28px; border-width:1px; border-color:rgba(226,194,122,.5); }
+[data-ui="shelf"] .cover-frame .cover-title { margin-top:30%; }
+[data-ui="shelf"] .cover-frame .cover-author { margin-top:auto; }
+[data-ui="shelf"] .cover-band .cover-author { margin-top:6%; }
+[data-ui="shelf"] .cover-band .cover-band {
+  position:absolute;
+  left:0;
+  right:0;
+  top:36%;
+  padding:18px 13% 18px 15%;
+  background:rgba(0,0,0,.22);
+  border-top:1.5px solid rgba(226,194,122,.8);
+  border-bottom:1.5px solid rgba(226,194,122,.8);
+}
+[data-ui="shelf"] .cover-classic { align-items:flex-start; text-align:left; }
+[data-ui="shelf"] .cover-classic .cover-title { font-size:calc(var(--cover-title) * 1.15); margin-top:8%; }
+[data-ui="shelf"] .cover-rule { width:46%; height:2px; background:#e2c27a; margin:16px 0; }
+[data-ui="shelf"] .cover-classic .cover-author { margin-top:auto; }
+[data-ui="shelf"] .cover-classic::after {
+  content:"";
+  position:absolute;
+  right:16px;
+  bottom:16px;
+  width:34px;
+  height:34px;
+  border-right:1.5px solid rgba(226,194,122,.67);
+  border-bottom:1.5px solid rgba(226,194,122,.67);
+}
+[data-ui="shelf"] .shelf-book-close {
+  position:fixed;
+  top:20px;
+  right:24px;
+  width:40px;
+  height:40px;
+  padding:0;
+  border-radius:50%;
+  border:1px solid rgba(243,233,216,.33);
+  background:rgba(0,0,0,.4);
+  color:#f3e9d8;
+  font-size:20px;
+  line-height:1;
+}
+[data-ui="shelf"] .shelf-book-close:hover:enabled { background:rgba(0,0,0,.66); }
+[data-ui="shelf"] .shelf-book-close:focus-visible { outline:2px solid #f2c879; outline-offset:2px; }
+/* v0.42 书本检视: a game's item card beside the turned-out book. Off-white type straight on the dim room, DIN-like
+   figures (Bahnschrift) with a clean Chinese sans, sized by the settings slider (--book-text-scale). */
+[data-ui="shelf"] .book-inspect {
+  --k:var(--book-text-scale, 1);
+  position:fixed;
+  left:50vw;
+  top:50%;
+  width:min(600px, 44vw);
+  translate:0 -54%;
+  font-family:"Bahnschrift","HarmonyOS Sans SC","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+  color:#f1eee8;
+  letter-spacing:.04em;
+  text-shadow:0 1px 3px rgba(0,0,0,.65);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .35s, translate .45s var(--ease-out);
+}
+[data-ui="shelf"] .shelf-book-stage.is-cover .book-inspect { opacity:1; translate:0 -50%; pointer-events:auto; }
+[data-ui="shelf"] .inspect-glyphs { display:flex; gap:calc(14px * var(--k)); margin-bottom:calc(14px * var(--k)); }
+[data-ui="shelf"] .inspect-glyph { width:calc(38px * var(--k)); height:calc(38px * var(--k)); fill:currentColor; filter:drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+[data-ui="shelf"] .inspect-glyph .is-line { fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+[data-ui="shelf"] .inspect-glyphs .inspect-glyph:nth-child(1) { rotate:-12deg; }
+[data-ui="shelf"] .inspect-glyphs .inspect-glyph:nth-child(2) { rotate:8deg; }
+[data-ui="shelf"] .inspect-title { margin:0 0 calc(10px * var(--k)); font-size:calc(34px * var(--k)); font-weight:700; line-height:1.25; letter-spacing:.06em; color:#f6f3ee; }
+[data-ui="shelf"] .inspect-blurb { margin:0 0 calc(30px * var(--k)); font-size:calc(21px * var(--k)); line-height:1.55; color:#e9e5dd; }
+[data-ui="shelf"] .inspect-stats { list-style:none; margin:0; padding:0; display:grid; gap:calc(14px * var(--k)); font-size:calc(20px * var(--k)); color:#e2ded6; }
+[data-ui="shelf"] .inspect-stats li { display:flex; align-items:center; gap:calc(12px * var(--k)); }
+[data-ui="shelf"] .inspect-stats .inspect-glyph { width:calc(26px * var(--k)); height:calc(26px * var(--k)); rotate:none; }
+@media (max-width:959px) {
+  [data-ui="shelf"] .book-inspect { left:50vw; top:auto; bottom:5vh; width:min(560px, 90vw); translate:-50% 12px; text-align:center; }
+  /* Reserve a half-size book plus two 16px gaps even for a tall description. */
+  [data-ui="shelf"] .book-inspect { max-height:max(0px, calc(95vh - 222px)); overflow-y:auto; }
+  [data-ui="shelf"] .shelf-book-stage.is-cover .book-inspect { translate:-50% 0; }
+  [data-ui="shelf"] .inspect-glyphs, [data-ui="shelf"] .inspect-stats li { justify-content:center; }
+}
+/* The detail rises as paper; beside a pulled-out book it slides in on the right over the same dim room. */
+[data-ui="shelf"] .shelf-detail {
+  border-radius:12px;
+  background:linear-gradient(180deg, #f7eedd, #eddcbe);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 30px 70px -20px #000, 0 8px 18px rgba(0,0,0,.4);
+}
+[data-ui="shelf"] .shelf-detail[open] { animation-name:ui-pop; }
+[data-ui="shelf"] .shelf-detail.beside-book { inset:0 6vw 0 auto; margin:auto 0; width:min(520px, 44vw); }
+[data-ui="shelf"] .shelf-detail.beside-book::backdrop { background:transparent; backdrop-filter:none; animation:none; }
+[data-ui="shelf"] .shelf-detail.beside-book[open] { animation:shelf-side-in .3s var(--ease-out) .14s backwards; }
+[data-ui="shelf"] .shelf-detail .actions button {
+  border-radius:8px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45), 0 1px 2px rgba(0,0,0,.14);
+}
+[data-ui="shelf"] .shelf-detail .actions button:hover:enabled { box-shadow:inset 0 1px 0 rgba(255,255,255,.45), 0 4px 10px -4px rgba(0,0,0,.4); }
+[data-ui="shelf"] .lending-card { transition:transform .2s var(--ease-out), box-shadow .2s var(--ease-out); }
+[data-ui="shelf"] .lending-card:hover { transform:translateY(-3px); }
+@media (prefers-reduced-motion:reduce) {
+  [data-ui="shelf"] .book-spine { transition:none; }
+  [data-ui="shelf"] .spine-edge { transition:none; }
+  [data-ui="shelf"] .book-spine:hover,
+  [data-ui="shelf"] .book-spine:focus-visible,
+  [data-ui="shelf"] .book-spine:active:enabled { transform:rotate(var(--lean,0deg)); }
+  [data-ui="shelf"] .ui-enter .book-spine,
+  [data-ui="shelf"] .shelf-book-stage::backdrop,
+  [data-ui="shelf"] .shelf-detail.beside-book[open] { animation:none; }
+  [data-ui="shelf"] .book-ground,
+  [data-ui="shelf"] .book-inspect,
+  [data-ui="shelf"] .shelf-book-stage.is-closing::backdrop,
+  [data-ui="shelf"] .lending-card { transition:none; }
+  [data-ui="shelf"] .lending-card:hover { transform:none; }
+}
+
+/* ===== 书桌 (2026-10-31, version 2 of docs/design/v0.39-desk): two joint-call buttons, the rooms in 书房各室 ▾. ===== */
+[data-ui="shelf"] #tray-selected .muted {
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+[data-ui="shelf"] .shelf-rooms-open {
+  anchor-name:--shelf-rooms;
+  border-color:#6b5640;
+  color:#ead8b4;
+}
+[data-ui="shelf"] .shelf-rooms-open:hover:enabled,
+[data-ui="shelf"] .desk-actions:has(.shelf-rooms:popover-open) .shelf-rooms-open {
+  border-color:#f2c879;
+  color:#f2c879;
+  background:rgba(242,200,121,.12);
+}
+/* The menu opens above its button, right edges aligned; without anchor positioning it falls back to the centre. */
+[data-ui="shelf"] .shelf-rooms {
+  position-anchor:--shelf-rooms;
+  position-area:top span-left;
+  inset:auto;
+  margin:0 0 8px;
+  width:220px;
+  box-sizing:border-box;
+  padding:6px;
+  border:0;
+  border-radius:10px;
+  background:#f3e9d8;
+  color:#2b2118;
+  box-shadow:0 20px 40px -12px rgba(0,0,0,.7), 0 2px 6px rgba(0,0,0,.3);
+}
+[data-ui="shelf"] .shelf-rooms:popover-open {
+  display:flex;
+  flex-direction:column;
+  animation:ui-pop var(--motion) var(--ease-out) backwards;
+}
+[data-ui="shelf"] .shelf-room {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:100%;
+  min-height:40px;
+  padding:0 12px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:#2b2118;
+  font-size:15px;
+  text-align:left;
+}
+[data-ui="shelf"] .shelf-room:hover:enabled,
+[data-ui="shelf"] .shelf-room:focus-visible {
+  background:rgba(43,33,24,.08);
+}
+[data-ui="shelf"] .shelf-room:focus-visible { outline:2px solid #2f4a6d; outline-offset:-2px; }
+[data-ui="shelf"] .shelf-room .shelf-icon {
+  width:16px;
+  height:16px;
+  color:#8a5a2b;
+}
+@media (prefers-reduced-motion:reduce) {
+  [data-ui="shelf"] .shelf-rooms:popover-open { animation:none; }
+}
+
+/* v0.41 在软件中阅读原书: the extras of the book reader (public/book-reader.js), which opens from every layout inside a
+   data-ui="shelf" host, so it shares the reading mode above. */
+[data-ui="shelf"] .book-reader [hidden] { display:none !important; }
+[data-ui="shelf"] .book-reader-tools { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; margin:-72px 0 48px; font:14px var(--font-ui); }
+[data-ui="shelf"] .book-reader.is-pdf .book-reader-tools { margin:-40px 0 12px; }
+[data-ui="shelf"] .book-reader-file-label { color:var(--reader-muted); font-size:13px; }
+[data-ui="shelf"] .book-reader .book-reader-file { max-width:min(360px, 40vw); min-height:32px; padding:0 8px; border:1px solid var(--reader-rule); border-radius:6px; background:var(--reader-paper); color:var(--reader-ink); font:13px var(--font-ui); }
+[data-ui="shelf"] .book-reader .book-reader-external { min-height:32px; padding:0 12px; border:1px solid var(--reader-rule); border-radius:6px; background:transparent; color:var(--reader-muted); font:13px var(--font-ui); cursor:pointer; }
+[data-ui="shelf"] .book-reader .book-reader-external:hover { background:#eadfc8; color:var(--reader-ink); }
+[data-ui="shelf"] .book-reader-pager { display:flex; gap:16px; margin-top:64px; padding-top:24px; border-top:1px solid var(--reader-rule); }
+[data-ui="shelf"] .book-reader .book-reader-turn { max-width:48%; padding:10px 14px; border:1px solid var(--reader-rule); border-radius:8px; background:transparent; color:var(--reader-muted); font:14px/1.5 var(--font-ui); text-align:left; cursor:pointer; }
+[data-ui="shelf"] .book-reader .book-reader-turn.is-next { margin-left:auto; text-align:right; }
+[data-ui="shelf"] .book-reader .book-reader-turn:hover { background:#eadfc8; color:var(--reader-ink); }
+[data-ui="shelf"] .book-reader .book-image { display:block; max-width:100%; height:auto; margin:24px auto; }
+/* A PDF keeps its own pages: the viewer fills the paper below a compact masthead. */
+[data-ui="shelf"] .book-reader.is-pdf .shelf-reader-grid { grid-template-columns:minmax(0,1fr); }
+[data-ui="shelf"] .book-reader.is-pdf .shelf-reader-page { box-sizing:border-box; width:100%; max-width:none; margin:0; padding:64px 24px 16px; }
+[data-ui="shelf"] .book-reader.is-pdf .shelf-reader-masthead { padding-bottom:12px; margin-bottom:12px; }
+[data-ui="shelf"] .book-reader.is-pdf .shelf-reader-title { font-size:22px; }
+[data-ui="shelf"] .book-reader.is-pdf .shelf-reader-lead, [data-ui="shelf"] .book-reader.is-pdf .book-reader-pager { display:none; }
+[data-ui="shelf"] .book-reader-pdf { display:block; width:100%; height:calc(100dvh - 200px); min-height:420px; border:1px solid var(--reader-rule); border-radius:6px; background:#fff; }
+/* Both reading modes (Word reports and lectures, original books): the collapsed outline rail hides itself after 3 s
+   (public/reader-rail.js); a 14 px strip at the left edge brings it back. */
+[data-ui="shelf"] dialog.shelf-reader .shelf-reader-toc,
+[data-ui="shelf"] dialog.shelf-reader .shelf-reader-exit { transition:transform .25s ease, opacity .2s ease, visibility 0s; }
+[data-ui="shelf"] dialog.shelf-reader.is-rail-hidden .shelf-reader-grid.is-toc-collapsed { grid-template-columns:0 minmax(0,1fr); }
+[data-ui="shelf"] dialog.shelf-reader.is-rail-hidden .shelf-reader-toc { transform:translateX(-100%); opacity:0; visibility:hidden; transition:transform .25s ease, opacity .2s ease, visibility 0s .25s; }
+[data-ui="shelf"] dialog.shelf-reader.is-rail-hidden .shelf-reader-exit { transform:translateX(-160%); opacity:0; visibility:hidden; transition:transform .25s ease, opacity .2s ease, visibility 0s .25s; }
+[data-ui="shelf"] .shelf-reader-edge { position:fixed; top:0; bottom:0; left:0; z-index:3; width:14px; display:none; }
+[data-ui="shelf"] dialog.shelf-reader.is-rail-hidden .shelf-reader-edge { display:block; }
+@media (prefers-reduced-motion:reduce) {
+  [data-ui="shelf"] dialog.shelf-reader .shelf-reader-toc,
+  [data-ui="shelf"] dialog.shelf-reader .shelf-reader-exit,
+  [data-ui="shelf"] dialog.shelf-reader .shelf-reader-grid { transition:none; }
+}
+
+/* The pulled-out book turns under the pointer (drag) or the arrow keys (2026-11-01); tilting shows its foot too. */
+[data-ui="shelf"] .book-3d { cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; }
+[data-ui="shelf"] .book-3d.is-turning { cursor:grabbing; }
+[data-ui="shelf"] .book-bottom { transform:rotateX(-90deg) translateZ(calc(var(--book-h) / 2 - 3px)); }

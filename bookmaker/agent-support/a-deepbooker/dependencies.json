@@ -1,0 +1,42 @@
+{
+  "abook_runtime": {
+    "path": "~/.codex/agent-support/a-book/abook_runtime_v3.py",
+    "sha256": "7c5c7fe9c1baf2f225a9b089c44e7d84176ee88c37d84114070a596191136002"
+  },
+  "abook_protocol": {
+    "path": "~/.codex/agent-support/a-book/protocol-v3.md",
+    "sha256": "ca530c14c4d4feb18159988a483718afdfc90c8d147951191dfbb781cdb88e8e"
+  },
+  "abook_agent": {
+    "path": "~/.codex/agents/a-book.toml",
+    "sha256": "d1acd6366da1d8d94634f9ffcbb71e598ccfc0e66b0f9587386119028365c395"
+  },
+  "deepbooker": {
+    "path": "<DEEPBOOKER_HOME>/plugins/deepbooker/skills/deepbooker/SKILL.md",
+    "sha256": "c586caff4830bb43f99c6a08a0f358ca9b52f5128bbcd3a99f74e7746da6d888"
+  },
+  "state_validator": {
+    "path": "<DEEPBOOKER_HOME>/.deepbooker-work/validate-reading-state.ps1",
+    "sha256": "80bfa5293ad4993d3f11d3f110102294bd359b177a4b7fb4a92f29d5292a4804"
+  },
+  "runtime-and-authorization.md": {
+    "path": "<DEEPBOOKER_HOME>/plugins/deepbooker/skills/deepbooker/references/runtime-and-authorization.md",
+    "sha256": "fecc865c976bf1ed39f4caf5c724fbaeb4c4d2d320ba353ab4b4dcd84ffb5f76"
+  },
+  "source-adapters.md": {
+    "path": "<DEEPBOOKER_HOME>/plugins/deepbooker/skills/deepbooker/references/source-adapters.md",
+    "sha256": "d610e75c653b063a1360e3fc59a6cf1ab46e30f1652872a37db33581ce2fce4d"
+  },
+  "analysis-and-report.md": {
+    "path": "<DEEPBOOKER_HOME>/plugins/deepbooker/skills/deepbooker/references/analysis-and-report.md",
+    "sha256": "a33cc6a0a2ba7484d7498b2a5ffbcae868323999324fa471415345318b405d1b"
+  },
+  "evidence-and-xros.md": {
+    "path": "<DEEPBOOKER_HOME>/plugins/deepbooker/skills/deepbooker/references/evidence-and-xros.md",
+    "sha256": "1cb6fcef3e30c781e3dfbff7a55102921a8e7537c04645bd513486b7343325b8"
+  },
+  "transfer-applications.md": {
+    "path": "<DEEPBOOKER_HOME>/plugins/deepbooker/skills/deepbooker/references/transfer-applications.md",
+    "sha256": "29425a27697cf0f32d50103ed8e335ee69285282df9c63f1d4efa816e306bfc7"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "co-agent",
+  "version": "0.53.2",
+  "main": "electron/main.cjs",
+  "productName": "CO-AGENT",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "start": "node src/server.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "electron": "44.2.0"
+  }
+}

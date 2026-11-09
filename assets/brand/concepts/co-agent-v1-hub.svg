@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="t">
+  <title id="t">CO-AGENT</title>
+  <!-- Tile -->
+  <rect x="8" y="8" width="496" height="496" rx="108" fill="#0A0E13"/>
+  <rect x="8" y="8" width="496" height="496" rx="108" fill="none" stroke="#1E2A36" stroke-width="4"/>
+  <!-- Faint dot grid -->
+  <g fill="#18222D">
+    <circle cx="96" cy="96" r="4"/><circle cx="416" cy="96" r="4"/>
+    <circle cx="96" cy="236" r="4"/><circle cx="416" cy="236" r="4"/>
+    <circle cx="256" cy="452" r="4"/><circle cx="160" cy="452" r="4"/><circle cx="352" cy="452" r="4"/>
+  </g>
+  <!-- Links: each agent to the shared hub -->
+  <g stroke-width="10" stroke-linecap="round">
+    <line x1="256" y1="132" x2="256" y2="280" stroke="#3EE88A"/>
+    <line x1="128" y1="354" x2="256" y2="280" stroke="#3CC8F5"/>
+    <line x1="384" y1="354" x2="256" y2="280" stroke="#B18CFF"/>
+  </g>
+  <!-- Agents: three terminal windows with a prompt -->
+  <g stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="190" y="78" width="132" height="108" rx="24" fill="#111821" stroke="#3EE88A"/>
+    <polyline points="222,114 244,132 222,150" fill="none" stroke="#3EE88A"/>
+    <line x1="256" y1="150" x2="288" y2="150" stroke="#3EE88A"/>
+
+    <rect x="62" y="300" width="132" height="108" rx="24" fill="#111821" stroke="#3CC8F5"/>
+    <polyline points="94,336 116,354 94,372" fill="none" stroke="#3CC8F5"/>
+    <line x1="128" y1="372" x2="160" y2="372" stroke="#3CC8F5"/>
+
+    <rect x="318" y="300" width="132" height="108" rx="24" fill="#111821" stroke="#B18CFF"/>
+    <polyline points="350,336 372,354 350,372" fill="none" stroke="#B18CFF"/>
+    <line x1="384" y1="372" x2="416" y2="372" stroke="#B18CFF"/>
+  </g>
+  <!-- Shared hub -->
+  <circle cx="256" cy="280" r="22" fill="#EDEFF2"/>
+  <circle cx="256" cy="280" r="9" fill="#0A0E13"/>
+</svg>

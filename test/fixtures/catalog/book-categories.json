@@ -1,0 +1,356 @@
+{
+  "version": 1,
+  "note": "Sample catalog for tests: invented titles; agent names match the agents the tests create.",
+  "categories": [
+    "投资／金融与金钱管理",
+    "心理／认知与行为",
+    "睡眠／健康／运动",
+    "软件工程",
+    "艺术／美学",
+    "思维／逻辑／因果与不确定性",
+    "经济学／经济史／博弈论",
+    "商业／传记／组织管理",
+    "哲学／神话",
+    "学习／研究／工作方法",
+    "科学／技术与社会"
+  ],
+  "books": [
+    {
+      "agent": "Sample1",
+      "title": "《示例书 1》",
+      "author": "作者 1",
+      "edition": "示例版",
+      "primary": "投资／金融与金钱管理",
+      "tags": []
+    },
+    {
+      "agent": "Sample2",
+      "title": "《示例书 2》",
+      "author": "作者 2",
+      "edition": "示例版",
+      "primary": "心理／认知与行为",
+      "tags": []
+    },
+    {
+      "agent": "Sample3",
+      "title": "《示例书 3》",
+      "author": "作者 3",
+      "edition": "示例版",
+      "primary": "睡眠／健康／运动",
+      "tags": []
+    },
+    {
+      "agent": "Sample4",
+      "title": "《示例书 4》",
+      "author": "作者 4",
+      "edition": "示例版",
+      "primary": "软件工程",
+      "tags": []
+    },
+    {
+      "agent": "Sample5",
+      "title": "《示例书 5》",
+      "author": "作者 5",
+      "edition": "示例版",
+      "primary": "艺术／美学",
+      "tags": []
+    },
+    {
+      "agent": "Sample6",
+      "title": "《示例书 6》",
+      "author": "作者 6",
+      "edition": "示例版",
+      "primary": "思维／逻辑／因果与不确定性",
+      "tags": []
+    },
+    {
+      "agent": "Sample7",
+      "title": "《示例书 7》",
+      "author": "作者 7",
+      "edition": "示例版",
+      "primary": "经济学／经济史／博弈论",
+      "tags": []
+    },
+    {
+      "agent": "Sample8",
+      "title": "《示例书 8》",
+      "author": "作者 8",
+      "edition": "示例版",
+      "primary": "商业／传记／组织管理",
+      "tags": []
+    },
+    {
+      "agent": "Sample9",
+      "title": "《示例书 9》",
+      "author": "作者 9",
+      "edition": "示例版",
+      "primary": "哲学／神话",
+      "tags": []
+    },
+    {
+      "agent": "Sample10",
+      "title": "《示例书 10》",
+      "author": "作者 10",
+      "edition": "示例版",
+      "primary": "学习／研究／工作方法",
+      "tags": []
+    },
+    {
+      "agent": "Sample11",
+      "title": "《示例书 11》",
+      "author": "作者 11",
+      "edition": "示例版",
+      "primary": "科学／技术与社会",
+      "tags": []
+    },
+    {
+      "agent": "Arnova",
+      "title": "《Arnova 示例书》",
+      "author": "Arnova",
+      "edition": "示例版",
+      "primary": "艺术／美学",
+      "tags": []
+    },
+    {
+      "agent": "Boolan",
+      "title": "《Boolan 示例书》",
+      "author": "Boolan",
+      "edition": "示例版",
+      "primary": "学习／研究／工作方法",
+      "tags": []
+    },
+    {
+      "agent": "Brovo",
+      "title": "《Brovo 示例书》",
+      "author": "Brovo",
+      "edition": "示例版",
+      "primary": "学习／研究／工作方法",
+      "tags": []
+    },
+    {
+      "agent": "Bufano",
+      "title": "《Bufano 示例书》",
+      "author": "Bufano",
+      "edition": "示例版",
+      "primary": "投资／金融与金钱管理",
+      "tags": []
+    },
+    {
+      "agent": "Calo",
+      "title": "《Calo 示例书》",
+      "author": "Calo",
+      "edition": "示例版",
+      "primary": "学习／研究／工作方法",
+      "tags": []
+    },
+    {
+      "agent": "Carbo",
+      "title": "《Carbo 示例书》",
+      "author": "Carbo",
+      "edition": "示例版",
+      "primary": "学习／研究／工作方法",
+      "tags": []
+    },
+    {
+      "agent": "Clemo",
+      "title": "《Clemo 示例书》",
+      "author": "Clemo",
+      "edition": "示例版",
+      "primary": "心理／认知与行为",
+      "tags": []
+    },
+    {
+      "agent": "Corvo",
+      "title": "《Corvo 示例书》",
+      "author": "Corvo",
+      "edition": "示例版",
+      "primary": "心理／认知与行为",
+      "tags": []
+    },
+    {
+      "agent": "Dirvo",
+      "title": "《Dirvo 示例书》",
+      "author": "Dirvo",
+      "edition": "示例版",
+      "primary": "学习／研究／工作方法",
+      "tags": []
+    },
+    {
+      "agent": "Eliora",
+      "title": "《Eliora 示例书》",
+      "author": "Eliora",
+      "edition": "示例版",
+      "primary": "软件工程",
+      "tags": []
+    },
+    {
+      "agent": "Farvo",
+      "title": "《Farvo 示例书》",
+      "author": "Farvo",
+      "edition": "示例版",
+      "primary": "软件工程",
+      "tags": []
+    },
+    {
+      "agent": "Granto",
+      "title": "《Granto 示例书》",
+      "author": "Granto",
+      "edition": "示例版",
+      "primary": "投资／金融与金钱管理",
+      "tags": []
+    },
+    {
+      "agent": "hafo",
+      "title": "《hafo 示例书》",
+      "author": "hafo",
+      "edition": "示例版",
+      "primary": "睡眠／健康／运动",
+      "tags": []
+    },
+    {
+      "agent": "Harlo",
+      "title": "《Harlo 示例书》",
+      "author": "Harlo",
+      "edition": "示例版",
+      "primary": "科学／技术与社会",
+      "tags": []
+    },
+    {
+      "agent": "Ishvo",
+      "title": "《Ishvo 示例书》",
+      "author": "Ishvo",
+      "edition": "示例版",
+      "primary": "睡眠／健康／运动",
+      "tags": []
+    },
+    {
+      "agent": "Jadra",
+      "title": "《Jadra 示例书》",
+      "author": "Jadra",
+      "edition": "示例版",
+      "primary": "睡眠／健康／运动",
+      "tags": []
+    },
+    {
+      "agent": "Levro",
+      "title": "《Levro 示例书》",
+      "author": "Levro",
+      "edition": "示例版",
+      "primary": "睡眠／健康／运动",
+      "tags": []
+    },
+    {
+      "agent": "liebo",
+      "title": "《liebo 示例书》",
+      "author": "liebo",
+      "edition": "示例版",
+      "primary": "睡眠／健康／运动",
+      "tags": []
+    },
+    {
+      "agent": "Marvo",
+      "title": "《Marvo 示例书》",
+      "author": "Marvo",
+      "edition": "示例版",
+      "primary": "投资／金融与金钱管理",
+      "tags": []
+    },
+    {
+      "agent": "Munto",
+      "title": "《Munto 示例书》",
+      "author": "Munto",
+      "edition": "示例版",
+      "primary": "投资／金融与金钱管理",
+      "tags": []
+    },
+    {
+      "agent": "Pecko",
+      "title": "《Pecko 示例书》",
+      "author": "Pecko",
+      "edition": "示例版",
+      "primary": "心理／认知与行为",
+      "tags": []
+    },
+    {
+      "agent": "Petvo",
+      "title": "《Petvo 示例书》",
+      "author": "Petvo",
+      "edition": "示例版",
+      "primary": "哲学／神话",
+      "tags": []
+    },
+    {
+      "agent": "Rusko",
+      "title": "《Rusko 示例书》",
+      "author": "Rusko",
+      "edition": "示例版",
+      "primary": "睡眠／健康／运动",
+      "tags": []
+    },
+    {
+      "agent": "Senvo",
+      "title": "《Senvo 示例书》",
+      "author": "Senvo",
+      "edition": "示例版",
+      "primary": "心理／认知与行为",
+      "tags": []
+    },
+    {
+      "agent": "Stevo",
+      "title": "《Stevo 示例书》",
+      "author": "Stevo",
+      "edition": "示例版",
+      "primary": "睡眠／健康／运动",
+      "tags": []
+    },
+    {
+      "agent": "Walvo",
+      "title": "《Walvo 示例书》",
+      "author": "Walvo",
+      "edition": "示例版",
+      "primary": "睡眠／健康／运动",
+      "tags": []
+    },
+    {
+      "agent": "Xiaomo",
+      "title": "《Xiaomo 示例书》",
+      "author": "Xiaomo",
+      "edition": "示例版",
+      "primary": "心理／认知与行为",
+      "tags": []
+    },
+    {
+      "agent": "Xiaomo2",
+      "title": "《Xiaomo2 示例书》",
+      "author": "Xiaomo2",
+      "edition": "示例版",
+      "primary": "学习／研究／工作方法",
+      "tags": []
+    }
+  ],
+  "shelfOrder": [
+    "Walvo",
+    "Jadra",
+    "Rusko",
+    "liebo",
+    "Stevo",
+    "Ishvo",
+    "hafo",
+    "Levro",
+    "Munto",
+    "Granto",
+    "Bufano"
+  ],
+  "featured": {
+    "members": [
+      "Walvo",
+      "Jadra",
+      "Rusko"
+    ],
+    "title": [
+      "一个示例问题，",
+      "请三位作者坐下来谈谈。"
+    ],
+    "text": "从三个示例角度回答同一个问题。一次联合调用，三份并排的回答。"
+  }
+}

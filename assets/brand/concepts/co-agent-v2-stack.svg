@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="t">
+  <title id="t">CO-AGENT · v2 stack</title>
+  <rect x="8" y="8" width="496" height="496" rx="108" fill="#0A0E13"/>
+  <!-- Three terminal sessions stacked: agents working side by side -->
+  <g stroke-width="10" stroke-linejoin="round">
+    <rect x="164" y="84" width="268" height="204" rx="22" fill="#0A0E13" stroke="#1E6B44"/>
+    <line x1="164" y1="124" x2="432" y2="124" stroke="#1E6B44"/>
+    <rect x="122" y="140" width="268" height="204" rx="22" fill="#0A0E13" stroke="#2AA866"/>
+    <line x1="122" y1="180" x2="390" y2="180" stroke="#2AA866"/>
+    <rect x="80" y="196" width="268" height="204" rx="22" fill="#0A0E13" stroke="#3EE88A"/>
+    <line x1="80" y1="236" x2="348" y2="236" stroke="#3EE88A"/>
+  </g>
+  <g fill="#3EE88A">
+    <circle cx="106" cy="216" r="7"/><circle cx="128" cy="216" r="7"/><circle cx="150" cy="216" r="7"/>
+  </g>
+  <g fill="none" stroke="#3EE88A" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="122,284 154,312 122,340"/>
+  </g>
+  <rect x="176" y="324" width="56" height="20" rx="4" fill="#3EE88A"/>
+</svg>

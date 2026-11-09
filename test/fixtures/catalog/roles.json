@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "note": "Sample catalog for tests: invented purposes; role names match the agents the tests create.",
+  "roles": [
+    "-albert",
+    "-jack",
+    "-ark",
+    "-jason",
+    "-steven",
+    "Loki",
+    "-Alan",
+    "-Ames",
+    "-Ben",
+    "-Monsey",
+    "Peter"
+  ],
+  "reviewers": [
+    "-jason",
+    "-steven"
+  ],
+  "purposes": {
+    "-albert": "示例用途 1",
+    "-jack": "示例用途 2",
+    "-ark": "示例用途 3",
+    "-jason": "示例用途 4",
+    "-steven": "示例用途 5",
+    "Loki": "示例用途 6",
+    "-Alan": "示例用途 7",
+    "-Ames": "示例用途 8",
+    "-Ben": "示例用途 9",
+    "-Monsey": "示例用途 10",
+    "Peter": "示例用途 11"
+  }
+}

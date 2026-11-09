@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="t" shape-rendering="crispEdges">
+  <title id="t">CO-AGENT · v4 pixel bots</title>
+  <rect x="8" y="8" width="496" height="496" rx="108" fill="#0A0E13" shape-rendering="geometricPrecision"/>
+  <!-- Three 8-bit bots at one shared bench -->
+  <g>
+    <rect x="124" y="168" width="16" height="32" fill="#3CC8F5"/><rect x="116" y="152" width="32" height="16" fill="#3CC8F5"/>
+    <rect x="76" y="200" width="112" height="96" fill="#0A0E13" stroke="#3CC8F5" stroke-width="12"/>
+    <rect x="100" y="228" width="20" height="20" fill="#3CC8F5"/><rect x="144" y="228" width="20" height="20" fill="#3CC8F5"/>
+    <rect x="108" y="264" width="48" height="10" fill="#3CC8F5"/>
+  </g>
+  <g>
+    <rect x="248" y="136" width="16" height="32" fill="#3EE88A"/><rect x="240" y="120" width="32" height="16" fill="#3EE88A"/>
+    <rect x="200" y="168" width="112" height="128" fill="#0A0E13" stroke="#3EE88A" stroke-width="12"/>
+    <rect x="224" y="204" width="20" height="20" fill="#3EE88A"/><rect x="268" y="204" width="20" height="20" fill="#3EE88A"/>
+    <rect x="232" y="248" width="48" height="10" fill="#3EE88A"/>
+  </g>
+  <g>
+    <rect x="372" y="168" width="16" height="32" fill="#B18CFF"/><rect x="364" y="152" width="32" height="16" fill="#B18CFF"/>
+    <rect x="324" y="200" width="112" height="96" fill="#0A0E13" stroke="#B18CFF" stroke-width="12"/>
+    <rect x="348" y="228" width="20" height="20" fill="#B18CFF"/><rect x="392" y="228" width="20" height="20" fill="#B18CFF"/>
+    <rect x="356" y="264" width="48" height="10" fill="#B18CFF"/>
+  </g>
+  <!-- Shared bench with a running task bar -->
+  <rect x="64" y="328" width="384" height="16" fill="#2A3644"/>
+  <rect x="64" y="368" width="64" height="12" fill="#3EE88A"/>
+  <rect x="136" y="368" width="64" height="12" fill="#3CC8F5"/>
+  <rect x="208" y="368" width="64" height="12" fill="#B18CFF"/>
+  <rect x="280" y="368" width="24" height="12" fill="#2A3644"/>
+</svg>

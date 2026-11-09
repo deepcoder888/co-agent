@@ -1,0 +1,60 @@
+$ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+function Quote-TerminalArgument {
+    param([string]$Value, [bool]$ForWt = $false)
+    if ($ForWt) { $Value = $Value.Replace(';', '\;') }
+    # Windows argv parsing requires doubling trailing backslashes inside quotes.
+    $Value = [regex]::Replace($Value, '\\+$', { param($m) $m.Value + $m.Value })
+    return '"' + $Value + '"'
+}
+function Wait-TerminalPid {
+    param([int]$TimeoutMs = 15000)
+    $clock = [Diagnostics.Stopwatch]::StartNew()
+    while (-not (Test-Path -LiteralPath $env:AH_PIDFILE -PathType Leaf)) {
+        if ($clock.ElapsedMilliseconds -ge $TimeoutMs) { throw "pidfile 等待超时（$TimeoutMs ms）：$env:AH_PIDFILE" }
+        Start-Sleep -Milliseconds 50
+    }
+    $text = [IO.File]::ReadAllText($env:AH_PIDFILE).Trim()
+    $terminalPid = 0
+    if ($text -notmatch '^\d+$' -or -not [int]::TryParse($text, [ref]$terminalPid) -or $terminalPid -le 0) { throw 'pidfile 未包含有效终端 PID' }
+    return $terminalPid
+}
+function Invoke-AgentTerminal {
+    param([object[]]$Screens)
+    $terminal = @('-NoLogo','-NoExit','-ExecutionPolicy','Bypass','-File',$env:AH_SCRIPT,'-SpecFile',$env:AH_SPEC)
+    $display = $null; $x = $null; $y = $null; $fallback = $null
+    if ($env:AH_WT) {
+        $screen = if ($env:AH_DISPLAY -eq 'secondary') { $Screens | Where-Object { -not $_.Primary } | Select-Object -First 1 } else { $Screens | Where-Object { $_.Primary } | Select-Object -First 1 }
+        if (-not $screen -and $env:AH_DISPLAY -eq 'secondary') {
+            $screen = $Screens | Where-Object { $_.Primary } | Select-Object -First 1
+            $fallback = 'primary'
+        }
+        if (-not $screen) { throw '无法找到目标显示器' }
+        $display = $screen.DeviceName; $x = [int]$screen.Bounds.X + 40; $y = [int]$screen.Bounds.Y + 40
+        $a = @('-w','new','--pos',"$x,$y")
+        if ($env:AH_MODE -eq 'fullscreen') { $a += '--fullscreen' }
+        elseif ($env:AH_MODE -eq 'maximized') { $a += '--maximized' }
+        $a += @('--title',$env:AH_TITLE,'--suppressApplicationTitle','-d',$env:AH_CWD,$env:AH_PWSH) + $terminal
+        $quoted = $a | ForEach-Object { Quote-TerminalArgument -Value $_ -ForWt $true }
+        Start-Process -FilePath $env:AH_WT -ArgumentList ($quoted -join ' ') | Out-Null
+    } else {
+        $quoted = $terminal | ForEach-Object { Quote-TerminalArgument -Value $_ }
+        Start-Process -FilePath $env:AH_PWSH -WorkingDirectory $env:AH_CWD -ArgumentList ($quoted -join ' ') | Out-Null
+    }
+    $result = @{pid=(Wait-TerminalPid);display=$display;x=$x;y=$y;mode=$env:AH_MODE;fallback=$fallback}
+    if (-not $env:AH_WT) { $result.terminalFallback = 'no-wt' }
+    return ($result | ConvertTo-Json -Compress)
+}
+try {
+    $screens = @()
+    if ($env:AH_WT) {
+        Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class CoAgentDpi { [DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(IntPtr value); }'
+        if (-not [CoAgentDpi]::SetProcessDpiAwarenessContext([IntPtr](-4))) { throw '无法启用 per-monitor v2 DPI 感知' }
+        Add-Type -AssemblyName System.Windows.Forms
+        $screens = [System.Windows.Forms.Screen]::AllScreens
+    }
+    [Console]::Out.Write((Invoke-AgentTerminal -Screens $screens))
+} catch {
+    [Console]::Error.WriteLine($_.Exception.Message)
+    exit 1
+}
