@@ -143,7 +143,7 @@ test('v09 editorial: fixed thirty-day stacked columns retain dates, accessible d
     await key(panel, range).fire('click'); await key(panel, 'filter-role').fire('click');
     const chart = panel.querySelector('.chart-columns'), days = chart.querySelectorAll('[data-point]');
     assert.equal(days.length, 30); assert.equal(chart.querySelector('.chart-data').children.length, 30);
-    assert.match(chart.closest('figure').querySelector('figcaption').textContent, /30 天.*Asia\/Shanghai/);
+    assert.match(chart.closest('figure').querySelector('figcaption').textContent, /30 天.*本机时区/);
     assert.match(chart.textContent, new RegExp(data.daily[0].day)); assert.match(chart.textContent, new RegExp(data.daily.at(-1).day));
     // v0.29 B: one stacked area per source; each day's split lives in its label and the hover card.
     assert.deepEqual(chart.querySelectorAll('.chart-trend-area').map(n => n.getAttribute('data-part')), ['Claude', 'Codex']);

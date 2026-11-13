@@ -1,3 +1,4 @@
+import './fixtures/time-zone.mjs';
 import { appDocument } from './fixtures/app.mjs';
 import { layouts } from '../public/layouts/index.js';
 import test from 'node:test';

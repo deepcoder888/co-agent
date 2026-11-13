@@ -1,3 +1,4 @@
+import './fixtures/time-zone.mjs';
 import { appDocument, allStyles } from './fixtures/app.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -66,7 +67,7 @@ test('T8 cards use text nodes, show both platforms and disabled reason; availabl
 const statFor = (recent, total) => ({ last7d: { calls: recent, ok: recent, failed: 0, unknown: 0, bySource: { claude: recent, codex: 0 } }, total: { calls: total, ok: total - 2, failed: 1, unknown: 1, bySource: { claude: total - 3, codex: 3 } }, launches: { last7d: 1, total: 2 }, lastAt: '2026-10-06T16:00:00Z' });
 const stats = { building: false, sources: [{ id: 'claude', path: '<synthetic>', available: true, files: 2, parsedFiles: 1, failedFiles: [{ file: '<bad>', reason: 'synthetic' }], badLines: 3, earliestAt: '2026-09-01T00:00:00Z', latestAt: '2026-10-06T00:00:00Z', notes: ['synthetic note'] }], perAgent: { jack: statFor(0, 8), harlo: statFor(5, 12) }, limited: true, limitedReasons: ['合成覆盖限制'], outOfScopeEvents: 4, unlabeledSubagents: 2 };
 
-test('S6 zero/building/no data DOM states, literal limitations, drawer sources/status/launches and Shanghai midnight', () => {
+test('S6 zero/building/no data DOM states, literal limitations, drawer sources/status/launches and UTC+8 midnight', () => {
   const card = data => createCard(doc, agent, { categories: [], onLaunch() {}, onDetails() {}, stats: data }).card;
   assert.match(card(stats).textContent, /近 7 天 0 · 累计 8/);
   assert.match(card({ ...stats, building: true }).textContent, /统计中…/);

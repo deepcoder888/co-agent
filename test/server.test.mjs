@@ -1,3 +1,4 @@
+import './fixtures/time-zone.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -189,7 +190,7 @@ test('S5 background stats does not block registry, serialized token-protected re
   await app.listen(); const base = `http://127.0.0.1:${app.server.address().port}`;
   assert.equal((await (await fetch(`${base}/api/registry`)).json()).marker, 'registry-ready');
   const data = await (await fetch(`${base}/api/stats`)).json();
-  assert.equal(data.building, true); assert.equal(data.timezone, 'Asia/Shanghai'); assert.equal(data.windowDays, 7);
+  assert.equal(data.building, true); assert.equal(data.timezone, 'Etc/GMT-8'); assert.equal(data.windowDays, 7);
   for (const field of ['generatedAt', 'limited', 'limitedReasons', 'sources', 'perAgent', 'outOfScopeEvents', 'unlabeledSubagents']) assert.ok(Object.hasOwn(data, field));
   assert.equal((await fetch(`${base}/api/stats/refresh`, { method: 'POST' })).status, 403);
   assert.equal((await fetch(`${base}/api/stats/refresh`, { method: 'POST', headers: { 'X-Agent-Hub-Token': app.token, Origin: 'https://evil.test' } })).status, 403);

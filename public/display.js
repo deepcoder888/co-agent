@@ -119,7 +119,7 @@ export function avatarLetter(name) { return Array.from(name.replace(/^-+/, ''))[
 
 export function formatDate(at) {
   if (!at || !Number.isFinite(Date.parse(at))) return '暂无数据';
-  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
+  return new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(at));
 }
 

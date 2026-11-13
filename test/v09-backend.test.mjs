@@ -1,3 +1,4 @@
+import './fixtures/time-zone.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -7,7 +8,7 @@ import { createApp } from '../src/server.mjs';
 import { fixture, put, jsonl } from './fixtures/helpers.mjs';
 
 const DAY = 86400000;
-const now = Date.parse('2026-10-08T04:00:00.000Z'); // Asia/Shanghai noon
+const now = Date.parse('2026-10-08T04:00:00.000Z'); // Etc/GMT-8 noon
 const agents = [{ id: 'jack', name: '-jack', kind: 'role' }, { id: 'walvo', name: 'Walvo', kind: 'book' }, { id: 'jadra', name: 'Jadra', kind: 'book' }];
 const bucket = (calls = 0, ok = 0, failed = 0, unknown = 0, claude = 0, codex = 0) => ({ calls, ok, failed, unknown, bySource: { claude, codex } });
 const point = (day, calls = 0, role = 0, book = 0, claude = 0, codex = 0) => ({ day, calls, role, book, claude, codex });
@@ -28,7 +29,7 @@ function legacyFields(value) {
 test('v09 new empty snapshot includes independent 30-day buckets, complete daily zeros and windows without altering old fields', () => {
   const value = aggregate([], agents, sources, now);
   assert.equal(value.windowDays, 7); assert.deepEqual(value.windows, [7, 30]);
-  assert.equal(value.timezone, 'Asia/Shanghai'); assert.equal(value.last30dLimited, false); assert.deepEqual(value.last30dLimitedReasons, []);
+  assert.equal(value.timezone, 'Etc/GMT-8'); assert.equal(value.last30dLimited, false); assert.deepEqual(value.last30dLimitedReasons, []);
   for (const a of agents) {
     assert.deepEqual(value.perAgent[a.id].last30d, bucket()); assert.equal(value.perAgent[a.id].launches.last30d, 0);
     assert.notEqual(value.perAgent[a.id].last30d, value.perAgent[a.id].last7d);
@@ -39,7 +40,7 @@ test('v09 new empty snapshot includes independent 30-day buckets, complete daily
     '2026-09-29','2026-09-30','2026-10-01','2026-10-02','2026-10-03','2026-10-04','2026-10-05','2026-10-06','2026-10-07','2026-10-08'];
   assert.deepEqual(value.daily, days.map(d => point(d)));
   assert.deepEqual(legacyFields(value), {
-    generatedAt: new Date(now).toISOString(), timezone: 'Asia/Shanghai', windowDays: 7, limited: false, limitedReasons: [], last7dLimited: false, last7dLimitedReasons: [],
+    generatedAt: new Date(now).toISOString(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, windowDays: 7, limited: false, limitedReasons: [], last7dLimited: false, last7dLimitedReasons: [],
     sources, perAgent: Object.fromEntries(agents.map(a => [a.id, { last7d: bucket(), total: bucket(), launches: { last7d: 0, total: 0 }, lastAt: null }])),
     outOfScopeEvents: 0, unlabeledSubagents: 0, building: false,
   });
@@ -62,7 +63,7 @@ test('v09 rolling 30-day cutoff is inclusive and independent of the 7-day window
   assert.deepEqual(value.perAgent.jadra.last30d, bucket());
   assert.deepEqual(value.perAgent.jack.launches, { last7d: 1, last30d: 2, total: 4 });
   assert.deepEqual(legacyFields(value), {
-    generatedAt: new Date(now).toISOString(), timezone: 'Asia/Shanghai', windowDays: 7,
+    generatedAt: new Date(now).toISOString(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, windowDays: 7,
     limited: false, limitedReasons: [], last7dLimited: false, last7dLimitedReasons: [], sources,
     perAgent: {
       jack: { last7d: bucket(2, 1, 1, 0, 1, 1), total: bucket(6, 3, 2, 1, 3, 3), launches: { last7d: 1, total: 4 }, lastAt: new Date(now + 1).toISOString() },
@@ -73,7 +74,7 @@ test('v09 rolling 30-day cutoff is inclusive and independent of the 7-day window
   assert.deepEqual(events, beforeEvents); assert.deepEqual(sources, beforeSources);
 });
 
-test('v09 daily uses Shanghai midnight, known agent kind/source, today up to now, and excludes launches/unlabeled/out-of-scope', () => {
+test('v09 daily uses UTC+8 midnight, known agent kind/source, today up to now, and excludes launches/unlabeled/out-of-scope', () => {
   const value = aggregate([
     call('jack', '2026-09-08T15:59:59.999Z'), // 31st calendar date, but inside the rolling window
     call('-jack', '2026-09-08T16:00:00.000Z', 'failed'), // first calendar date, inclusive
@@ -87,7 +88,7 @@ test('v09 daily uses Shanghai midnight, known agent kind/source, today up to now
   assert.equal(value.daily.length, 30);
   assert.deepEqual(value.daily.filter(p => p.calls), [point('2026-09-09', 1, 1, 0, 1, 0), point('2026-10-07', 1, 0, 1, 0, 1), point('2026-10-08', 2, 1, 1, 1, 1)]);
   assert.equal(value.daily.reduce((sum, p) => sum + p.calls, 0), 4);
-  assert.equal(Object.values(value.perAgent).reduce((sum, a) => sum + a.last30d.calls, 0), 5, 'rolling 30d and 30 Shanghai calendar dates have distinct lower bounds');
+  assert.equal(Object.values(value.perAgent).reduce((sum, a) => sum + a.last30d.calls, 0), 5, 'rolling 30d and 30 UTC+8 calendar dates have distinct lower bounds');
   for (const p of value.daily) { assert.equal(p.calls, p.role + p.book); assert.equal(p.calls, p.claude + p.codex); }
 });
 
@@ -198,5 +199,5 @@ test('v09 HTTP stats exposes new fields while building and after refresh without
   const complete = await (await fetch(base + '/api/stats')).json();
   assert.equal(complete.building, false); assert.equal(complete.perAgent.walvo.last30d.calls, 1); assert.equal(complete.perAgent.walvo.launches.last30d, 1);
   assert.deepEqual(complete.daily.at(-1), point('2026-10-08', 1, 0, 1, 0, 1));
-  assert.equal((await (await fetch(base + '/api/health')).json()).version, '0.53.4');
+  assert.equal((await (await fetch(base + '/api/health')).json()).version, '0.53.5');
 });

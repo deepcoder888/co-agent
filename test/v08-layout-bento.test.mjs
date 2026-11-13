@@ -1,3 +1,4 @@
+import './fixtures/time-zone.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -94,7 +95,7 @@ test('v08 bento acceptance: absent daily uses latest completed archive concept, 
   assert.deepEqual(value, before, 'sorting must not mutate the shared archive');
 });
 
-test('v08 bento acceptance: fallback dates use Shanghai time and daily arrival/day rollover update the cached home tile', () => {
+test('v08 bento acceptance: fallback dates use UTC+8 time and daily arrival/day rollover update the cached home tile', () => {
   const value = model(), saved = concept('saved', { kind: 'manual', day: null, createdAt: '2026-10-07T16:30:00Z' });
   value.today = null; value.items = [saved]; value.selected = saved;
   const h = fixture(value), tile = h.get('concepts-today');

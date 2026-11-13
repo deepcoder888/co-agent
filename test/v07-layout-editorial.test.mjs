@@ -1,3 +1,4 @@
+import './fixtures/time-zone.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -59,7 +60,7 @@ test('editorial §5.1: scoped offline paper palette, content width and original 
 
 test('editorial §5.2: dynamic issue, single brand, exactly six ordered columns and conditional running marker', async t => {
   const { doc, get, app } = await fixture(t);
-  const [year, month] = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit' }).format(new Date()).split('-');
+  const [year, month] = new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-digit' }).format(new Date()).split('-');
   assert.equal(get('brand').children.find(n => n.tagName === 'H1').textContent, 'CO-AGENT');
   assert.equal(get('issue-date').textContent, `CO-AGENT · 第 4 期 · ${year} 年 ${Number(month)} 月`);
   assert.deepEqual(doc.querySelector('.editorial-columns').children.filter(n => !n.hidden).map(n => n.textContent), ['目录', '人物', '藏书', '调用组', '推荐', '概念', '圆桌', '会诊室', '顾问团','概念地图','对话', '统计', '往期', '设置'] /* v0.35 顾问团 */);

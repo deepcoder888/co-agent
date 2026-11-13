@@ -568,11 +568,11 @@ export function drawCoverage(doc, target, stats) {
   if (!target) return;
   target.replaceChildren();
   if (!stats) { target.append(element(doc, 'p', '统计中…')); return; }
-  target.append(element(doc, 'p', stats.building ? '统计中…' : `更新时间（Asia/Shanghai）：${formatDate(stats.generatedAt)}`));
+  target.append(element(doc, 'p', stats.building ? '统计中…' : `更新时间（本机时区）：${formatDate(stats.generatedAt)}`));
   if (stats.dataDirMigration) target.append(element(doc, 'p', stats.dataDirMigration));
   for (const source of stats.sources) {
     target.append(element(doc, 'h3', source.id), element(doc, 'p', `${source.path}：${source.available ? '可读' : '不可读'} · 文件 ${source.files} / 解析 ${source.parsedFiles} · 坏行 ${source.badLines}`),
-      element(doc, 'p', `覆盖（Asia/Shanghai）：${formatDate(source.earliestAt)} → ${formatDate(source.latestAt)}`));
+      element(doc, 'p', `覆盖（本机时区）：${formatDate(source.earliestAt)} → ${formatDate(source.latestAt)}`));
     const failures = element(doc, 'ul');
     for (const failed of source.failedFiles) failures.append(element(doc, 'li', `${failed.file}：${failed.reason}`));
     target.append(failures);
@@ -743,7 +743,7 @@ export function renderStats(ctx, model) {
     category.append(statsDonut(ctx, model.byCategory.map(s => ({ ...s, colorClass: `bento-stats-color-${keys.indexOf(s.key) % 11}` })),
       '书籍调用', model.byKind.find(s => s.key === 'book')?.value ?? 0, model.categoryFilter, a.setStatsCategory));
     const trend = tile('stats-trend', '近 30 天每日趋势', 'bento-stats-trend');
-    trend.append(node(doc, 'p', '趋势固定展示近 30 天全部 Agent，日期按 Asia/Shanghai。', 'bento-stats-note'), statsSources(doc),
+    trend.append(node(doc, 'p', '趋势固定展示近 30 天全部 Agent，日期按本机时区。', 'bento-stats-note'), statsSources(doc),
       columns({ points: model.daily.map(p => ({ label: p.day, value: p.calls, parts: [
         { key: 'claude', value: p.claude, colorClass: 'bento-stats-claude' }, { key: 'codex', value: p.codex, colorClass: 'bento-stats-codex' },
       ] })), height: 160 }, doc));

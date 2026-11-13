@@ -235,7 +235,7 @@ export function renderDefaultStats(ctx, model) {
   panel.append(region(doc,'div','stats-donuts',
     region(doc,'section','stats-chart',node(doc,'h2','功能性 / 书籍'),donut({segments:model.byKind.map(s=>({...s,colorClass:`chart-${s.key}`})),centerLabel:'调用',centerValue:t.calls,onSelect:a.setStatsFilter},doc)),
     region(doc,'section','stats-chart',node(doc,'h2','书籍分类'),donut({segments:model.byCategory,centerLabel:'书籍调用',centerValue:model.byKind.find(s=>s.key==='book')?.value || 0,onSelect:a.setStatsCategory},doc))));
-  const trend=region(doc,'section','stats-chart',node(doc,'h2','近 30 天每日趋势'),node(doc,'p','趋势固定展示近 30 天全部 Agent，日期按 Asia/Shanghai。'));
+  const trend=region(doc,'section','stats-chart',node(doc,'h2','近 30 天每日趋势'),node(doc,'p','趋势固定展示近 30 天全部 Agent，日期按本机时区。'));
   trend.append(columns({points:model.daily.map(p=>({label:p.day,value:p.calls,parts:[{key:'claude',value:p.claude,colorClass:'chart-claude'},{key:'codex',value:p.codex,colorClass:'chart-codex'}]})),height:160},doc)); panel.append(trend);
   const filters=region(doc,'div','stats-controls',...Object.entries({all:'全部',role:'功能性',book:'书籍'}).map(([key,label])=>control(label,`filter-${key}`,()=>a.setStatsFilter(key),model.filter===key)));
   filters.setAttribute('aria-label','排行榜筛选');

@@ -118,7 +118,7 @@ test('v09 shelf both donuts filter via slices and legends; all eleven categories
 
 test('v09 shelf trend retains thirty days and both CLI stacks across filters; hover/focus disclose the exact date', async t => {
   const h = await fixture(t); await h.open(); const panel = h.get('stats-panel');
-  assert.match(panel.querySelector('.shelf-stats-trend').textContent, /近 30 天.*全部 Agent.*Asia\/Shanghai/);
+  assert.match(panel.querySelector('.shelf-stats-trend').textContent, /近 30 天.*全部 Agent.*本机时区/);
   for (const range of ['7d', '30d', 'all']) {
     await key(panel, range).fire('click'); await key(panel, 'filter-role').fire('click');
     const trend = panel.querySelector('.chart-columns'), points = trend.querySelectorAll('[data-point]'); assert.equal(points.length, 30);

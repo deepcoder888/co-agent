@@ -1,3 +1,4 @@
+import './fixtures/time-zone.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -8,7 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { fixture, put, jsonl } from './fixtures/helpers.mjs';
 import { loadConfig } from '../src/config.mjs';
 import { createApp } from '../src/server.mjs';
-import { createConcepts, selectAgent, excludedConcepts, shanghaiTime } from '../src/concepts/index.mjs';
+import { createConcepts, selectAgent, excludedConcepts, localTime } from '../src/concepts/index.mjs';
 import { conceptPrompt, perspectivePrompt, conceptArgs, conceptSchema, perspectiveSchema, runConceptProcess, killProcessTree } from '../src/concepts/runner.mjs';
 import { verifyConcept, verifyPerspectives, skillStructure } from '../src/concepts/verify.mjs';
 import { conceptBasename, saveThink } from '../src/concepts/think.mjs';
@@ -185,8 +186,8 @@ test('v08 duplicate concept names fail without silently retaining a repeated les
   assert.equal((await engine.get(one.conceptId)).status, 'done'); assert.equal((await engine.get(four.conceptId)).status, 'failed');
   assert.match((await engine.get(four.conceptId)).error, /重复/);
 });
-test('v08 ensureDaily Shanghai cutoff, concurrency, two retries maximum, no catch-up before 08:55', async t => {
-  assert.deepEqual(shanghaiTime(new Date('2026-10-07T16:00:00Z')), { day: '2026-10-08', minutes: 0 });
+test('v08 ensureDaily UTC+8 cutoff, concurrency, two retries maximum, no catch-up before 08:55', async t => {
+  assert.deepEqual(localTime(new Date('2026-10-07T16:00:00Z')), { day: '2026-10-08', minutes: 0 });
   let attempts = 0; const { engine } = await setup(t, { dailyRetryDelayMs: 0, runner: async () => { attempts++; throw Error('fixture failure'); } });
   assert.equal((await engine.ensureDaily(new Date('2026-10-08T00:54:59Z'))).status, 'not-due'); assert.equal(attempts, 0);
   await Promise.all([engine.ensureDaily(new Date('2026-10-08T00:55:00Z')), engine.ensureDaily(instant)]);
@@ -281,7 +282,7 @@ test('v08 generation output and structure violations remain visible with exact T
   for (const id of ['../config', 'not-uuid', randomUUID()]) await assert.rejects(restarted.get(id), { status: 404 });
 });
 
-test('v08 daily completed record suppresses repeats, manual contention defers, next Shanghai day can run', async t => {
+test('v08 daily completed record suppresses repeats, manual contention defers, next UTC+8 day can run', async t => {
   let finish, attempts = 0;
   const { engine } = await setup(t, { runner: async () => {
     attempts++; if (attempts === 1) return new Promise(resolve => { finish = resolve; });

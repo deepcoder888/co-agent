@@ -66,7 +66,7 @@ test('v09 threepane range buttons choose exact buckets, reveal limited reasons a
     if(reason){assert.ok(visible(ids['stats-limited']));assert.match(ids['stats-limited'].textContent,new RegExp(reason));assert.equal(ids['stats-limited'].getAttribute('role'),'status');}
     else assert.equal(visible(ids['stats-limited']),false);
   }
-  assert.match(ids['stats-panel'].textContent,/趋势固定.*30 天.*全部 Agent.*Asia\/Shanghai/);
+  assert.match(ids['stats-panel'].textContent,/趋势固定.*30 天.*全部 Agent.*本机时区/);
 });
 
 test('v09 threepane both donuts filter with pointer and keyboard; all eleven categories retain legend controls',async t=>{

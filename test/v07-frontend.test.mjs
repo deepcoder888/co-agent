@@ -1,3 +1,4 @@
+import './fixtures/time-zone.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -110,7 +111,7 @@ test('v07 manual builder search, eight limit, chips, counter, submit snapshot an
   assert.deepEqual(JSON.parse(posted.options.body), { source: 'manual', agentIds: shown.map(a => a.id), input: '共同问题', cli: 'codex', crossExam: false });
   assert.equal(doc.getElementById('joint-builder').open, false); assert.equal(doc.activeElement, trigger);
 });
-test('v07 history list literal text, Shanghai time, filter and authenticated rerun/resume', async t => {
+test('v07 history list literal text, UTC+8 time, filter and authenticated rerun/resume', async t => {
   const { doc, find, calls } = await appFixture(t);
   await find('历史调用').fire('click');
   assert.match(doc.getElementById('history-list').textContent, /2026-10-07 00:00:00/);

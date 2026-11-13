@@ -1,3 +1,4 @@
+import './fixtures/time-zone.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -9,7 +10,7 @@ import { fixture, put } from './fixtures/helpers.mjs';
 import { appDocument } from './fixtures/app.mjs';
 import { documentFrom } from './fixtures/dom.mjs';
 import { createApp } from '../src/server.mjs';
-import { createConcepts, responseTarget, shanghaiTime } from '../src/concepts/index.mjs';
+import { createConcepts, responseTarget, localTime } from '../src/concepts/index.mjs';
 import { conceptSchema, conceptPrompt, validateConcept } from '../src/concepts/runner.mjs';
 import { thinkMarkdown } from '../src/concepts/think.mjs';
 import { deriveConcepts } from '../src/conceptMap/index.mjs';
@@ -68,8 +69,8 @@ test('v037 X2 X4 X5 select latest completed daily before today, skip manual and 
   assert.equal(responseTarget(records, 'daily', '2026-10-24', 'one'), null);
 });
 
-test('v037 X14 selection compares Shanghai day fields even when UTC dates disagree', () => {
-  const day = shanghaiTime(new Date('2026-10-23T16:05:00Z')).day;
+test('v037 X14 selection compares UTC+8 day fields even when UTC dates disagree', () => {
+  const day = localTime(new Date('2026-10-23T16:05:00Z')).day;
   assert.equal(day, '2026-10-24');
   const a = record('2026-10-23', { createdAt: '2026-10-22T16:10:00Z' });
   const older = record('2026-10-22', { createdAt: '2026-10-23T02:00:00Z' });

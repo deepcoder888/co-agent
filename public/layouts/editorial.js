@@ -270,7 +270,7 @@ export function renderMetrics(ctx, model) {
 function historyRow(ctx, item, { detail=false }={}) {
   const { doc, actions: a } = ctx, names = item.agents.map(x=>x.name).join('、');
   const el=region(doc,'article','directory-row history-row'), at=formatDate(item.createdAt);
-  const date=node(doc,'time',undefined,'history-date');date.append(node(doc,'span',at.slice(5,10),'history-md'),node(doc,'span',at.slice(0,4),'history-year'));date.setAttribute('datetime',item.createdAt);date.setAttribute('title',`${at} · Asia/Shanghai`);
+  const date=node(doc,'time',undefined,'history-date');date.append(node(doc,'span',at.slice(5,10),'history-md'),node(doc,'span',at.slice(0,4),'history-year'));date.setAttribute('datetime',item.createdAt);date.setAttribute('title',`${at} · 本机时区`);
   const title=action(doc,names,e=>a.selectHistory(item.type,item.id,e.currentTarget),`查看调用记录 ${names}`);fillAgentNames(doc,title,item.agents);title.className='directory-title';title.setAttribute('data-focus-key',`history-title-${item.type}-${item.id}`);
   const state=item.status?.message?.endsWith(' · 会话已结束')?item.status.message:labels[item.status?.overall]||item.status?.overall||'未确认';
   const copy=region(doc,'div','directory-copy',title,node(doc,'div',[item.inputPreview,item.cliLabel || item.cli,state,item.type==='joint'?`◈ 联合 · ${item.agents.length} 个`:'○ 单次',at.slice(11)].filter(Boolean).join(' · '),'row-subtitle'));
@@ -544,11 +544,11 @@ export function drawCoverage(doc, target, stats) {
   if (!target) return;
   target.replaceChildren();
   if (!stats) { target.append(element(doc, 'p', '统计中…')); return; }
-  target.append(element(doc, 'p', stats.building ? '统计中…' : `更新时间（Asia/Shanghai）：${formatDate(stats.generatedAt)}`));
+  target.append(element(doc, 'p', stats.building ? '统计中…' : `更新时间（本机时区）：${formatDate(stats.generatedAt)}`));
   if (stats.dataDirMigration) target.append(element(doc, 'p', stats.dataDirMigration));
   for (const source of stats.sources) {
     target.append(element(doc, 'h3', source.id), element(doc, 'p', `${source.path}：${source.available ? '可读' : '不可读'} · 文件 ${source.files} / 解析 ${source.parsedFiles} · 坏行 ${source.badLines}`),
-      element(doc, 'p', `覆盖（Asia/Shanghai）：${formatDate(source.earliestAt)} → ${formatDate(source.latestAt)}`));
+      element(doc, 'p', `覆盖（本机时区）：${formatDate(source.earliestAt)} → ${formatDate(source.latestAt)}`));
     const failures = element(doc, 'ul');
     for (const failed of source.failedFiles) failures.append(element(doc, 'li', `${failed.file}：${failed.reason}`));
     target.append(failures);
@@ -776,9 +776,9 @@ export function renderStats(ctx, model) {
     statsFigure(doc, '书籍分类', `图 02 · ${statsRanges[model.range]}书籍调用的分类分布。再次选择同一分类可取消筛选。`, categories)));
   const daily = model.daily;
   content.append(statsFigure(doc, '每日调用趋势',
-    `图 03 · 固定展示近 30 天（Asia/Shanghai），不随范围或排行筛选改变。${daily.length ? `${daily[0].day} — ${daily.at(-1).day}` : ''}`,
+    `图 03 · 固定展示近 30 天（本机时区），不随范围或排行筛选改变。${daily.length ? `${daily[0].day} — ${daily.at(-1).day}` : ''}`,
     columns({ points: daily.map(day => ({ label: day.day, value: day.calls, parts: statsParts(day) })), height: 160 }, doc)));
-  content.append(statsRanking(ctx, model), node(doc, 'p', `更新时间（Asia/Shanghai）：${model.generatedAt ? formatDate(model.generatedAt) : '未提供'} · 调用次数不包含单独记录的启动次数。`, 'stats-note'));
+  content.append(statsRanking(ctx, model), node(doc, 'p', `更新时间（本机时区）：${model.generatedAt ? formatDate(model.generatedAt) : '未提供'} · 调用次数不包含单独记录的启动次数。`, 'stats-note'));
 }
 
 function seminarControl(ctx, text, key, callback) {

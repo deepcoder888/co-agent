@@ -97,7 +97,7 @@ test('v09 bento daily columns retain all 30 days across ranges/filters and expos
     h.view.setRange(range); h.view.setFilter('role'); const trend = h.get('stats-trend');
     const points = trend.querySelectorAll('[data-point]'); assert.equal(points.length, 30);
     await points[29].fire('focus'); assert.match(trend.querySelector('.chart-tooltip').textContent, /2026-10-08：29（claude 14，codex 15）/);
-    assert.match(trend.textContent, /近 30 天全部 Agent.*Asia\/Shanghai/);
+    assert.match(trend.textContent, /近 30 天全部 Agent.*本机时区/);
     assert.equal(trend.querySelector('.chart-data').children.length, 30); assert.deepEqual(h.view.snapshot().daily, daily);
   }
 });

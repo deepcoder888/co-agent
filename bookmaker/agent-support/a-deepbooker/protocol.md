@@ -66,7 +66,7 @@ After package sealing, prepare:
  "combination_work":"absolute/project/.a-deepbooker-work/author",
  "source_review":"absolute/source-review.json","provenance":null,
  "book":{"title":"Title","author":"Author","edition":"Exact edition","language":"en","publication_year":2020},
- "research_cutoff":{"date":"YYYY-MM-DD","timezone":"Asia/Shanghai"},
+ "research_cutoff":{"date":"YYYY-MM-DD","timezone":"<IANA time zone of this computer>"},
  "sections":[{"section_id":"S01","section_kind":"CHAPTER","core_claims":[
  {"claim_id":"C01","normalized_claim":"Source-grounded proposition.","claim_type":"EMPIRICAL_INFERENCE","material":true}]}]
 }

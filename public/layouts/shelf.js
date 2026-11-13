@@ -1174,11 +1174,11 @@ export function drawCoverage(doc, target, stats) {
   if (!target) return;
   target.replaceChildren();
   if (!stats) { target.append(node(doc, 'p', '统计中…')); return; }
-  target.append(node(doc, 'p', stats.building ? '统计中…' : `更新时间（Asia/Shanghai）：${formatDate(stats.generatedAt)}`));
+  target.append(node(doc, 'p', stats.building ? '统计中…' : `更新时间（本机时区）：${formatDate(stats.generatedAt)}`));
   if (stats.dataDirMigration) target.append(node(doc, 'p', stats.dataDirMigration));
   for (const source of stats.sources) {
     target.append(node(doc, 'h3', source.id), node(doc, 'p', `${source.path}：${source.available ? '可读' : '不可读'} · 文件 ${source.files} / 解析 ${source.parsedFiles} · 坏行 ${source.badLines}`),
-      node(doc, 'p', `覆盖（Asia/Shanghai）：${formatDate(source.earliestAt)} → ${formatDate(source.latestAt)}`));
+      node(doc, 'p', `覆盖（本机时区）：${formatDate(source.earliestAt)} → ${formatDate(source.latestAt)}`));
     const failures = node(doc, 'ul');
     for (const failed of source.failedFiles) failures.append(node(doc, 'li', `${failed.file}：${failed.reason}`));
     target.append(failures);
@@ -1372,7 +1372,7 @@ export function renderStats(ctx, model) {
     statsCard(doc, '书籍分类', 'shelf-stats-categories', node(doc, 'p', '点击分类筛选，再点一次取消。', 'shelf-stats-note'),
       statsDonut(doc, categorySegments, '书籍调用', model.byKind.find(item => item.key === 'book')?.value ?? 0, a.setStatsCategory, model.categoryFilter))));
   const trend = statsCard(doc, '近 30 天每日趋势', 'shelf-stats-trend',
-    node(doc, 'p', '固定展示近 30 天全部 Agent，日期按 Asia/Shanghai；不随上方范围或排行筛选变化。', 'shelf-stats-note'),
+    node(doc, 'p', '固定展示近 30 天全部 Agent，日期按本机时区；不随上方范围或排行筛选变化。', 'shelf-stats-note'),
     columns({ points: model.daily.map(point => ({ label: point.day, value: point.calls, parts: statsParts(point) })), height: 160 }, doc));
   trend.append(region(doc, 'p', 'shelf-stats-sources', node(doc, 'span', 'Claude', 'shelf-chart-claude'), node(doc, 'span', 'Codex', 'shelf-chart-codex')));
   content.append(trend);

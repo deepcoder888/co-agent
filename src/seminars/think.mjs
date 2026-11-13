@@ -1,12 +1,12 @@
 import { saveThink } from '../concepts/think.mjs';
-import { shanghaiTime } from '../concepts/index.mjs';
+import { localTime } from '../concepts/index.mjs';
 
 export function seminarMarkdown(record) {
   const r = record.result;
   const name = agent => r.perAgent.find(a => a.agent === agent)?.name || agent;
   const book = a => a.bookLabel?.startsWith('《') ? a.bookLabel : `《${a.bookLabel || '书名未载明'}》`;
   return `# 研讨：${record.input}\n\n核心概念：${r.terms.map(t => `${t.zh} · ${t.en} · ${t.fr}`).join('；')}\n\n` +
-    `日期：${shanghaiTime(new Date(record.createdAt)).day}（Asia/Shanghai）\n\n参加者：\n` +
+    `日期：${localTime(new Date(record.createdAt)).day}（本机时区）\n\n参加者：\n` +
     r.selected.map(s => { const a = r.perAgent.find(a => a.agent === s.agent); return `- ${a.name} · ${book(a)} · ${s.reason}`; }).join('\n') +
     `\n\n## 共同答案\n\n${r.commonAnswer.summary}\n\n` +
     r.commonAnswer.points.map(p => `- 【${p.strength}】${p.text}（支持：${p.support.map(name).join('、')}）`).join('\n') +

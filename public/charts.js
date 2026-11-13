@@ -101,7 +101,7 @@ export function columns({points = [], height = 160} = {}, doc = document) {
   const canvas = html('div', undefined, 'chart-trend-canvas'); canvas.style.setProperty('height', `${H}px`);
   const graph = svg('svg', {viewBox:`0 0 ${W} ${H}`, preserveAspectRatio:'none', 'aria-label':'近 30 天调用趋势'}), tooltip = html('p', '聚焦或悬停日期查看调用数', 'chart-tooltip');
   tooltip.setAttribute('aria-live', 'polite');
-  graph.append(svg('title', {}, '每日调用次数（Asia/Shanghai）'));
+  graph.append(svg('title', {}, '每日调用次数（本机时区）'));
   const thin = {'vector-effect':'non-scaling-stroke'};
   for (let v = 0; v <= top; v += step) {
     graph.append(svg('line', {x1:0, x2:W, y1:y(v), y2:y(v), class:v ? 'chart-grid' : 'chart-baseline', ...thin}));

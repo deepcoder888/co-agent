@@ -7,7 +7,7 @@ import { parseCodex } from './codex.mjs';
 import { parseHub } from './hub.mjs';
 
 const DAY = 24 * 60 * 60 * 1000, WEEK = 7 * DAY, MONTH = 30 * DAY;
-const shanghaiDay = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' });
+const localDay = new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit' });
 const bucket = () => ({ calls: 0, ok: 0, failed: 0, unknown: 0, bySource: { claude: 0, codex: 0 } });
 const explanation = '仅解析 session_meta 首行与末尾最多 256 KB；中段坏行不可见；未知状态不代表成功或失败。';
 const errorText = error => error.code && !error.message.startsWith(`${error.code}:`) ? `${error.code}: ${error.message}` : error.message;
@@ -15,9 +15,9 @@ const errorText = error => error.code && !error.message.startsWith(`${error.code
 export function aggregate(events, agents, sources, now = Date.now()) {
   const perAgent = Object.fromEntries(agents.map(a => [a.id, { last7d: bucket(), last30d: bucket(), total: bucket(), launches: { last7d: 0, last30d: 0, total: 0 }, lastAt: null }]));
   const kinds = new Map(agents.map(a => [a.id, a.kind]));
-  // The chart covers today and the preceding 29 Shanghai calendar dates.
+  // The chart covers today and the preceding 29 calendar dates in this computer's time zone.
   // UTC is used only for label arithmetic; rolling windows remain elapsed time.
-  const today = Date.parse(`${shanghaiDay.format(now)}T00:00:00Z`);
+  const today = Date.parse(`${localDay.format(now)}T00:00:00Z`);
   const daily = Array.from({ length: 30 }, (_, i) => ({ day: new Date(today - (29 - i) * DAY).toISOString().slice(0, 10), calls: 0, role: 0, book: 0, claude: 0, codex: 0 }));
   const dailyByDay = new Map(daily.map(item => [item.day, item]));
   const limitedReasons = [], last7dLimitedReasons = [], last30dLimitedReasons = [];
@@ -35,7 +35,7 @@ export function aggregate(events, agents, sources, now = Date.now()) {
   }
   const claudeAt = sources.find(s => s.id === 'claude')?.earliestAt;
   const codexAt = sources.filter(s => s.id.startsWith('codex-') && s.earliestAt).map(s => s.earliestAt).sort()[0];
-  if (claudeAt && codexAt && Date.parse(claudeAt) > Date.parse(codexAt)) limitedReasons.push(`Claude 会话记录最早只到 ${formatShanghai(claudeAt).slice(0, 10)}，此前的 Claude 调用无法统计`);
+  if (claudeAt && codexAt && Date.parse(claudeAt) > Date.parse(codexAt)) limitedReasons.push(`Claude 会话记录最早只到 ${formatLocal(claudeAt).slice(0, 10)}，此前的 Claude 调用无法统计`);
   let outOfScopeEvents = 0, unlabeledSubagents = 0;
   for (const event of events) {
     if (event.kind === 'unlabeled') { unlabeledSubagents++; continue; }
@@ -51,7 +51,7 @@ export function aggregate(events, agents, sources, now = Date.now()) {
       if (event.source === 'claude' || event.source === 'codex') agent[key].bySource[event.source]++;
     }
     if (Number.isFinite(timestamp) && timestamp <= now) {
-      const day = dailyByDay.get(shanghaiDay.format(timestamp));
+      const day = dailyByDay.get(localDay.format(timestamp));
       if (day) {
         day.calls++;
         const kind = kinds.get(id);
@@ -61,15 +61,15 @@ export function aggregate(events, agents, sources, now = Date.now()) {
     }
     if (!agent.lastAt || timestamp > Date.parse(agent.lastAt)) agent.lastAt = event.at;
   }
-  return { generatedAt: new Date(now).toISOString(), timezone: 'Asia/Shanghai', windowDays: 7, windows: [7, 30], daily,
+  return { generatedAt: new Date(now).toISOString(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, windowDays: 7, windows: [7, 30], daily,
     limited: limitedReasons.length > 0, limitedReasons, last7dLimited: last7dLimitedReasons.length > 0, last7dLimitedReasons,
     last30dLimited: last30dLimitedReasons.length > 0, last30dLimitedReasons,
     sources, perAgent, outOfScopeEvents, unlabeledSubagents, building: false };
 }
 
-export function formatShanghai(at) {
+export function formatLocal(at) {
   if (!at || !Number.isFinite(Date.parse(at))) return '暂无数据';
-  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
+  return new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(at));
 }
 

@@ -1,3 +1,4 @@
+import './fixtures/time-zone.mjs';
 import { appDocument, allStyles } from './fixtures/app.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -74,7 +75,7 @@ test('K3/K4/K7 mounted app awaits source confirmation, cancel starts nothing, de
   const resume=descendants(ids['detail-body']).find(n=>n.attrs['aria-label']?.startsWith('继续上次会话 Harlo'));assert.ok(resume);resume.fire('click');await new Promise(r=>setImmediate(r));assert.deepEqual(JSON.parse(calls.find(c=>c.url==='/api/resume').options.body),{agentId:'harlo',launchId:'original',sourcesConfirmed:true});
   ids.detail.fire('keydown',{key:'Escape',preventDefault(){},stopPropagation(){}});assert.equal(ids.detail.open,false);assert.ok(doc.activeElement.attrs['aria-label']?.includes('Harlo'));
 });
-test('K4/K5 history buttons and running panel show name, Shanghai time, CLI/mode and missing explanation',()=>{
+test('K4/K5 history buttons and running panel show name, UTC+8 time, CLI/mode and missing explanation',()=>{
   const doc=documentFixture(),target=new Element(doc,'div');let chosen;
   renderHistory(doc,target,book,{items:[{launchId:'a',createdAt:'2026-10-06T16:00:00Z',cli:'claude',mode:'relay'}],unavailable:[{reason:'会话文件不存在'}]},item=>chosen=item);
   assert.match(target.textContent,/2026-10-07 00:00:00.*claude.*relay/);assert.match(target.textContent,/会话文件不存在/);

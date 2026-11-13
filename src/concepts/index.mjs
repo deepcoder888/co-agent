@@ -19,8 +19,8 @@ const missingSources = agent => (!agent.sources?.missingByVersion && agent.sourc
 const DAILY_MAX_ATTEMPTS = 3;
 const DAILY_RETRY_DELAY_MS = 30 * 60_000;
 const eligibleBooks = agents => agents.filter(a => a.kind === 'book' && a.platforms.codex?.available && !missingSources(a));
-export function shanghaiTime(now = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now);
+export function localTime(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now);
   const fields = Object.fromEntries(parts.map(p => [p.type, p.value]));
   return { day: `${fields.year}-${fields.month}-${fields.day}`, minutes: Number(fields.hour) * 60 + Number(fields.minute) };
 }
@@ -44,7 +44,7 @@ export function agentSnapshot(a) {
     author: a.book?.author ?? null, bookLabel: raw ? bookLabel(a) : null, purpose: a.purpose ?? null };
 }
 
-// Calendar dates are Shanghai day fields, never UTC createdAt dates.
+// Calendar dates are day fields in this computer's time zone, never UTC createdAt dates.
 export function responseTarget(records, kind, day, agentId) {
   if (kind !== 'daily') return null;
   const first = records.filter(r => r.kind === 'daily' && r.day === day)
@@ -285,7 +285,7 @@ export function createConcepts(config, getRegistry, { now = () => new Date(), ra
     async list(limit = 30) {
       if (!Number.isInteger(limit) || limit < 1 || limit > 200) fail(400, 'limit 必须为 1–200 的整数');
       return exclusive(() => {
-        const all = sorted(), day = shanghaiTime(now()).day, today = all.find(r => r.kind === 'daily' && r.day === day);
+        const all = sorted(), day = localTime(now()).day, today = all.find(r => r.kind === 'daily' && r.day === day);
         return structuredClone({ items: all.slice(0, limit).map(({ result, perspectives, ...r }) => ({ ...r,
           respondsTo: r.respondsTo ?? null, response: responseSummary(result),
           result: result ? { concept: result.concept, conceptEn: result.conceptEn, oneLine: result.oneLine, whyUnknown: result.whyUnknown, term: result.term ?? null, response: responseSummary(result) } : null,
@@ -295,11 +295,11 @@ export function createConcepts(config, getRegistry, { now = () => new Date(), ra
     },
     async startManual(body) {
       if (!body || body.kind !== 'manual') fail(400, 'kind 必须为 manual');
-      const { conceptId } = await exclusive(async () => { await reconcile(); return begin('manual', shanghaiTime(now()).day, 1); });
+      const { conceptId } = await exclusive(async () => { await reconcile(); return begin('manual', localTime(now()).day, 1); });
       return { conceptId };
     },
     async ensureDaily(at = now()) {
-      const { day, minutes } = shanghaiTime(at);
+      const { day, minutes } = localTime(at);
       if (minutes < 535) { await logDaily(day, 'not-due'); return { status: 'not-due' }; }
       const decision = await exclusive(async () => {
         await reconcile(); const daily = sorted().filter(r => r.kind === 'daily' && r.day === day);

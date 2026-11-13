@@ -65,7 +65,7 @@ export function toDetailView(agent, history, settings = {}, message = '') {
   const counts=agent.statsDetail;
   if(counts)sections.push({key:'stats',title:'调用统计',rows:[...['last7d','total'].map((key,i)=>({label:['近 7 天','累计'][i],
     value:`调用 ${counts[key]?.calls||0} · Claude ${counts[key]?.bySource?.claude||0} / Codex ${counts[key]?.bySource?.codex||0} · 成功 ${counts[key]?.ok||0} / 失败 ${counts[key]?.failed||0} / 未知 ${counts[key]?.unknown||0}`})),
-    {label:'启动',value:`近 7 天 ${counts.launches?.last7d||0} · 累计 ${counts.launches?.total||0}`},{label:'最后调用（Asia/Shanghai）',value:formatDate(counts.lastAt)}]});
+    {label:'启动',value:`近 7 天 ${counts.launches?.last7d||0} · 累计 ${counts.launches?.total||0}`},{label:'最后调用（本机时区）',value:formatDate(counts.lastAt)}]});
   return {...agent,fullDescription:agent.description||'无描述',chips:[{label:agent.kind==='book'?'书籍 Agent':'功能性 Agent',tone:'kind'},
     {label:agent.writable?'可写':'只读',tone:agent.writable?'warning':'normal'},
     // v0.16: role agents bind no book, so the source chip is shown for book agents only.

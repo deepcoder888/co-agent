@@ -165,13 +165,13 @@
  * expanded (including zero rows last); ties use name then id. agentCount/zeroCount
  * refer to the filtered population. byKind, byCategory and totals use the selected
  * window independently of the ranking filters. daily retains the API's full
- * 30-day Asia/Shanghai sequence, independent of window and filters.
+ * 30-day local-time sequence, independent of window and filters.
  * Actions: openStats(), setStatsRange(range), setStatsFilter(filter),
  * setStatsCategory(category), toggleStatsShowAll(). Category selects book+category;
  * selecting it again clears category and resets filter to all. Changing a range
  * or filter collapses the ranking. openDetail handles row selection as before.
  * Model choices survive layout changes. renderDefaultStats is the A2 stub only.
- * All UI strings are literal text, never HTML. Date helper uses Asia/Shanghai.
+ * All UI strings are literal text, never HTML. Date helper uses this computer's time zone.
  */
 import * as threepane from './threepane.js';
 import * as bento from './bento.js';
