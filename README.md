@@ -25,19 +25,42 @@ CO-AGENT 是一个运行在本机的 Windows 桌面软件，用来浏览、统�
 ### 需要什么
 
 - Windows 10 / 11（x64）
-- [Node.js](https://nodejs.org/) 24，用于构建和运行测试
-- PowerShell 7（`pwsh`）和 Windows Terminal（`wt`），用于打开 Agent 会话
+- PowerShell 7（`pwsh`）和 Windows Terminal（`wt`），用于安装和打开 Agent 会话
 - [Codex CLI](https://github.com/openai/codex)（默认引擎）和/或 [Claude Code](https://docs.anthropic.com/claude-code)，已安装并登录
+- 从源码构建时还需要 [Node.js](https://nodejs.org/) 24
 - git（可选：只有在备份时打包代码才需要）
 
-### 安装
+### 安装方式一：下载打包好的程序
+
+1. 在本仓库的 Releases 页面下载 `CO-AGENT-<版本>-win32-x64.zip` 和同名的 `.sha256` 文件。
+2. 在 PowerShell 里核对文件，并解除下载标记（否则 Windows 会拦下解压出来的脚本和程序）：
+
+   ```powershell
+   (Get-FileHash .\CO-AGENT-<版本>-win32-x64.zip).Hash   # 应与 .sha256 文件里的值相同（不区分大小写）
+   Unblock-File .\CO-AGENT-<版本>-win32-x64.zip
+   ```
+
+3. 解压，在解压出来的文件夹里运行：
+
+   ```powershell
+   pwsh -File scripts\install.ps1      # 安装到 %LOCALAPPDATA%\Programs\CO-AGENT，并建开始菜单和桌面快捷方式
+   ```
+
+程序没有代码签名。如果 Windows 显示「Windows 已保护你的电脑」，点「更多信息」→「仍要运行」。
+
+### 安装方式二：从源码构建
 
 ```powershell
-npm ci                               # 安装 electron 和 @electron/packager（只在这一步需要联网）
+npm ci                               # 安装 electron 和 @electron/packager
+npx install-electron                 # 下载 Electron 程序本身（Electron 44 起 npm ci 不再自动下载）
 npm test                             # 全部测试，不会调用真实的 claude 或 codex
-npm run package                      # 用 Electron 缓存离线打包，输出到 release\CO-AGENT-win32-x64
+npm run package                      # 用下载好的 Electron 离线打包，输出到 release\CO-AGENT-win32-x64
 pwsh -File scripts/install.ps1       # 安装到 %LOCALAPPDATA%\Programs\CO-AGENT，并建开始菜单和桌面快捷方式
 ```
+
+只有 `npm ci` 和 `npx install-electron` 需要联网。`npm run release` 会把打包好的程序做成方式一用的 ZIP（输出到 `release\`）。
+
+### 安装之后
 
 - **每日概念计划任务**：加上 `-DailyConcept`，会注册每天 09:00 自动生成概念的计划任务。这个任务会调用 Codex，所以默认不注册。
 - **卸载**：`pwsh -File scripts/install.ps1 -Uninstall`。卸载会保留你的数据。
@@ -108,19 +131,42 @@ CO-AGENT is a local Windows desktop app for browsing, counting and launching you
 ### Requirements
 
 - Windows 10 / 11 (x64)
-- [Node.js](https://nodejs.org/) 24, to build and run the tests
-- PowerShell 7 (`pwsh`) and Windows Terminal (`wt`), to open agent sessions
+- PowerShell 7 (`pwsh`) and Windows Terminal (`wt`), to install and to open agent sessions
 - [Codex CLI](https://github.com/openai/codex) (the default engine) and/or [Claude Code](https://docs.anthropic.com/claude-code), installed and signed in
+- [Node.js](https://nodejs.org/) 24, only to build from source
 - git (optional; only needed when a backup includes code)
 
-### Install
+### Install option 1: download the built app
+
+1. From this repository's Releases page, download `CO-AGENT-<version>-win32-x64.zip` and the `.sha256` file of the same name.
+2. In PowerShell, check the file and remove the download mark (otherwise Windows blocks the scripts and the program inside):
+
+   ```powershell
+   (Get-FileHash .\CO-AGENT-<version>-win32-x64.zip).Hash   # must equal the value in the .sha256 file (case does not matter)
+   Unblock-File .\CO-AGENT-<version>-win32-x64.zip
+   ```
+
+3. Extract it, and in the extracted folder run:
+
+   ```powershell
+   pwsh -File scripts\install.ps1      # installs to %LOCALAPPDATA%\Programs\CO-AGENT with Start Menu and desktop shortcuts
+   ```
+
+The program is not code-signed. If Windows shows "Windows protected your PC", click "More info" → "Run anyway".
+
+### Install option 2: build from source
 
 ```powershell
-npm ci                               # installs electron and @electron/packager (the only step that needs a network)
+npm ci                               # installs electron and @electron/packager
+npx install-electron                 # downloads the Electron program itself (since Electron 44, npm ci no longer does)
 npm test                             # the full suite; it never calls the real claude or codex
-npm run package                      # builds release\CO-AGENT-win32-x64 offline from the Electron cache
+npm run package                      # builds release\CO-AGENT-win32-x64 offline from the downloaded Electron
 pwsh -File scripts/install.ps1       # installs to %LOCALAPPDATA%\Programs\CO-AGENT with Start Menu and desktop shortcuts
 ```
+
+Only `npm ci` and `npx install-electron` need a network. `npm run release` turns the built app into the ZIP for option 1 (in `release\`).
+
+### After installing
 
 - **Daily-concept task**: `-DailyConcept` registers a scheduled task that generates the day's concept at 09:00. It calls Codex, so it is not registered by default.
 - **Uninstall**: `pwsh -File scripts/install.ps1 -Uninstall`. Your data is kept.

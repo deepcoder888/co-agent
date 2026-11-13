@@ -198,5 +198,5 @@ test('v09 HTTP stats exposes new fields while building and after refresh without
   const complete = await (await fetch(base + '/api/stats')).json();
   assert.equal(complete.building, false); assert.equal(complete.perAgent.walvo.last30d.calls, 1); assert.equal(complete.perAgent.walvo.launches.last30d, 1);
   assert.deepEqual(complete.daily.at(-1), point('2026-10-08', 1, 0, 1, 0, 1));
-  assert.equal((await (await fetch(base + '/api/health')).json()).version, '0.53.3');
+  assert.equal((await (await fetch(base + '/api/health')).json()).version, '0.53.4');
 });

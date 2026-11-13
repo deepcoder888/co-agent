@@ -20,7 +20,7 @@ async function findArchive(cache) {
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     if (entry.isDirectory() && await isFile(path.join(cache, entry.name, archiveName))) return path.join(cache, entry.name);
   }
-  throw new Error(`离线 Electron 包缺失，未尝试下载：${path.join(cache, archiveName)}`);
+  throw new Error(`离线 Electron 包缺失，未尝试下载：${path.join(cache, archiveName)}。先运行 npx install-electron 下载它（Electron 44 起 npm ci 不再自动下载）`);
 }
 export async function packageApp({ root = projectRoot, env = process.env, packager } = {}) {
   root = path.resolve(root);
