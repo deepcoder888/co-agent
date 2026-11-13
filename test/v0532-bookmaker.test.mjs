@@ -23,6 +23,17 @@ test('v0532 the Codex and Claude agent files of the bundle parse, and the book m
   }
 });
 
+// v0.53: the Deepbooker plugin manifest was once published empty; Codex needs its name and skills path to install it.
+test('v0533 the Deepbooker plugin manifest is complete, with LF line endings', async () => {
+  const text = await read('plugins/deepbooker/.codex-plugin/plugin.json');
+  const manifest = JSON.parse(text);
+  assert.equal(manifest.name, 'deepbooker');
+  assert.equal(manifest.skills, './skills/');
+  assert.ok(manifest.description && manifest.interface?.displayName === 'Deepbooker');
+  assert.equal(manifest.author.name, 'deepcoder888');
+  assert.ok(!text.includes('\r\n'));
+});
+
 test('v0532 dependencies.json pins every bundled file it names, with LF line endings', async () => {
   const lock = JSON.parse(await read('agent-support/a-deepbooker/dependencies.json'));
   const local = installed => installed.replace('~/.codex/agents/', 'codex/agents/').replace('~/.codex/', '')

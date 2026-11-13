@@ -1,0 +1,35 @@
+{
+  "name": "deepbooker",
+  "version": "1.0.3+codex.20260906-render",
+  "description": "Read complete books, create two cited README reports, and merge them into one verified Word document with Office CLI.",
+  "author": {
+    "name": "deepcoder888"
+  },
+  "keywords": [
+    "books",
+    "chapter-verification",
+    "xros",
+    "concept-maps",
+    "transfer-analysis"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Deepbooker",
+    "shortDescription": "Turn two verified book reports into one Word file",
+    "longDescription": "Reads a supplied edition cover to cover, writes separate book-analysis and chapter-transfer README reports, verifies every substantive chapter's core viewpoints, and uses Office CLI to merge both reports into one readable Word document. One explicit invocation authorizes the complete scoped run without duplicate permission questions.",
+    "developerName": "deepcoder888",
+    "category": "Productivity",
+    "capabilities": [
+      "Complete-book reading",
+      "Chapter-by-chapter claim verification",
+      "Cross-domain transfer analysis",
+      "Paired README reporting",
+      "Office CLI Word synthesis",
+      "Single-invocation scoped authorization"
+    ],
+    "defaultPrompt": [
+      "Read this book with Deepbooker, verify every chapter, and produce two README reports and one Word file with Office CLI.",
+      "用 Deepbooker 通读这本书，逐章验证，生成两份 README 和一个 Word。按已授权的完整流程连续执行。"
+    ]
+  }
+}

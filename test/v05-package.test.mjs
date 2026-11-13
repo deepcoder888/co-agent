@@ -43,12 +43,12 @@ test('L2 verified cache child/root/override builds offline with exact options an
   const o = s.options;
   assert.equal(s.calls, 1); assert.equal(o.electronZipDir, path.join(s.cache, 'hash'));
   assert.equal(o.dir, s.repo); assert.equal(o.out, path.join(s.repo, 'release')); assert.equal(o.name, 'CO-AGENT');
-  assert.equal(o.platform, 'win32'); assert.equal(o.arch, 'x64'); assert.equal(o.electronVersion, '44.2.0');
+  assert.equal(o.platform, 'win32'); assert.equal(o.arch, 'x64'); assert.equal(o.electronVersion, '44.10.2');
   assert.equal(o.icon, path.join(s.repo, 'assets/brand/co-agent.ico')); assert.equal(o.asar, false); assert.equal(o.prune, false); assert.equal(o.overwrite, true);
   assert.deepEqual(o.win32metadata, { CompanyName: 'CO-AGENT', FileDescription: 'CO-AGENT', ProductName: 'CO-AGENT' });
   assert.equal(o.ignore('/test/a'), true); assert.equal(o.ignore('/src/a'), false); assert.ok(!Object.hasOwn(o, 'download'));
   assert.deepEqual(o.sanitizePackageJson[0]({ scripts: { package: 'bad' }, devDependencies: { electron: 'x' }, main: 'electron/main.cjs', version: '0.5.0' }), { main: 'electron/main.cjs', version: '0.5.0' });
-  assert.equal(evidence.zipHash, s.hash); assert.equal(evidence.subsystem, 2); assert.equal(evidence.electronVersion, '44.2.0');
+  assert.equal(evidence.zipHash, s.hash); assert.equal(evidence.subsystem, 2); assert.equal(evidence.electronVersion, '44.10.2');
   assert.deepEqual(JSON.parse(await fs.readFile(path.join(s.repo, '.tmp/package-v0.5.json'))), evidence);
   await fs.rename(path.join(s.cache, 'hash', archiveName), path.join(s.cache, archiveName));
   await packageApp({ root: s.repo, env: { CO_AGENT_ELECTRON_ZIP_DIR: s.cache }, packager: s.packager }); assert.equal(s.options.electronZipDir, s.cache);

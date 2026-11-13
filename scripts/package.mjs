@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSubsystem } from './check-gui-subsystem.mjs';
 
 const projectRoot = fileURLToPath(new URL('../', import.meta.url));
-export const archiveName = 'electron-v44.2.0-win32-x64.zip';
+export const archiveName = 'electron-v44.10.2-win32-x64.zip';
 export function included(file) {
   const name = file.replaceAll('\\', '/');
   return ['', '/', '/package.json', '/launcher', '/launcher/launch.ps1', '/assets', '/assets/brand', '/assets/brand/co-agent.ico'].includes(name) ||
@@ -33,7 +33,7 @@ export async function packageApp({ root = projectRoot, env = process.env, packag
   // Installed packager's electronZipDir branch throws on missing zip; it cannot fall back to downloading.
   const runPackager = packager || (await import('@electron/packager')).packager;
   const paths = await runPackager({ dir: root, out: path.join(root, 'release'), name: 'CO-AGENT', platform: 'win32', arch: 'x64',
-    electronVersion: '44.2.0', electronZipDir: zipDir, icon: path.join(root, 'assets', 'brand', 'co-agent.ico'),
+    electronVersion: '44.10.2', electronZipDir: zipDir, icon: path.join(root, 'assets', 'brand', 'co-agent.ico'),
     asar: false, prune: false, overwrite: true,
     win32metadata: { CompanyName: 'CO-AGENT', FileDescription: 'CO-AGENT', ProductName: 'CO-AGENT' },
     ignore: file => !included(file),
@@ -47,7 +47,7 @@ export async function packageApp({ root = projectRoot, env = process.env, packag
   for (const file of required) {
     if (!(await fs.stat(path.join(output, 'resources', 'app', file))).isFile()) throw new Error(`打包必需文件缺失：${file}`);
   }
-  const evidence = { offline: true, electronVersion: '44.2.0', archive: archiveName, zipDir, zipHash, checksumMatched: true, output, paths, subsystem, required, asar: false };
+  const evidence = { offline: true, electronVersion: '44.10.2', archive: archiveName, zipDir, zipHash, checksumMatched: true, output, paths, subsystem, required, asar: false };
   await fs.mkdir(path.join(root, '.tmp'), { recursive: true });
   await fs.writeFile(path.join(root, '.tmp', 'package-v0.5.json'), JSON.stringify(evidence, null, 2) + '\n');
   return evidence;
