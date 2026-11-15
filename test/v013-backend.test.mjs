@@ -253,11 +253,13 @@ test('v013 launch/joint/resume title follows each new record ID and flows into w
 });
 
 test('v013 HTTP close requires token/Origin, reports per-item outcomes, and does not refresh stats',async t=>{
+  // After hooks run in registration order: close the app before the fixture folder is removed.
+  let app; t.after(()=>app?.close());
   const {config}=await fixture(t), live=new Set([4242]),calls=[]; let refreshes=0;
-  const app=await createApp(config,{conceptAutoDaily:false,isAlive:pid=>live.has(pid),registryBuilder:async()=>({agents:[]}),
+  app=await createApp(config,{conceptAutoDaily:false,isAlive:pid=>live.has(pid),registryBuilder:async()=>({agents:[]}),
     verifier:async()=>({overall:'ready'}),statsFactory:()=>({refresh:async()=>{refreshes++;}}),
     closeOptions:{queryProcess:async pid=>({pid,name:'pwsh.exe',creationDate:instant}),killTree:async child=>{calls.push(child.pid);live.delete(child.pid);},closeWindow:async()=>({windowClosed:true})}});
-  t.after(()=>app.close()); await app.listen(); const r=record();
+  await app.listen(); const r=record();
   await put(path.join(config.dataDir,'launches',`${r.launchId}.json`),JSON.stringify(r)); await app.sessions.register('launch',r);
   const base=`http://127.0.0.1:${app.server.address().port}`,body={items:[{type:'launch',id:r.launchId}]};
   const request=async(headers={},value=body)=>fetch(base+'/api/running/close',{method:'POST',headers:{'Content-Type':'application/json','X-Co-Agent-Token':app.token,...headers},body:JSON.stringify(value)});

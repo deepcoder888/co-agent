@@ -184,12 +184,14 @@ test('v09 cache-write failure publishes new metrics and preserves existing limit
 });
 
 test('v09 HTTP stats exposes new fields while building and after refresh without running any CLI', async t => {
-  const { config } = await logFixture(t); let release;
+  // After hooks run in registration order: release the held stats write and close the app before the fixture folder is removed.
+  let app, release; t.after(async () => { release?.(); await app?.close(); });
+  const { config } = await logFixture(t);
   const gate = new Promise(resolve => { release = resolve; });
-  const app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => ({ agents }),
+  app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => ({ agents }),
     statsFactory: (cfg, list) => createStats(cfg, list, { now: () => now, write: async (file, data) => { await gate; await put(file, data); } }),
   });
-  t.after(async () => { release(); await app.close(); }); await app.listen();
+  await app.listen();
   const base = `http://127.0.0.1:${app.server.address().port}`;
   const first = await (await fetch(base + '/api/stats')).json();
   assert.equal(first.building, true); assert.deepEqual(first.windows, [7,30]); assert.equal(first.daily.length, 30);

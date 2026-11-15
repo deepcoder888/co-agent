@@ -52,9 +52,11 @@ function spawner(value, calls = [], { hang = false, code = 0, malformed = false,
   };
 }
 async function setup(t, options = {}, r = records()) {
-  const h = await fixture(t); const engine = createConceptMap(h.config, { getConcepts: async () => structuredClone(r.concepts), getSeminars: async () => structuredClone(r.seminars),
+  // After hooks run in registration order: close the engine (and any app) before the fixture folder is removed.
+  let engine; t.after(() => engine?.close());
+  const h = await fixture(t); engine = createConceptMap(h.config, { getConcepts: async () => structuredClone(r.concepts), getSeminars: async () => structuredClone(r.seminars),
     runner: async () => output(), now: () => new Date(at), ...options });
-  t.after(() => engine.close()); await engine.recover(); return { ...h, engine, records: r };
+  await engine.recover(); return { ...h, engine, records: r };
 }
 async function seed(config, r = records()) {
   for (const c of r.concepts) await put(path.join(config.dataDir, 'concepts', c.conceptId + '.json'), JSON.stringify(c));
@@ -139,6 +141,7 @@ test('v036 M7 M8 M18 snapshot excludes concurrent new concepts, serializes organ
 });
 
 test('v036 M7 process timeout, interruption, nonzero and malformed JSON preserve old map; live kill failure holds lock', async t => {
+  const engines = []; t.after(async () => { for (const engine of engines) await engine.close(); });
   const h = await fixture(t), r = records(), originalTimeout = h.config.conceptMap.timeoutMs;
   t.after(() => { h.config.conceptMap.timeoutMs = originalTimeout; });
   for (const kind of ['timeout', 'abort', 'code', 'malformed', 'kill']) {
@@ -149,7 +152,7 @@ test('v036 M7 process timeout, interruption, nonzero and malformed JSON preserve
     const engine = createConceptMap(h.config, { getConcepts: () => r.concepts, getSeminars: () => r.seminars,
       spawnImpl: spawner(output(), [], { hang: ['timeout', 'abort', 'kill'].includes(kind), code: kind === 'code' ? 1 : 0, malformed: kind === 'malformed' }),
       isAlive: () => alive, killTree: async () => { killed++; if (kind === 'kill') throw Error('fixture kill denied'); } });
-    t.after(() => engine.close());
+    engines.push(engine);
     await engine.recover(); await engine.organize(); if (kind === 'abort') await engine.close(); await engine.idle();
     const view = await engine.list(); assert.equal(view.lastRun.status, 'failed'); assert.deepEqual(view.relations, state.relations);
     assert.match(view.lastRun.error, { timeout: /超时/, abort: /中断/, code: /fixture quota exhausted/, malformed: /JSON 无效/, kill: /fixture kill denied/ }[kind]);
@@ -190,15 +193,16 @@ test('v036 M10 corrupt syntax and invalid nested shape are preserved byte for by
 });
 
 test('v036 M11 M12 manual split hide restore survive restart and constrain prompt and next organization', async t => {
+  let engine; t.after(() => engine?.close());
   const h = await setup(t); await h.engine.organize(); await h.engine.idle();
   await h.engine.manual({ unmerge: { canonical: '复利', member: '复利式积累' } });
   await h.engine.manual({ hideRelation: output().relations[0] }); await h.engine.manual({ hideConcept: '反馈' });
   let view = await h.engine.list(); assert.equal(view.merges.length, 0); assert.equal(view.relations.length, 0); assert.equal(view.concepts.some(n => n.key === '反馈'), false);
   await assert.rejects(h.engine.get('反馈'), { status: 404 }); assert.equal(view.hiddenConcepts[0].key, '反馈');
-  await h.engine.close(); const engine = createConceptMap(h.config, { getConcepts: () => h.records.concepts, getSeminars: () => h.records.seminars, runner: async r => {
+  await h.engine.close(); engine = createConceptMap(h.config, { getConcepts: () => h.records.concepts, getSeminars: () => h.records.seminars, runner: async r => {
     const prompt = mapPrompt(r); assert.ok(prompt.includes('不要再合并 X 与 Y')); assert.ok(prompt.includes('不要再提出这条关系'));
     assert.ok(prompt.includes(JSON.stringify(r.input.manual))); return output();
-  } }); t.after(() => engine.close()); await engine.recover(); await engine.organize(); await engine.idle();
+  } }); await engine.recover(); await engine.organize(); await engine.idle();
   view = await engine.list(); assert.equal(view.merges.length, 0); assert.equal(view.relations.length, 0);
   for (const op of [{ hideConcept: '反馈' }, { hideRelation: output().relations[0] }, { unmerge: { canonical: '复利', member: '复利式积累' } }]) await engine.manual({ restore: op });
   assert.equal((await engine.list()).hiddenConcepts.length, 0);
@@ -273,8 +277,8 @@ test('v036 conceptMap config defaults to ten minutes and rejects invalid timeout
 });
 
 for (const ui of ['threepane', 'bento', 'editorial', 'shelf']) test(`v036 M5 M6 M8 M11 M12 M17 M19 ${ui} HTTP + mountApp + fake Codex end-to-end map organize override source`, async t => {
-  const { config } = await fixture(t), calls = []; const r = await seed(config); let app, front, release, first = true;
-  t.after(async () => { release?.(); front?.dispose(); await app?.close(); });
+  let app, front, release, first = true; t.after(async () => { release?.(); front?.dispose(); await app?.close(); });
+  const { config } = await fixture(t), calls = []; const r = await seed(config);
   app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => registry(), conceptMapOptions: {
     spawnImpl: spawner(output(), calls, { wait: () => first ? new Promise(resolve => { release = () => { first = false; resolve(); }; }) : Promise.resolve() }),
   } }); await app.listen(); const base = `http://127.0.0.1:${app.server.address().port}`;
@@ -325,9 +329,10 @@ for (const ui of ['threepane', 'bento', 'editorial', 'shelf']) test(`v036 M5 M6 
 });
 
 test('v036 M20 real HTTP GET returns all 2000 mentions in one source read without list pagination loss', async t => {
+  let app; t.after(() => app?.close());
   const { config } = await fixture(t); const r = { concepts: Array.from({ length: 2000 }, (_, i) => concept(`概念${i % 500}`, ['one', 'two', 'three', 'four'][i % 4])), seminars: [] };
   for (const c of r.concepts) c.termBackfill = { status: 'failed', reason: 'refit' }; // Synthetic numeric labels must never trigger CLI backfill.
-  await seed(config, r); let app; t.after(() => app?.close()); app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => registry() }); await app.listen();
+  await seed(config, r); app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => registry() }); await app.listen();
   const readAll = app.concepts.allRecords.bind(app.concepts), readSeminars = app.seminars.allRecords.bind(app.seminars);
   let conceptReads = 0, seminarReads = 0;
   app.concepts.allRecords = (...args) => { conceptReads++; return readAll(...args); };

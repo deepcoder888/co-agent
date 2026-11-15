@@ -32,10 +32,11 @@ function scripted(script = () => ({ text: '回答' })) {
   return { calls, runImpl };
 }
 async function chatsFor(t, script) {
+  // After hooks run in registration order: close chats and apps before the fixture folder is removed.
+  let chats; t.after(() => chats?.close());
   const { config } = await fixture(t), run = scripted(script), registry = agents();
   config.taskContracts = { octopus: ['peter'] };
-  const logs = [], chats = createChats(config, { getRegistry: () => ({ agents: registry }), runImpl: run.runImpl, log: m => logs.push(m), createResumeImpl: async (original, session) => ({ original, session }) });
-  t.after(() => chats.close());
+  const logs = []; chats = createChats(config, { getRegistry: () => ({ agents: registry }), runImpl: run.runImpl, log: m => logs.push(m), createResumeImpl: async (original, session) => ({ original, session }) });
   return { config, chats, ...run, registry, logs };
 }
 const settled = (chats, id) => until(async () => (await chats.get(id)).turns.every(turn => Object.values(turn.answers).every(a => !['queued', 'running'].includes(a.status))));
@@ -194,10 +195,11 @@ test('v039 chats: 在终端中继续 needs a finished, opened session file and h
 });
 
 test('v039 server: /api/chats routes require the launch token and answer through the injected runner', async t => {
+  let app; t.after(() => app?.close());
   const { config } = await fixture(t), run = scripted(() => ({ text: '服务端回答' }));
-  const app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => ({ agents: agents(), categories: ['学习'], summary: {}, sources: [], outOfScope: [], conflicts: [], missingFromDisk: [] }),
+  app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => ({ agents: agents(), categories: ['学习'], summary: {}, sources: [], outOfScope: [], conflicts: [], missingFromDisk: [] }),
     chatOptions: { runImpl: run.runImpl } });
-  await app.listen(); t.after(() => app.close());
+  await app.listen();
   const base = `http://127.0.0.1:${app.server.address().port}`;
   const post = (url, body, token = app.token) => fetch(base + url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Co-Agent-Token': token }, body: JSON.stringify(body) });
   assert.equal((await post('/api/chats', { engine: 'codex', agentIds: ['jadra'], question: '问' }, 'f'.repeat(64))).status, 403);

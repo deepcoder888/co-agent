@@ -37,9 +37,11 @@ function output(r = record()) {
 }
 const initial = () => synthesizeMemory(empty(), validateCouncil(output(), record()), '第一份汇报', at).memory;
 async function setup(t, options = {}, list = agents) {
+  // After hooks run in registration order: close the engine (and any app) before the fixture folder is removed.
+  let engine; t.after(() => engine?.close());
   const h = await fixture(t); h.config.council.timeoutMs = 5000; const reg = { agents: structuredClone(list) };
-  const engine = createCouncils(h.config, () => reg, { now: () => new Date(at), runner: async r => output(r), verifier: async () => ({ state: 'unconfirmed' }), ...options });
-  t.after(() => engine.close()); await engine.recover();
+  engine = createCouncils(h.config, () => reg, { now: () => new Date(at), runner: async r => output(r), verifier: async () => ({ state: 'unconfirmed' }), ...options });
+  await engine.recover();
   const create = (name = '读书', memberIds = ['one', 'two']) => engine.create({ name, goal: '读书半小时', memberIds });
   const run = async (id, report = '本周读了三天') => { const { sessionId } = await engine.start(id, { report }); await engine.idle(); return engine.getSession(id, sessionId); };
   return { ...h, engine, registry: reg, create, run };
@@ -179,11 +181,12 @@ test('v035 C6 C7 C11 C13 C17 concurrent limits serialize starts and block mutati
 });
 
 test('v035 C8 real runner failures, timeout, abort keep memory and expose actual errors', async t => {
+  const engines = []; t.after(async () => { for (const engine of engines) await engine.close(); });
   for (const [opts, message] of [[{ code: 2 }, /fixture quota exhausted/], [{ malformed: true }, /JSON 无效/], [{ hang: true }, /生成超时/]]) {
     const h = await setup(t), c = await h.create(); await h.run(c.councilId);
     const before = (await h.engine.get(c.councilId)).memory; await h.engine.close();
     let kills = 0; const engine = createCouncils(h.config, () => h.registry, { spawnImpl: spawner({}, [], opts), killTree: async () => { kills++; } });
-    t.after(() => engine.close()); await engine.recover();
+    engines.push(engine); await engine.recover();
     if (opts.hang) h.config.council.timeoutMs = 10;
     try { const { sessionId } = await engine.start(c.councilId, { report: '新进展' }); await engine.idle(); const s = await engine.getSession(c.councilId, sessionId);
       assert.equal(s.status, 'failed'); assert.match(s.error, message); assert.deepEqual((await engine.get(c.councilId)).memory, before);
@@ -308,7 +311,7 @@ test('v035 3.1 verifier checks council marker, parallel ordering and exact membe
 });
 
 test('v035 HTTP routes enforce token, Origin, resource ownership and expected status codes', async t => {
-  const { config } = await fixture(t); let app; t.after(() => app?.close());
+  let app; t.after(() => app?.close()); const { config } = await fixture(t);
   app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => registry(), councilOptions: { runner: async r => output(r), verifier: async () => ({ state: 'unconfirmed' }) } }); await app.listen();
   const base = `http://127.0.0.1:${app.server.address().port}`;
   const request = (url, method = 'GET', body, headers = {}) => fetch(base + url, { method, headers: { 'Content-Type': 'application/json', 'X-Co-Agent-Token': app.token, ...headers }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
@@ -333,8 +336,8 @@ test('v035 HTTP routes enforce token, Origin, resource ownership and expected st
 // v0.40: 顾问团 is a room of the chat page: an opening sheet creates or edits a council, each meeting folds in order,
 // and the composer at the bottom opens the next meeting.
 for (const ui of ['threepane', 'bento', 'editorial', 'shelf']) test(`v040 C4 C12 C14 C18 C19 C20 ${ui} HTTP + mountApp end-to-end 顾问团 room: create, meet twice, undo, branch, delete`, async t => {
-  const { config } = await fixture(t), calls = [], confirmations = []; let app, front, release, first = true;
-  t.after(async () => { release?.(); front?.dispose(); await app?.close(); });
+  let app, front, release, first = true; t.after(async () => { release?.(); front?.dispose(); await app?.close(); });
+  const { config } = await fixture(t), calls = [], confirmations = [];
   app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => registry(), councilOptions: {
     spawnImpl: spawner(prompt => {
       const memoryBefore = JSON.parse(prompt.split('当前记忆（JSON 数据）：\n')[1].split('\n本次汇报原文')[0]);

@@ -80,11 +80,12 @@ test('v031 3.1 launch, joint and both resume paths use the original CLI', async 
 });
 
 test('v031 3.1 daily and seminar candidate pools retain books missing only Claude sources', async t => {
+  // After hooks run in registration order: close the engines before the fixture folder is removed.
+  let concepts, seminars; t.after(async () => { await concepts?.close(); await seminars?.close(); });
   const { config } = await fixture(t), agents = [book(), book('two'), book('three')];
-  const concepts = createConcepts(config, () => ({ agents }), { now: () => new Date(at), randomIntImpl: () => 0,
+  concepts = createConcepts(config, () => ({ agents }), { now: () => new Date(at), randomIntImpl: () => 0,
     runner: async () => { throw new Error('fixture generation stop'); }, isAlive: () => false });
-  const seminars = createSeminars(config, () => ({ agents }), { runner: async () => { throw new Error('fixture seminar stop'); }, isAlive: () => false });
-  t.after(async () => { await concepts.close(); await seminars.close(); });
+  seminars = createSeminars(config, () => ({ agents }), { runner: async () => { throw new Error('fixture seminar stop'); }, isAlive: () => false });
   const daily = await concepts.ensureDaily(); await concepts.idle();
   assert.equal((await concepts.get(daily.conceptId)).agent.id, 'book');
   const started = await seminars.start({ input: '测试问题' }); await seminars.idle();
@@ -261,13 +262,14 @@ const historicalConcept = (extra = {}) => ({ version: 1, conceptId: randomUUID()
   createdAt: at, finishedAt: at, status: 'done', agent: { id: 'book', name: 'Book', codexName: 'book', title: '测试书' },
   result: conceptResult(), perspectives: [], ...extra });
 async function conceptFixture(t, options = {}) {
+  let engine; t.after(() => engine?.close());
   const ctx = await fixture(t); ctx.config.concept.thinkDir = path.join(ctx.root, 'think');
-  const engine = createConcepts(ctx.config, () => ({ agents: [book()] }), {
+  engine = createConcepts(ctx.config, () => ({ agents: [book()] }), {
     now: () => new Date(at), isAlive: () => false, runner: async () => conceptResult(),
     conceptVerifier: async () => ({ state: 'unconfirmed' }),
     termRunner: async () => assert.fail('unexpected term generation'), ...options,
   });
-  t.after(() => engine.close()); return { ...ctx, engine };
+  return { ...ctx, engine };
 }
 const writeConcept = (config, record) => put(path.join(config.dataDir, 'concepts', `${record.conceptId}.json`), JSON.stringify(record));
 
@@ -345,7 +347,7 @@ test('v031 3.3 generated invalid term is saved as null, queued once and uses con
 });
 
 test('v031 3.3 failed generated-term backfill keeps completed lecture and null without retry', async t => {
-  let calls = 0;
+  let calls = 0, restarted; t.after(() => restarted?.close());
   const { engine, config } = await conceptFixture(t, { termRunner: async () => { calls++; return { term: { ...compassTerm, zh: '目标罗盘' } }; } });
   const { conceptId } = await engine.startManual({ kind: 'manual' }); await engine.idle();
   const saved = await engine.get(conceptId);
@@ -354,14 +356,14 @@ test('v031 3.3 failed generated-term backfill keeps completed lecture and null w
   assert.deepEqual(await fs.readFile(saved.thinkFile), Buffer.from(saved.result.markdown));
   await assert.rejects(engine.backfillTerm(conceptId), { status: 409 }); await engine.recover(); await engine.idle();
   await engine.close();
-  const restarted = createConcepts(config, () => ({ agents: [book()] }), { isAlive: () => false, termRunner: async () => { calls++; return { term: compassTerm }; } });
-  t.after(() => restarted.close()); await restarted.recover(); await restarted.idle();
+  restarted = createConcepts(config, () => ({ agents: [book()] }), { isAlive: () => false, termRunner: async () => { calls++; return { term: compassTerm }; } });
+  await restarted.recover(); await restarted.idle();
   assert.deepEqual((await restarted.get(conceptId)).result, saved.result); assert.equal(calls, 1);
 });
 
 test('v031 3.3 historical refits run serially once even after older backfills, replacing only term', async t => {
-  const entered = Promise.withResolvers(), release = Promise.withResolvers(), calls = []; let active = 0, maximum = 0;
-  t.after(() => release.resolve());
+  const entered = Promise.withResolvers(), release = Promise.withResolvers(), calls = []; let active = 0, maximum = 0, restarted;
+  t.after(() => release.resolve()); t.after(() => restarted?.close());
   const { engine, config, root } = await conceptFixture(t, { termRunner: async r => {
     calls.push(r.conceptId); maximum = Math.max(maximum, ++active); entered.resolve(); await release.promise; active--;
     return { term: compassTerm };
@@ -392,14 +394,14 @@ test('v031 3.3 historical refits run serially once even after older backfills, r
   assert.deepEqual(await engine.get(valid.conceptId), valid); assert.deepEqual(await engine.get(unfinished.conceptId), unfinished);
   assert.equal(await fs.readFile(thinkFile, 'utf8'), original); assert.equal((await fs.stat(thinkFile)).mtimeMs, before.mtimeMs);
   await engine.recover(); await engine.idle(); await engine.close();
-  const restarted = createConcepts(config, () => ({ agents: [book()] }), { isAlive: () => false, termRunner: async () => assert.fail('refit repeated after restart') });
-  t.after(() => restarted.close()); await restarted.recover(); await restarted.idle();
+  restarted = createConcepts(config, () => ({ agents: [book()] }), { isAlive: () => false, termRunner: async () => assert.fail('refit repeated after restart') });
+  await restarted.recover(); await restarted.idle();
   for (const r of records) assert.deepEqual((await restarted.get(r.conceptId)).result.term, compassTerm);
   assert.equal(calls.length, records.length);
 });
 
 for (const failure of ['invalid term', 'runner error', 'save error']) test(`v031 3.3 refit ${failure} preserves original data and never retries`, async t => {
-  let calls = 0;
+  let calls = 0, restarted; t.after(() => restarted?.close());
   const { engine, config, root } = await conceptFixture(t, {
     termRunner: async () => {
       calls++; if (failure === 'runner error') throw Error('fixture term failure');
@@ -419,8 +421,8 @@ for (const failure of ['invalid term', 'runner error', 'save error']) test(`v031
   const onDisk = JSON.parse(await fs.readFile(path.join(config.dataDir, 'concepts', `${r.conceptId}.json`), 'utf8'));
   assert.deepEqual(onDisk, saved); assert.equal(await fs.readFile(r.thinkFile, 'utf8'), '原始 THINK\r\n');
   await engine.recover(); await assert.rejects(engine.backfillTerm(r.conceptId), { status: 409 }); await engine.idle(); await engine.close();
-  const restarted = createConcepts(config, () => ({ agents: [book()] }), { isAlive: () => false, termRunner: async () => { calls++; return { term: compassTerm }; } });
-  t.after(() => restarted.close()); await restarted.recover(); await restarted.idle();
+  restarted = createConcepts(config, () => ({ agents: [book()] }), { isAlive: () => false, termRunner: async () => { calls++; return { term: compassTerm }; } });
+  await restarted.recover(); await restarted.idle();
   assert.deepEqual(await restarted.get(r.conceptId), saved); assert.equal(calls, 1);
 });
 

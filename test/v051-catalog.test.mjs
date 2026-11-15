@@ -84,9 +84,11 @@ test('v051 基本配置 saves catalogDir and reports whether it exists', async t
 });
 
 test('v051 the server runs on an empty catalog: registry, reports and coverage', async t => {
+  // After hooks run in registration order: close the app before the fixture folder is removed.
+  let app; t.after(() => app?.close());
   const { config } = await emptyCatalog(t);
-  const app = await createApp(config, { conceptAutoDaily: false });
-  await app.listen(); t.after(() => app.close());
+  app = await createApp(config, { conceptAutoDaily: false });
+  await app.listen();
   const registry = await (await fetch(`http://127.0.0.1:${app.server.address().port}/api/registry`)).json();
   assert.equal(registry.summary.roles, 0); assert.equal(registry.reports.directory, null);
   assert.equal(registry.outOfScope.length, 2);

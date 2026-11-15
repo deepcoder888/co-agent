@@ -20,9 +20,10 @@ const output = n => ({ situation: { summary: 's', decision: 'd' }, options: [{ i
     tensions: [], nextSteps: [1, 2, 3].map(() => ({ text: 'n', basis: ['cx-walvo'] })), missingInfo: [] } });
 
 test('v048 会诊 engine: 自动选择 takes exactly 3, 5 or 7 books, the host is told the number, and the memo must match it', async t => {
+  // After hooks run in registration order: close both engines before the fixture folder is removed.
+  let engine, few; t.after(async () => { await engine?.close(); await few?.close(); });
   const { config } = await fixture(t), seen = [];
-  const engine = createConsults(config, () => ({ agents: catalog }), { runner: async r => { seen.push(r); return output(r.count); }, verifier: async () => ({ state: 'ok' }) });
-  t.after(() => engine.close());
+  engine = createConsults(config, () => ({ agents: catalog }), { runner: async r => { seen.push(r); return output(r.count); }, verifier: async () => ({ state: 'ok' }) });
   await assert.rejects(engine.start({ situation: 'x', count: 4 }), e => e.status === 400 && /3、5、7/.test(e.message));
   await assert.rejects(engine.start({ situation: 'x', count: 5, lenses: [] }), e => e.status === 400 && /指定名单时不再另选书籍数量/.test(e.message));
   const { consultId } = await engine.start({ situation: 'x', count: 7 }); await engine.idle();
@@ -32,8 +33,7 @@ test('v048 会诊 engine: 自动选择 takes exactly 3, 5 or 7 books, the host i
   assert.match(consultPrompt({ ...seen[0], count: null }), /选出 3–5 个/, 'an old record without a count keeps the 3–5 wording');
   assert.throws(() => validateConsult(output(5), { ...seen[0] }), /无效/, 'five lenses do not satisfy a 7-book consult');
   assert.equal(consultSchema.properties.lenses.maxItems, 7); assert.equal(consultSchema.properties.perLens.maxItems, 7);
-  const few = createConsults(config, () => ({ agents: catalog.slice(0, 5) }), { runner: async () => output(5) });
-  t.after(() => few.close());
+  few = createConsults(config, () => ({ agents: catalog.slice(0, 5) }), { runner: async () => output(5) });
   await assert.rejects(few.start({ situation: 'x', count: 7 }), e => e.status === 409 && /不足 7 本/.test(e.message));
 });
 

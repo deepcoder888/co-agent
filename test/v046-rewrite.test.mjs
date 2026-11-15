@@ -43,11 +43,12 @@ test('v046 rewrite: the prompt carries the question and each concept map; valida
 });
 
 async function chatsFor(t, rewriteImpl = async (question, list) => ({ items: list.map(a => ({ id: a.id, fit: true, angle: `${a.id} 角度`, question: `${a.id}：${question}` })) })) {
+  // After hooks run in registration order: close chats and apps before the fixture folder is removed.
+  let chats; t.after(() => chats?.close());
   const { config } = await fixture(t), calls = [], registry = agents(), rewrites = [];
-  const chats = createChats(config, { getRegistry: () => ({ agents: registry }),
+  chats = createChats(config, { getRegistry: () => ({ agents: registry }),
     rewriteImpl: async (...args) => { rewrites.push(args); return rewriteImpl(...args); },
     runImpl: job => { calls.push(job); return Promise.resolve({ text: '答', final: true, threadId: `T-${calls.length}` }); } });
-  t.after(() => chats.close());
   return { config, chats, calls, rewrites };
 }
 const settled = (chats, id) => until(async () => (await chats.get(id)).turns.every(turn => Object.values(turn.answers).every(a => a.status === 'done')));
@@ -87,10 +88,11 @@ test('v046 chats: a failed rewrite is explained and nothing is sent', async t =>
 });
 
 test('v046 server: POST /api/chats/rewrite needs the launch token and answers with the drafts', async t => {
+  let app; t.after(() => app?.close());
   const { config } = await fixture(t);
-  const app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => ({ agents: agents(), categories: ['学习'], summary: {}, sources: [], outOfScope: [], conflicts: [], missingFromDisk: [] }),
+  app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => ({ agents: agents(), categories: ['学习'], summary: {}, sources: [], outOfScope: [], conflicts: [], missingFromDisk: [] }),
     chatOptions: { rewriteImpl: async () => drafts, runImpl: () => Promise.resolve({ text: '答', final: true }) } });
-  await app.listen(); t.after(() => app.close());
+  await app.listen();
   const base = `http://127.0.0.1:${app.server.address().port}`;
   const post = (body, token = app.token) => fetch(`${base}/api/chats/rewrite`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Co-Agent-Token': token }, body: JSON.stringify(body) });
   assert.equal((await post({ agentIds: ['eliora', 'farvo'], question: '问' }, 'f'.repeat(64))).status, 403);

@@ -100,9 +100,11 @@ test('v052 agent files: off means 403; on adds new files only, exactly as given'
 });
 
 test('v052 HTTP: /api/agent-lists and /api/agent-files need the token and change the registry', async t => {
+  // After hooks run in registration order: close the app or store before the fixture folder is removed.
+  let app; t.after(() => app?.close());
   const { config } = await setup(t);
-  const app = await createApp(config, { conceptAutoDaily: false });
-  await app.listen(); t.after(() => app.close());
+  app = await createApp(config, { conceptAutoDaily: false });
+  await app.listen();
   const base = `http://127.0.0.1:${app.server.address().port}`;
   const post = (route, body, token = app.token) => fetch(base + route, { method: 'POST', headers: { 'content-type': 'application/json', 'x-co-agent-token': token }, body: JSON.stringify(body) });
   const lists = await (await fetch(base + '/api/agent-lists')).json();
@@ -117,10 +119,10 @@ test('v052 HTTP: /api/agent-lists and /api/agent-files need the token and change
 });
 
 test('v052 with no categories the new-book suggestion stops before calling Codex', async t => {
+  let candidates; t.after(() => candidates?.close());
   const { config } = await fixture(t);
   const registry = { categories: [], agents: [], candidates: [{ id: 'reader', name: 'Reader', description: '' }] };
-  const candidates = createCandidates(config, () => registry, { runner: async () => assert.fail('Codex must not be called') });
-  t.after(() => candidates.close());
+  candidates = createCandidates(config, () => registry, { runner: async () => assert.fail('Codex must not be called') });
   await assert.rejects(candidates.suggest({ ids: ['reader'] }), error => error.status === 409 && /还没有分类/.test(error.message));
 });
 

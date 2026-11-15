@@ -36,10 +36,12 @@ function output(r = record()) {
       nextSteps: [1, 2, 3].map(i => ({ text: `行动 ${i}`, basis })), missingInfo: ['需要观察时段反馈'] } };
 }
 async function setup(t, options = {}, list = agents) {
+  // After hooks run in registration order: close the engine (and any app) before the fixture folder is removed.
+  let engine; t.after(() => engine?.close());
   const ctx = await fixture(t); ctx.config.consult.timeoutMs = 5000;
   const registry = { agents: list };
-  const engine = createConsults(ctx.config, () => registry, { now: () => new Date(at), runner: async r => output(r), verifier: async () => ({ state: 'unconfirmed', parallel: { state: 'pending' }, violations: [] }), ...options });
-  t.after(() => engine.close()); await engine.recover(); return { ...ctx, engine, registry };
+  engine = createConsults(ctx.config, () => registry, { now: () => new Date(at), runner: async r => output(r), verifier: async () => ({ state: 'unconfirmed', parallel: { state: 'pending' }, violations: [] }), ...options });
+  await engine.recover(); return { ...ctx, engine, registry };
 }
 function fakeOutput(value, calls = [], { hang = false, malformed = false, code = 0, huge = false, hugeStdout = false, wait } = {}) {
   return (exe, args, options) => {
@@ -264,7 +266,7 @@ test('v034 3.7 verifies consultation marker, whitelist and parallel spawn orderi
 
 const registry = () => ({agents:structuredClone(agents),categories:['学习'],summary:{roles:0,books:6},sources:[],outOfScope:[],conflicts:[],missingFromDisk:[]});
 test('v034 HTTP E18 routes enforce token, Origin, limit and idempotent DELETE',async t=>{
-  const {config}=await fixture(t);let app; t.after(()=>app?.close());
+  let app; t.after(()=>app?.close());const {config}=await fixture(t);
   app=await createApp(config,{conceptAutoDaily:false,registryBuilder:async()=>registry(),consultOptions:{runner:async r=>output(r),verifier:async()=>({state:'unconfirmed'})}});await app.listen();
   const base=`http://127.0.0.1:${app.server.address().port}`;
   const request=(url,method,body,headers={})=>fetch(base+url,{method,headers:{'Content-Type':'application/json','X-Co-Agent-Token':app.token,...headers},...(body?{body:JSON.stringify(body)}:{})});
@@ -280,8 +282,8 @@ test('v034 HTTP E18 routes enforce token, Origin, limit and idempotent DELETE',a
 
 // v0.40: 会诊室 is a room of the chat page; the opening sheet (开场纸) holds the situation, options and lenses.
 for (const ui of ['threepane','bento','editorial','shelf']) test(`v040 E17 E19 E20 ${ui} real HTTP + mountApp end-to-end 会诊 room: start, poll, memo, rerun, delete`,async t=>{
-  const {config}=await fixture(t),calls=[],confirmations=[];let app,front,release;
-  t.after(async()=>{release?.();front?.dispose();await app?.close();});
+  let app,front,release;t.after(async()=>{release?.();front?.dispose();await app?.close();});
+  const {config}=await fixture(t),calls=[],confirmations=[];
   const options=[{id:'A',text:'早上阅读'},{id:'B',text:'晚上阅读'}],r={...record(),options};
   app=await createApp(config,{conceptAutoDaily:false,registryBuilder:async()=>registry(),consultOptions:{spawnImpl:fakeOutput(prompt=>{const value=output(r);if(prompt.includes('\n补充'))value.memo.recommendation.option=null;return value;},calls,{wait:()=>new Promise(resolve=>{release=resolve;})}),verifier:async()=>({state:'ok',parallel:{state:'ok'},violations:[]})}});await app.listen();
   const base=`http://127.0.0.1:${app.server.address().port}`,{doc}=await appDocument(ui,app.token),requests=[];

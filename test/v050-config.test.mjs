@@ -97,12 +97,14 @@ test('v050 prompts name the configured user', () => {
 });
 
 test('v050 a concept without a copy folder is kept in the app only, with no copy error', async t => {
+  // After hooks run in registration order: close the engine (and apps below) before the fixture folder is removed.
+  let engine; t.after(() => engine?.close());
   const { config } = await fixture(t); config.concept.thinkDir = null;
   const value = { concept: '移情：过时的地图', conceptEn: 'Transference', oneLine: '认知线索', whyUnknown: '书名没有提示', sourceRefs: ['第三章'], markdown: '# 原文\n', term: { zh: '移情', en: 'Transference', fr: 'Transfert' } };
   const agent = { id: 'pecko', name: 'Pecko', kind: 'book', platforms: { codex: { available: true } }, book: { title: '一条示例的路' }, sources: { missing: [] } };
-  const engine = createConcepts(config, () => ({ agents: [agent] }), { runner: async () => value, conceptVerifier: async () => ({ state: 'unconfirmed' }),
+  engine = createConcepts(config, () => ({ agents: [agent] }), { runner: async () => value, conceptVerifier: async () => ({ state: 'unconfirmed' }),
     thinkWriter: async () => assert.fail('no copy folder is configured') });
-  t.after(() => engine.close()); await engine.recover();
+  await engine.recover();
   const started = await engine.startManual({ kind: 'manual' }); await engine.idle();
   const record = await engine.get(started.conceptId);
   assert.equal(record.status, 'done'); assert.ok(!record.thinkFile); assert.ok(!record.thinkError);
@@ -141,11 +143,12 @@ test('v050 the daily catch-up runs only when concept.autoDaily is on; the option
 });
 
 test('v050 GET/POST /api/config: first run, values, folders, programs, token, validation, kept keys', async t => {
+  let app; t.after(() => app?.close());
   const { root, config } = await fixture(t);
   const found = path.join(root, 'bin', 'codex.exe'); config.codexExe = 'codex-v050';
-  const app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => ({ agents: [] }),
+  app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => ({ agents: [] }),
     basicConfigOptions: { firstRunPrompt: true, resolver: async exe => exe === config.codexExe ? found : Promise.reject(new Error('missing')) } });
-  await app.listen(); t.after(() => app.close());
+  await app.listen();
   const url = `http://127.0.0.1:${app.server.address().port}/api/config`;
   const post = (body, token = app.token) => fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-co-agent-token': token }, body: JSON.stringify(body) });
   let state = await (await fetch(url)).json();

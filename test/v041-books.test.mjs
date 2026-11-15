@@ -123,8 +123,10 @@ test('v041 books service: files only by registry index, cached EPUB, PDF and MOB
 });
 
 test('v041 HTTP: book routes, PDF framing for this app only, token-guarded progress, and no paths from the page', async t => {
+  // After hooks run in registration order: close the app before the fixture folder is removed.
+  let app; t.after(() => app?.close());
   const { config, registry } = await library(t);
-  const app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => registry }); await app.listen(); t.after(() => app.close());
+  app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => registry }); await app.listen();
   const base = `http://127.0.0.1:${app.server.address().port}`;
   assert.equal((await (await fetch(base + '/api/books/habit/0')).json()).toc.length, 3);
   assert.match((await (await fetch(base + '/api/books/habit/0/chapters/0')).json()).markdown, /第一章/);

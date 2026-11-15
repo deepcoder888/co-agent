@@ -49,10 +49,11 @@ test('v040 backend: roomContext accepts only a finished 圆桌 or 会诊 and rea
 });
 
 test('v040 backend: a follow-up chat is Codex-only, takes its members from the record and sends the background once per member', async t => {
+  // After hooks run in registration order: close the chats before the fixture folder is removed.
+  let chats; t.after(() => chats?.close());
   const { config } = await fixture(t), calls = [], registry = { agents: catalog };
-  const chats = createChats(config, { getRegistry: () => registry, contextFor: origin => roomContext(origin, { seminars: { get: async () => seminar() }, consults: { get: async () => consult() } }),
+  chats = createChats(config, { getRegistry: () => registry, contextFor: origin => roomContext(origin, { seminars: { get: async () => seminar() }, consults: { get: async () => consult() } }),
     runImpl: job => { calls.push(job); return Promise.resolve({ text: '答', final: true, threadId: `t-${calls.length}` }); } });
-  t.after(() => chats.close());
   const chat = await chats.start({ origin: { room: 'seminars', id: 's1' }, engine: 'claude', agentIds: ['walvo'], question: '那周末呢？' });
   assert.equal(chat.engine, 'codex', 'rooms run on Codex whatever the page sends'); assert.deepEqual(chat.agentIds, ['walvo', 'jadra', 'liebo']);
   assert.deepEqual(chat.origin, { room: 'seminars', id: 's1' }); assert.equal(chat.title, '睡不好的第二天，还要不要运动？');

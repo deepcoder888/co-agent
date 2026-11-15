@@ -17,9 +17,11 @@ const agent = { id:'pecko', name:'Pecko', kind:'book', platforms:{ codex:{availa
 const old = () => { const result=value();delete result.term;return {version:1,conceptId:randomUUID(),kind:'manual',day:'2026-10-08',createdAt:'2026-10-08T01:00:00Z',status:'done',agent:{id:'pecko',name:'Pecko',codexName:'Pecko',title:'一条示例的路'},result,perspectives:[],thinkFile:'existing-file.txt'}; };
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 async function setup(t, options={}) {
+  // After hooks run in registration order: close the engine (and any app) before the fixture folder is removed.
+  let engine;t.after(()=>engine?.close());
   const ctx=await fixture(t);ctx.config.concept.thinkDir=path.join(ctx.root,'concept');
-  const engine=createConcepts(ctx.config,()=>({agents:[agent]}),{runner:async()=>value(),conceptVerifier:async()=>({state:'unconfirmed'}),...options});
-  t.after(()=>engine.close());assert.equal(typeof engine.backfillTerm,'function');return {...ctx,engine};
+  engine=createConcepts(ctx.config,()=>({agents:[agent]}),{runner:async()=>value(),conceptVerifier:async()=>({state:'unconfirmed'}),...options});
+  assert.equal(typeof engine.backfillTerm,'function');return {...ctx,engine};
 }
 
 test('v011 concept schema/prompt require term and preserve lectures with invalid terms for backfill',()=>{
@@ -54,7 +56,7 @@ test('v011 concept names participate in dedupe and new THINK filenames use term.
 });
 
 test('v011 startup backfill queue runs serially, coalesces POSTs and preserves markdown/THINK bytes across restart',async t=>{
-  const gates=[],calls=[];let active=0,maximum=0;
+  const gates=[],calls=[];let active=0,maximum=0;let restarted;t.after(()=>restarted?.close());
   const {engine,config,root}=await setup(t,{termRunner:async r=>{
     calls.push(r.conceptId);active++;maximum=Math.max(maximum,active);
     await new Promise(resolve=>gates.push(resolve));active--;return {term};
@@ -69,7 +71,7 @@ test('v011 startup backfill queue runs serially, coalesces POSTs and preserves m
   for(const r of records.slice(0,2)){const saved=await engine.get(r.conceptId);assert.deepEqual(saved.result,{...r.result,term});assert.equal(saved.thinkFile,oldFile);assert.equal(saved.termBackfill.status,'done');}
   assert.equal(await fs.readFile(oldFile,'utf8'),'OLD É\r\n');
   await engine.backfillTerm(records[0].conceptId);await engine.recover();await engine.idle();assert.equal(calls.length,2);
-  const restarted=createConcepts(config,()=>({agents:[agent]}),{termRunner:async()=>{throw Error('must not run');}});t.after(()=>restarted.close());await restarted.recover();await restarted.idle();
+  restarted=createConcepts(config,()=>({agents:[agent]}),{termRunner:async()=>{throw Error('must not run');}});await restarted.recover();await restarted.idle();
   assert.deepEqual((await restarted.get(records[1].conceptId)).result.term,term);
 });
 
@@ -124,10 +126,11 @@ test('v011 tiny backfill process supplies only four input fields and term-only s
 });
 
 test('v011 POST term is authenticated and reuses startup queue without rewriting content',async t=>{
+  let app;t.after(()=>app?.close());
   const {root,config}=await fixture(t);config.concept.thinkDir=path.join(root,'think');const r=old();let release,calls=0;
   await put(path.join(config.dataDir,'concepts',r.conceptId+'.json'),JSON.stringify(r));
-  const app=await createApp(config,{conceptAutoDaily:false,registryBuilder:async()=>({agents:[agent]}),conceptOptions:{termRunner:async()=>{calls++;await new Promise(resolve=>{release=resolve;});return {term};}}});
-  t.after(()=>app.close());await app.listen();const base=`http://127.0.0.1:${app.server.address().port}`,url=base+`/api/concepts/${r.conceptId}/term`;
+  app=await createApp(config,{conceptAutoDaily:false,registryBuilder:async()=>({agents:[agent]}),conceptOptions:{termRunner:async()=>{calls++;await new Promise(resolve=>{release=resolve;});return {term};}}});
+  await app.listen();const base=`http://127.0.0.1:${app.server.address().port}`,url=base+`/api/concepts/${r.conceptId}/term`;
   assert.equal((await fetch(url,{method:'POST'})).status,403);assert.equal((await fetch(url,{method:'POST',headers:{'X-Co-Agent-Token':app.token,Origin:'https://evil.test'}})).status,403);
   assert.equal((await fetch(url,{method:'POST',headers:{'X-Co-Agent-Token':app.token}})).status,202);
   while(!release)await tick();release();await app.concepts.idle();assert.equal(calls,1);

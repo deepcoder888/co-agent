@@ -20,13 +20,15 @@ const result = { concept: '心理表征', conceptEn: 'Mental Representation', on
 const book = (id = 'walvo') => ({ id, name: id === 'walvo' ? 'Walvo' : id, kind: 'book', platforms: { codex: { available: true } }, book: { title: '睡眠', author: '作者' }, sources: { missing: [] } });
 const record = () => ({ conceptId: randomUUID(), createdAt: instant.toISOString(), agent: { id: 'walvo', name: 'Walvo', codexName: 'Walvo', title: '睡眠' }, excludedConcepts: [], result });
 async function setup(t, overrides = {}) {
+  // After hooks run in registration order: close engines and apps before the fixture folder is removed.
+  let engine; t.after(() => engine?.close());
   const { root, config } = await fixture(t);
   config.concept = { timeoutMs: 1000, thinkDir: path.join(root, 'think') };
-  const engine = createConcepts(config, () => ({ agents: [book(), book('jadra'), book('peter')] }), {
+  engine = createConcepts(config, () => ({ agents: [book(), book('jadra'), book('peter')] }), {
     now: () => instant, randomIntImpl: () => 0, runner: async () => result,
     conceptVerifier: async () => ({ state: 'unconfirmed', session: null, children: [], skillStructure: skillStructure(markdown) }), ...overrides,
   });
-  await engine.recover(); t.after(() => engine.close());
+  await engine.recover();
   return { root, config, engine };
 }
 const tick = () => new Promise(resolve => setImmediate(resolve));
@@ -232,15 +234,16 @@ test('v08 config defaults and nested validation preserve unrelated settings', as
 });
 
 test('v08 API auth, 202/409, detail/limit validation and catch-up timer with injected engine', async t => {
+  let app; t.after(() => app?.close());
   const { config } = await fixture(t), calls = []; let timerFn, cleared;
   const concepts = { recover: async () => calls.push('recover'), ensureDaily: async () => calls.push('daily'),
     list: async limit => ({ items: [], running: null, today: { day: '2026-10-08', conceptId: null, status: null }, limit }),
     get: async id => ({ conceptId: id }), startManual: async () => { if (calls.includes('start')) throw Object.assign(Error('正在生成'), { status: 409, running: { conceptId: 'running' } }); calls.push('start'); return { conceptId: 'new' }; },
     startPerspectives: async (id, body) => ({ runId: id + body.agentIds[0] }), close: async () => calls.push('close'), idle: async () => {},
   };
-  const app = await createApp(config, { registryBuilder: async () => ({ agents: [] }), conceptsFactory: () => concepts,
+  app = await createApp(config, { registryBuilder: async () => ({ agents: [] }), conceptsFactory: () => concepts,
     conceptTimers: { setInterval: (fn, ms) => { assert.equal(ms, 600000); timerFn = fn; return { unref() {} }; }, clearInterval: () => { cleared = true; } } });
-  await app.listen(); t.after(() => app.close());
+  await app.listen();
   const url = `http://127.0.0.1:${app.server.address().port}`;
   const post = (route, body, headers = {}) => fetch(url + route, { method: 'POST', headers: { 'content-type': 'application/json', 'x-co-agent-token': app.token, ...headers }, body: JSON.stringify(body) });
   assert.equal((await post('/api/concepts', { kind: 'manual' }, { 'x-co-agent-token': 'wrong' })).status, 403);
@@ -255,14 +258,15 @@ test('v08 API auth, 202/409, detail/limit validation and catch-up timer with inj
 });
 
 test('v08 confirmations are exact booleans and failed source/writable checks create no run', async t => {
+  let engine; t.after(() => engine?.close());
   const { config } = await fixture(t); config.concept = { timeoutMs: 1000, thinkDir: path.join(path.dirname(config.dataDir), 'think') };
   let runs = 0;
   const agents = [book(), { ...book('peter'), kind: 'role', writable: true }, { ...book('jadra'), sources: { missing: ['gone.epub'] } }, { ...book('offline'), platforms: { codex: { available: false } } }];
-  const engine = createConcepts(config, () => ({ agents }), { now: () => instant, runner: async () => result,
+  engine = createConcepts(config, () => ({ agents }), { now: () => instant, runner: async () => result,
     conceptVerifier: async () => ({ state: 'unconfirmed' }), perspectiveRunner: async () => { runs++; return { results: [{ agent: 'peter', analysis: 'A' }, { agent: 'jadra', analysis: 'B' }] }; },
     perspectiveVerifier: async () => ({ state: 'violation', parallel: { state: 'not-parallel' }, violations: ['fixture'] }),
   });
-  t.after(() => engine.close()); await engine.recover(); const { conceptId } = await engine.startManual({ kind: 'manual' }); await engine.idle();
+  await engine.recover(); const { conceptId } = await engine.startManual({ kind: 'manual' }); await engine.idle();
   await assert.rejects(engine.startPerspectives(conceptId, { agentIds: ['offline'] }), e => e.status === 409 && e.unavailable.length === 1);
   await assert.rejects(engine.startPerspectives(conceptId, { agentIds: ['peter'], writableConfirmed: 'true' }), e => e.status === 409 && e.writable.length === 1);
   await assert.rejects(engine.startPerspectives(conceptId, { agentIds: ['jadra'], sourcesConfirmed: 'true' }), /原书/);
@@ -272,12 +276,13 @@ test('v08 confirmations are exact booleans and failed source/writable checks cre
 });
 
 test('v08 generation output and structure violations remain visible with exact THINK bytes after restart', async t => {
+  let restarted; t.after(() => restarted?.close());
   const { config, engine } = await setup(t, { conceptVerifier: async () => { throw Error('unreadable rollout'); } });
   const { conceptId } = await engine.startManual({ kind: 'manual' }); await engine.idle();
   const r = await engine.get(conceptId); assert.equal(r.status, 'done'); assert.equal(r.verify.state, 'unconfirmed'); assert.match(r.verify.error, /unreadable/);
   assert.deepEqual(await fs.readFile(r.thinkFile), Buffer.from(markdown));
-  const restarted = createConcepts(config, () => ({ agents: [book()] }), { now: () => instant, runner: async () => { throw Error('must not run'); } });
-  t.after(() => restarted.close()); await restarted.recover(); assert.deepEqual(await restarted.get(conceptId), r);
+  restarted = createConcepts(config, () => ({ agents: [book()] }), { now: () => instant, runner: async () => { throw Error('must not run'); } });
+  await restarted.recover(); assert.deepEqual(await restarted.get(conceptId), r);
   for (const limit of [0, -1, 201, 1.5, NaN, Infinity]) await assert.rejects(restarted.list(limit), { status: 400 });
   for (const id of ['../config', 'not-uuid', randomUUID()]) await assert.rejects(restarted.get(id), { status: 404 });
 });
@@ -347,12 +352,13 @@ test('v08 prefilter never reads old or non-exec rollout bodies and preserves exa
 });
 
 test('v08 real HTTP routes archive and reload an injected process result, rejecting invalid bodies and IDs', async t => {
+  let app; t.after(() => app?.close());
   const { root, config } = await fixture(t); config.concept = { timeoutMs: 1000, thinkDir: path.join(root,'think') };
-  const app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => ({ agents: [book(),book('jadra')] }),
+  app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => ({ agents: [book(),book('jadra')] }),
     conceptOptions: { now: () => instant, randomIntImpl: () => 0, spawnImpl: spawnOutput(result, []),
       perspectiveRunner: async () => ({ results: [{ agent: 'jadra', analysis: '跨视角分析原文' }] }),
     } });
-  await app.listen(); t.after(() => app.close());
+  await app.listen();
   const url = `http://127.0.0.1:${app.server.address().port}`, post = (route, body) => fetch(url + route, {
     method: 'POST', headers: { 'content-type': 'application/json', 'x-co-agent-token': app.token, origin: url }, body: JSON.stringify(body),
   });

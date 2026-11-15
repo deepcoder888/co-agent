@@ -227,15 +227,16 @@ test('v043 #6 turn.failed wins over error events and stderr, and long structured
 
 const goodBlurb = '有关学习方法与知识积累的详细信息。研读这本书可以掌握检验理解与改进练习的方法。';
 test('v043 #7 candidate runner blurb survives suggestion, UI acceptance, persistence and registry; old entries stay valid', async t => {
+  // After hooks run in registration order: close the store before the fixture folder is removed.
+  let store; t.after(() => store?.close());
   const { config } = await fixture(t);
   for (const name of ['NewBook', 'Legacy']) await put(path.join(config.codexAgentsDir, name + '.toml'), `name="${name}"\ndescription="edition-bound book Agent"\ndeveloper_instructions="fixture"`);
   const categories = JSON.parse(await fs.readFile('test/fixtures/catalog/book-categories.json', 'utf8')).categories;
   const legacy = { agent: 'Legacy', title: '旧书', author: '作者', edition: '中文', primary: categories[0], tags: [] };
   await put(path.join(config.dataDir, 'book-additions.json'), JSON.stringify({ version: 1, books: [legacy] }));
   let registry = await buildRegistry(config);
-  const store = createCandidates(config, () => registry, { runner: async () => ({ items: [{ id: 'newbook', title: '新书', author: '作者', edition: '中文', primary: categories[0], blurb: goodBlurb }] }),
+  store = createCandidates(config, () => registry, { runner: async () => ({ items: [{ id: 'newbook', title: '新书', author: '作者', edition: '中文', primary: categories[0], blurb: goodBlurb }] }),
     linkIO: { lstat: async () => { throw Object.assign(Error('fixture no link'), { code: 'ENOENT' }); } }, onChanged: async () => { registry = await buildRegistry(config); } });
-  t.after(() => store.close());
   const { doc } = await appDocument();
   const ui = mountCandidates(doc, { getRegistry: () => registry, notify() {}, onChanged: async () => {}, api: (url, body) => url.endsWith('/suggest') ? store.suggest(body) : store.accept(body) });
   t.after(() => ui.dispose());
@@ -313,6 +314,7 @@ test('v043 #8 narrow inspection measures the card, keeps the book above it, reme
 });
 
 test('v043 #9 all book endpoints decode ids exactly once and malformed escapes are 404, including report ids containing percent escapes', async t => {
+  let app; t.after(() => app?.close());
   const { config, root } = await fixture(t), file = path.join(root, 'source.epub'), directory = path.join(root, 'word'), mappingFile = path.join(root, 'mapping.json');
   await fs.writeFile(file, epubFixture(['<p>正文</p>']));
   // This stored ZIP also contains a minimal Word document for the reports endpoint.
@@ -320,8 +322,8 @@ test('v043 #9 all book endpoints decode ids exactly once and malformed escapes a
   const ids = ['老子', 'two words', 'literal%20id', 'literal%E0%A4%A'];
   await put(mappingFile, JSON.stringify({ agents: Object.fromEntries(ids.map(id => [id, [{ label: 'fixture', prefix: 'Fixture' }]])) }));
   const agents = ids.map(id => ({ id, name: id, kind: 'book', primary: '学习', tags: [], book: { title: '书' }, bookFiles: [{ path: file, ext: 'epub' }] }));
-  const app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => ({ agents, categories: [], sources: [], summary: {} }), reportOptions: { mappingFile, directory } });
-  t.after(() => app.close()); await app.listen();
+  app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => ({ agents, categories: [], sources: [], summary: {} }), reportOptions: { mappingFile, directory } });
+  await app.listen();
   const base = `http://127.0.0.1:${app.server.address().port}`;
   const endpoints = [['books', 'GET', '/0'], ['book-facts', 'GET', ''], ['reading-time', 'POST', ''], ['reading-progress', 'PUT', ''], ['reading-progress', 'GET', ''], ['reports', 'GET', '/0']];
   for (const rawId of [...ids.map(encodeURIComponent), '%E0%A4%A']) for (const [route, method, suffix] of endpoints) {

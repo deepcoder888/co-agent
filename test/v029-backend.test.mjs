@@ -26,14 +26,15 @@ const noStats = () => ({ refresh: async () => {}, snapshot: () => ({ building: f
 const neverRun = async () => { throw new Error('fixture runner'); };
 
 async function harness(t, agents = [], options = {}) {
+  // After hooks run in registration order: close the app or engine before the fixture folder is removed.
+  let app, closed = false;
+  const close = async () => { if (!closed && app) { closed = true; await app.close(); } };
+  t.after(close);
   const { root, config } = await fixture(t), calls = [];
   config.verifyPollMs = 60000;
-  const app = await createApp(config, { conceptAutoDaily: false, statsRefreshMs: 0, statsFactory: noStats,
+  app = await createApp(config, { conceptAutoDaily: false, statsRefreshMs: 0, statsFactory: noStats,
     registryBuilder: async () => ({ agents, summary: {}, sources: [], categories: [] }),
     spawnImpl: fakeSpawner(calls), verifier: async () => ({ overall: 'pending' }), isAlive: () => true, ...options });
-  let closed = false;
-  const close = async () => { if (!closed) { closed = true; await app.close(); } };
-  t.after(close);
   await app.listen();
   const base = `http://127.0.0.1:${app.server.address().port}`;
   const request = async (url, body) => {
@@ -209,12 +210,13 @@ test('v029 3.5 zero interval disables periodic stats refresh', async t => {
 const activeRecord = (at, extra = {}) => ({ conceptId: randomUUID(), kind: 'manual', day: '2026-10-21', status: 'running',
   startedAt: at, createdAt: at, pid: 12345, agent: { id: 'walvo' }, perspectives: [], ...extra });
 async function conceptEngine(t, records, options = {}) {
+  let engine; t.after(() => engine?.close());
   const { config } = await fixture(t); config.concept.timeoutMs = 1000;
   for (const record of records) await put(path.join(config.dataDir, 'concepts', `${record.conceptId}.json`), JSON.stringify(record));
-  const engine = createConcepts(config, () => ({ agents: [member(), member('jadra')] }), {
+  engine = createConcepts(config, () => ({ agents: [member(), member('jadra')] }), {
     now: () => instant, isAlive: () => true, runner: neverRun, perspectiveRunner: neverRun, termRunner: neverRun,
     killTree: () => assert.fail('reconciliation must not kill processes'), ...options });
-  t.after(() => engine.close()); await engine.recover();
+  await engine.recover();
   return { config, engine };
 }
 test('v029 3.6 stale concept with live PID fails and releases the generation lock', async t => {
@@ -261,20 +263,21 @@ test('v029 3.6 stale queued term work ages out without being launched', async t 
 });
 test('v029 3.6 a local controller protects an ongoing generation even after the age threshold', async t => {
   let at = instant; const started = deferred(), release = deferred();
-  const { engine } = await conceptEngine(t, [], { now: () => at, runner: async () => { started.resolve(); await release.promise; throw Error('fixture finish'); } });
   t.after(() => release.resolve());
+  const { engine } = await conceptEngine(t, [], { now: () => at, runner: async () => { started.resolve(); await release.promise; throw Error('fixture finish'); } });
   const { conceptId } = await engine.startManual({ kind: 'manual' }); await started.promise;
   at = new Date(instant.getTime() + 1000000); await engine.recover();
   assert.equal((await engine.get(conceptId)).status, 'running'); release.resolve(); await engine.idle();
 });
 for (const [age, isAlive, expected] of [[601001, true, '超时未结束（可能已中断）'], [601000, true, null], [601001, false, '进程中断']]) {
   test(`v029 3.6 seminar reconciliation age=${age}, alive=${isAlive}`, async t => {
+    let engine; t.after(() => engine?.close());
     const { config } = await fixture(t); config.seminar.timeoutMs = 1000;
     const record = { seminarId: randomUUID(), status: 'running', createdAt: new Date(instant - age).toISOString(), startedAt: null, pid: 12345 };
     await put(path.join(config.dataDir, 'seminars', `${record.seminarId}.json`), JSON.stringify(record));
-    const engine = createSeminars(config, () => ({ agents: [member(), member('jadra'), member('calo')] }), {
+    engine = createSeminars(config, () => ({ agents: [member(), member('jadra'), member('calo')] }), {
       now: () => instant, isAlive: () => isAlive, runner: neverRun, killTree: () => assert.fail('must not kill a recovered PID') });
-    t.after(() => engine.close()); await engine.recover(); const result = await engine.get(record.seminarId);
+    await engine.recover(); const result = await engine.get(record.seminarId);
     assert.equal(result.status, expected ? 'failed' : 'running');
     if (expected) {
       assert.equal(result.error, expected); assert.equal(result.pid, null); assert.equal(result.finishedAt, instant.toISOString());

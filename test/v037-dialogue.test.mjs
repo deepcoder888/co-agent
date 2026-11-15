@@ -35,10 +35,12 @@ function record(day = '2026-10-23', overrides = {}) {
 }
 const seed = async (config, records) => { for (const r of records) await put(path.join(config.dataDir, 'concepts', r.conceptId + '.json'), JSON.stringify(r)); };
 async function setup(t, records = [], options = {}) {
+  // After hooks run in registration order: close engines and apps before the fixture folder is removed.
+  let engine; t.after(() => engine?.close());
   const h = await fixture(t); await seed(h.config, records);
-  const engine = createConcepts(h.config, registry, { now: () => new Date(at), randomIntImpl: () => 0, runner: async r => output('新概念', r.respondsTo ? validResponse() : { stance: '无', text: '' }),
+  engine = createConcepts(h.config, registry, { now: () => new Date(at), randomIntImpl: () => 0, runner: async r => output('新概念', r.respondsTo ? validResponse() : { stance: '无', text: '' }),
     conceptVerifier: async () => ({ state: 'unconfirmed' }), ...options });
-  t.after(() => engine.close()); await engine.recover(); return { ...h, engine };
+  await engine.recover(); return { ...h, engine };
 }
 function spawner(values, calls) {
   return (exe, args, options) => {
@@ -79,15 +81,15 @@ test('v037 X14 selection compares UTC+8 day fields even when UTC dates disagree'
 });
 
 test('v037 X3 retries reuse the first persisted snapshot including null after restart', async t => {
-  const a = record(); let attempt = 0;
+  const a = record(); let attempt = 0, second; t.after(() => second?.close());
   const h = await setup(t, [a], { dailyRetryDelayMs: 0, runner: async () => { if (++attempt === 1) throw Error('fixture first failure'); return output('新概念', validResponse()); } });
   const first = await h.engine.ensureDaily(); assert.equal(first.status, 'failed'); assert.equal(first.respondsTo.conceptId, a.conceptId);
   await h.engine.close();
   // A later imported record must not change the same day's target.
   const newer = record('2026-10-23', { sequence: 20, agent: identity('three') }); await seed(h.config, [newer]);
-  const second = createConcepts(h.config, registry, { now: () => new Date(at), randomIntImpl: () => 0, dailyRetryDelayMs: 0,
+  second = createConcepts(h.config, registry, { now: () => new Date(at), randomIntImpl: () => 0, dailyRetryDelayMs: 0,
     runner: async () => output('再试概念', validResponse()), conceptVerifier: async () => ({ state: 'unconfirmed' }) });
-  t.after(() => second.close()); await second.recover(); const retried = await second.ensureDaily();
+  await second.recover(); const retried = await second.ensureDaily();
   assert.equal(retried.status, 'done'); assert.equal(retried.attempt, 2); assert.deepEqual(retried.respondsTo, first.respondsTo);
   for (const respondsTo of [null, undefined]) assert.equal(responseTarget([a, record('2026-10-24', { status: 'failed', respondsTo })], 'daily', '2026-10-24', 'two'), null);
   const disk = JSON.parse(await fs.readFile(path.join(h.config.dataDir, 'concepts', retried.conceptId + '.json'), 'utf8'));
@@ -95,12 +97,13 @@ test('v037 X3 retries reuse the first persisted snapshot including null after re
 });
 
 test('v037 X4 X5 engine manual runs and same-book daily runs persist null targets', async t => {
+  let single; t.after(() => single?.close());
   const a = record(), h = await setup(t, [a]); const manual = await h.engine.startManual({ kind: 'manual' }); await h.engine.idle();
   const saved = await h.engine.get(manual.conceptId); assert.equal(saved.respondsTo, null); assert.equal(saved.result.response, null); assert.equal(saved.responseError, null);
   assert.equal((await h.engine.thread()).items.some(r => r.conceptId === manual.conceptId), false);
   const one = await setup(t, [a]); await one.engine.close();
-  const single = createConcepts(one.config, () => ({ agents: [agents[0]] }), { now: () => new Date(at), runner: async () => output(), conceptVerifier: async () => ({ state: 'unconfirmed' }) });
-  t.after(() => single.close()); await single.recover(); assert.equal((await single.ensureDaily()).respondsTo, null);
+  single = createConcepts(one.config, () => ({ agents: [agents[0]] }), { now: () => new Date(at), runner: async () => output(), conceptVerifier: async () => ({ state: 'unconfirmed' }) });
+  await single.recover(); assert.equal((await single.ensureDaily()).respondsTo, null);
 });
 
 test('v037 D85 prompt starts child task with snapshot and schema requires response in both modes', () => {
@@ -149,10 +152,11 @@ test('v037 D88 X10 THINK appends response after unchanged eleven sections and wr
 test('v037 X8 recovery skips corrupt target and keeps dependent snapshot and original bytes', async t => {
   const a = record(), target = responseTarget([a], 'daily', '2026-10-24', 'two');
   const b = record('2026-10-24', { agent: identity('two'), respondsTo: target, result: output('新概念', validResponse()) });
+  let engine; t.after(() => engine?.close());
   const h = await fixture(t); await seed(h.config, [b]); const file = path.join(h.config.dataDir, 'concepts', a.conceptId + '.json'); await put(file, '{corrupt');
   const malformed = [record(undefined, { day: undefined }), record(undefined, { day: 123 }), record(undefined, { agent: null })];
   await seed(h.config, malformed);
-  const engine = createConcepts(h.config, registry); t.after(() => engine.close()); await engine.recover();
+  engine = createConcepts(h.config, registry); await engine.recover();
   await assert.rejects(engine.get(a.conceptId), { status: 404 }); assert.deepEqual((await engine.get(b.conceptId)).respondsTo, target);
   for (const r of malformed) await assert.rejects(engine.get(r.conceptId), { status: 404 });
   assert.deepEqual((await engine.thread()).items.map(r => r.conceptId), [b.conceptId]);
@@ -162,10 +166,11 @@ test('v037 X8 recovery skips corrupt target and keeps dependent snapshot and ori
 test('v037 X11 X12 refit preserves response and THINK; responses create no map mentions', async t => {
   const a = record(), target = responseTarget([a], 'daily', '2026-10-24', 'two');
   const b = record('2026-10-24', { agent: identity('two'), respondsTo: target, responseError: null, result: output('会话目标罗盘', validResponse()) });
+  let engine; t.after(() => engine?.close());
   b.result.term.zh = '目标罗盘'; const h = await fixture(t), thinkFile = path.join(h.root, 'existing-think.txt'); b.thinkFile = thinkFile;
   await put(thinkFile, thinkMarkdown(b)); await seed(h.config, [a, b]); const before = await fs.readFile(thinkFile); let calls = 0;
-  const engine = createConcepts(h.config, registry, { termRunner: async () => { calls++; return { term: { zh: '会话目标罗盘', en: 'Compass', fr: 'Boussole' } }; } });
-  t.after(() => engine.close()); await engine.recover(); await engine.idle(); const saved = await engine.get(b.conceptId);
+  engine = createConcepts(h.config, registry, { termRunner: async () => { calls++; return { term: { zh: '会话目标罗盘', en: 'Compass', fr: 'Boussole' } }; } });
+  await engine.recover(); await engine.idle(); const saved = await engine.get(b.conceptId);
   assert.equal(calls, 1); assert.equal(saved.termBackfill.reason, 'refit'); assert.deepEqual(saved.result.response, b.result.response); assert.deepEqual(saved.respondsTo, target);
   assert.equal(saved.responseError, null); assert.equal(saved.result.markdown, b.result.markdown); assert.deepEqual(await fs.readFile(thinkFile), before);
   const withResponse = deriveConcepts([a, saved], []), without = structuredClone(saved); delete without.result.response; delete without.respondsTo;
@@ -173,11 +178,12 @@ test('v037 X11 X12 refit preserves response and THINK; responses create no map m
 });
 
 test('v037 X9 X13 HTTP thread defaults limits daily dedup failure gaps and legacy summaries', async t => {
+  let app; t.after(() => app?.close());
   const h = await fixture(t), dates = Array.from({ length: 65 }, (_, i) => new Date(Date.parse('2026-10-23') - i * 86400000).toISOString().slice(0, 10));
   const records = dates.map(day => record(day)), failed = record('2026-10-24', { status: 'failed', result: null });
   const retry = record('2026-10-23', { status: 'failed', result: null, createdAt: at, sequence: 99 });
   const manual = record('2026-10-25', { kind: 'manual' }); await seed(h.config, [...records, failed, retry, manual]);
-  const app = await createApp(h.config, { conceptAutoDaily: false, registryBuilder: async () => registry() }); t.after(() => app.close()); await app.listen();
+  app = await createApp(h.config, { conceptAutoDaily: false, registryBuilder: async () => registry() }); await app.listen();
   const base = `http://127.0.0.1:${app.server.address().port}`;
   for (const [query, count] of [['', 30], ['?limit=1', 1], ['?limit=60', 60]]) {
     const response = await fetch(base + '/api/concepts/thread' + query), data = await response.json(); assert.equal(response.status, 200); assert.equal(data.items.length, count);
@@ -198,12 +204,13 @@ async function activate(button, doc) {
   assert.notEqual(button.getAttribute('tabindex'), '-1'); button.focus(); assert.equal(doc.activeElement, button); await button.fire('click');
 }
 for (const ui of ['threepane', 'bento', 'editorial', 'shelf']) test(`v037 E2E X6 X8 X9 X15 ${ui} HTTP mountApp fake Codex response, thread, home and omitted response`, async t => {
+  let front, app; t.after(async () => { front?.dispose(); await app?.close(); });
   const h = await fixture(t), a = record(), old = record('2026-10-21', { agent: identity('three') }), gap = record('2026-10-22', { status: 'failed', agent: identity('four'), result: null });
   await seed(h.config, [old, gap, a]); let now = new Date(at); const calls = [];
-  let front; const app = await createApp(h.config, { conceptAutoDaily: false, registryBuilder: async () => registry(), conceptOptions: {
+  app = await createApp(h.config, { conceptAutoDaily: false, registryBuilder: async () => registry(), conceptOptions: {
     now: () => now, randomIntImpl: () => 0, spawnImpl: spawner([output('新概念', validResponse()), output('后日概念', { stance: '无', text: '' })], calls),
     conceptVerifier: async () => ({ state: 'unconfirmed' }),
-  } }); t.after(async () => { front?.dispose(); await app.close(); }); await app.listen(); const base = `http://127.0.0.1:${app.server.address().port}`;
+  } }); await app.listen(); const base = `http://127.0.0.1:${app.server.address().port}`;
   const done = await app.concepts.ensureDaily(); assert.equal(done.status, 'done'); assert.equal(done.respondsTo.conceptId, a.conceptId);
   assert.ok(calls[0].prompt.includes(a.result.concept)); assert.ok(calls[0].prompt.includes(a.agent.bookLabel)); assert.equal(calls[0].options.shell, false); assert.equal(calls[0].options.windowsHide, true);
   const schemaFile = calls[0].args[calls[0].args.indexOf('--output-schema') + 1]; assert.ok(JSON.parse(await fs.readFile(schemaFile)).required.includes('response'));

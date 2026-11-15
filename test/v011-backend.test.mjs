@@ -23,10 +23,12 @@ function output(names = ['ONE','TWO','THREE']) {
 }
 const record = () => ({ seminarId: randomUUID(), createdAt: at, input: '为什么人很难改变习惯？', mode: 'auto', requestedAgents: null, catalog: agents });
 async function setup(t, options = {}, list = agents) {
+  // After hooks run in registration order: close the engine (and any app) before the fixture folder is removed.
+  let engine; t.after(() => engine?.close());
   const ctx = await fixture(t); ctx.config.seminar = { timeoutMs: 1000, thinkDir: path.join(ctx.root, '研讨') };
   const { createSeminars } = await import('../src/seminars/index.mjs');
-  const engine = createSeminars(ctx.config, () => ({ agents: list }), { now: () => new Date(at), runner: async () => output(), verifier: async () => ({ state: 'unconfirmed' }), ...options });
-  t.after(() => engine.close()); await engine.recover(); return { ...ctx, engine };
+  engine = createSeminars(ctx.config, () => ({ agents: list }), { now: () => new Date(at), runner: async () => output(), verifier: async () => ({ state: 'unconfirmed' }), ...options });
+  await engine.recover(); return { ...ctx, engine };
 }
 function fakeOutput(value, calls = [], { hang = false, malformed = false, code = 0 } = {}) {
   return (exe, args, options) => {
@@ -241,9 +243,10 @@ test('v011 config seminar defaults, nested merge, validation and protected direc
 });
 
 test('v011 real HTTP seminar routes are token/Origin protected and expose 202,409,list,detail', async t => {
+  let app; t.after(()=>app?.close());
   const { root, config } = await fixture(t); config.seminar.thinkDir = path.join(root,'研讨'); const releases=[];
-  const app = await createApp(config, { conceptAutoDaily:false, registryBuilder:async()=>({agents}), seminarOptions:{ runner:()=>new Promise(resolve=>{ releases.push(resolve); }), verifier:async()=>({state:'unconfirmed'}) } });
-  t.after(()=>app.close()); await app.listen(); const base=`http://127.0.0.1:${app.server.address().port}`;
+  app = await createApp(config, { conceptAutoDaily:false, registryBuilder:async()=>({agents}), seminarOptions:{ runner:()=>new Promise(resolve=>{ releases.push(resolve); }), verifier:async()=>({state:'unconfirmed'}) } });
+  await app.listen(); const base=`http://127.0.0.1:${app.server.address().port}`;
   const post=(body,headers={})=>fetch(base+'/api/seminars',{method:'POST',headers:{'Content-Type':'application/json','X-Co-Agent-Token':app.token,...headers},body:JSON.stringify(body)});
   assert.equal((await post({input:'x'},{'X-Co-Agent-Token':''})).status,403); assert.equal((await post({input:'x'},{Origin:'https://evil.test'})).status,403);
   assert.equal((await post({input:''})).status,400); assert.equal((await fetch(base+'/api/seminars?limit=0')).status,400);

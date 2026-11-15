@@ -241,12 +241,13 @@ test('U3 migration validates copied config placement before writing new data dir
 
 // v0.51: the list lives in catalogDir; a new install has none, so missing or empty means no agent needs the format.
 test('U2 a missing or empty contract means no task format', async t => {
+  // After hooks run in registration order: close the apps before the fixture folder is removed.
+  const apps = []; t.after(async () => { for (const app of apps) await app.close(); });
   const { root, config } = await fixture(t), file = path.join(root, 'task-contracts.json');
   for (const contents of [null, '{"version":1,"octopus":[]}']) {
     if (contents !== null) await put(file, contents);
     const started = { ...config, taskContractsFile: file };
-    const app = await createApp(started, { registryBuilder: async () => ({ agents: [] }), conceptAutoDaily: false });
-    t.after(() => app.close());
+    apps.push(await createApp(started, { registryBuilder: async () => ({ agents: [] }), conceptAutoDaily: false }));
     assert.deepEqual(started.taskContracts, { version: 1, octopus: [] });
   }
 });

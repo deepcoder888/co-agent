@@ -12,9 +12,11 @@ const book = id => ({ id, name: id.toUpperCase(), kind: 'book', primary: '学习
 const registry = () => ({ agents: ['one', 'two', 'three'].map(book), categories: ['学习'], summary: { roles: 0, books: 3 }, sources: [], outOfScope: [], conflicts: [], missingFromDisk: [] });
 
 test('v0483 顾问团 page: 顾问团记录 and ＋ 新建顾问团 in the toolbar; archived councils are listed and marked', async t => {
-  const { config } = await fixture(t); let front;
-  const app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => registry() });
-  t.after(async () => { front?.dispose(); await app.close(); }); await app.listen();
+  // After hooks run in registration order: close the app before the fixture folder is removed.
+  let front, app; t.after(async () => { front?.dispose(); await app?.close(); });
+  const { config } = await fixture(t);
+  app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => registry() });
+  await app.listen();
   const reading = await app.councils.create({ name: '读书顾问团', goal: '每天读书半小时', memberIds: ['one', 'two'] });
   const old = await app.councils.create({ name: '旧的顾问团', goal: '早睡', memberIds: ['two', 'three'] });
   await app.councils.update(old.councilId, { archived: true });

@@ -178,15 +178,18 @@ for (const [offset, matches] of [[-300001, false], [-300000, true], [600000, tru
 }
 
 async function conceptEngine(t, { agents = [book()], ...options } = {}) {
+  // After hooks run in registration order: close the engine before the fixture folder is removed.
+  let engine; t.after(() => engine?.close());
   const { config } = await fixture(t);
-  const engine = createConcepts(config, () => ({ agents }), { now: () => instant, randomIntImpl: () => 0,
+  engine = createConcepts(config, () => ({ agents }), { now: () => instant, randomIntImpl: () => 0,
     runner: async () => { throw Error('fixture failure'); }, thinkWriter: async () => assert.fail('unexpected THINK write'),
     termRunner: async () => assert.fail('unexpected term runner'), ...options });
-  t.after(() => engine.close()); await engine.recover(); return { config, engine };
+  await engine.recover(); return { config, engine };
 }
 test('v030 3.3 daily cooldown, restart, exact boundary, deduplicated wait log and three-attempt cap', async t => {
   let at = instant, attempts = 0;
   const options = { now: () => at, runner: async () => { attempts++; throw Error('fixture failure'); } };
+  let restarted; t.after(() => restarted?.close());
   const { config, engine } = await conceptEngine(t, options);
   assert.equal((await engine.ensureDaily()).attempt, 1); await engine.idle();
   at = new Date(+instant + 30 * 60000 - 1);
@@ -195,7 +198,7 @@ test('v030 3.3 daily cooldown, restart, exact boundary, deduplicated wait log an
   const logFile = path.join(config.dataDir, 'logs', 'concepts.log');
   assert.equal((await fs.readFile(logFile, 'utf8')).match(/daily retry-wait/g).length, 1); assert.equal(attempts, 1);
   await engine.close();
-  const restarted = createConcepts(config, () => ({ agents: [book()] }), options); t.after(() => restarted.close());
+  restarted = createConcepts(config, () => ({ agents: [book()] }), options);
   await restarted.recover(); assert.deepEqual(await restarted.ensureDaily(), wait); assert.equal(attempts, 1);
   at = new Date(+instant + 30 * 60000);
   assert.equal((await restarted.ensureDaily()).attempt, 2); await restarted.idle();

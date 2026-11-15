@@ -91,13 +91,15 @@ test('v07 settings acceptance: settings footer version is injected from package 
   assert.equal(ctx.calls.length,0);
 });
 
-async function running(t, config) {
-  let app;
-  // after hooks run in registration order: close before fixture directory cleanup.
-  t.after(()=>app?.close());
+const started=new WeakMap(); // test context -> apps that running() started in it
+async function running(t, config, prepare) {
+  // after hooks run in registration order: the first call in a test registers one hook, before fixture() registers
+  // the folder removal, that closes every app the test starts (a restart included).
+  if(!started.has(t)){const apps=[];started.set(t,apps);t.after(async()=>{for(const app of apps)await app.close();});}
   config ||= (await fixture(t)).config;
+  await prepare?.(config);
   const calls=[];
-  app=await createApp(config,{spawnImpl:fakeSpawner(calls)});
+  const app=await createApp(config,{spawnImpl:fakeSpawner(calls)});started.get(t).push(app);
   await app.listen();
   const base=`http://127.0.0.1:${app.server.address().port}`;
   const send=(body,headers={})=>fetch(`${base}/api/settings`,{method:'PUT',headers:{'Content-Type':'application/json','X-Co-Agent-Token':app.token,...headers},body:JSON.stringify(body)});
@@ -122,7 +124,7 @@ test('v07 settings settings API defaults/logs; preserves recommendation config; 
   await assert.rejects(fs.access(path.join(config.dataDir,'settings.json')));
 });
 test('v07 settings valid PUT is durable and injects first-paint theme on both index routes', async t => {
-  const {config}=await fixture(t), ctx=await running(t,config);
+  const ctx=await running(t), {config}=ctx;
   for(const ui of themes) {
     const response=await ctx.send({ui});assert.equal(response.status,200);assert.equal((await response.json()).ui,ui);
     assert.deepEqual(JSON.parse(await fs.readFile(path.join(config.dataDir,'settings.json'),'utf8')),{version:1,ui,bookText:100}); // v0.42 description size
@@ -136,8 +138,8 @@ test('v07 settings valid PUT is durable and injects first-paint theme on both in
 });
 for(const contents of ['{', '{"version":2,"ui":"shelf"}', '{"version":1,"ui":"<bad>"}', 'null'])
   test(`v07 settings invalid persisted settings fall back without rewriting: ${contents}`,async t=>{
-    const {config}=await fixture(t);const file=path.join(config.dataDir,'settings.json');await put(file,contents);
-    const ctx=await running(t,config);assert.equal((await (await fetch(ctx.base+'/api/settings')).json()).ui,'shelf');
+    const ctx=await running(t,null,config=>put(path.join(config.dataDir,'settings.json'),contents));
+    const {config}=ctx,file=path.join(config.dataDir,'settings.json');assert.equal((await (await fetch(ctx.base+'/api/settings')).json()).ui,'shelf');
     assert.equal(await fs.readFile(file,'utf8'),contents);assert.match(await fs.readFile(path.join(config.dataDir,'logs/server.log'),'utf8'),/设置.*shelf/);
   });
 test('v07 settings failed atomic save keeps in-memory theme and returns error',async t=>{

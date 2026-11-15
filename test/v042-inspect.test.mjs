@@ -101,8 +101,10 @@ test('v042 books service: facts add up the original books, are cached, and readi
 });
 
 test('v042 HTTP: facts, token-guarded reading time, and the description size in settings and on the page', async t => {
+  // After hooks run in registration order: close the app before the fixture folder is removed.
+  let app; t.after(() => app?.close());
   const { config, registry } = await library(t);
-  const app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => registry, bookOptions: { systemIdle: () => 0 } }); await app.listen(); t.after(() => app.close());
+  app = await createApp(config, { conceptAutoDaily: false, registryBuilder: async () => registry, bookOptions: { systemIdle: () => 0 } }); await app.listen();
   const base = `http://127.0.0.1:${app.server.address().port}`, json = { 'Content-Type': 'application/json' };
   assert.equal((await (await fetch(base + '/api/book-facts/set')).json()).pages, 264);
   assert.equal((await fetch(base + '/api/book-facts/nobody')).status, 404);
