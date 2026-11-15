@@ -112,7 +112,7 @@ test('v042 HTTP: facts, token-guarded reading time, and the description size in 
   const put = body => fetch(base + '/api/settings', { method: 'PUT', headers: { ...json, 'X-Co-Agent-Token': app.token }, body: JSON.stringify(body) });
   assert.equal((await (await fetch(base + '/api/settings')).json()).bookText, 100);
   const saved = await (await put({ bookText: 130 })).json();
-  assert.equal(saved.bookText, 130); assert.equal(saved.ui, 'threepane', 'the size alone leaves the layout');
+  assert.equal(saved.bookText, 130); assert.equal(saved.ui, 'shelf', 'the size alone leaves the layout');
   assert.equal((await (await put({ ui: 'shelf' })).json()).bookText, 130, 'the layout alone leaves the size');
   for (const bad of [{ bookText: 75 }, { bookText: 125 }, { bookText: 170 }, { bookText: '130' }, {}]) assert.equal((await put(bad)).status, 400, JSON.stringify(bad));
   assert.match(await (await fetch(base + '/')).text(), /<html lang="zh-CN" data-ui="shelf" data-book-text="130">/);

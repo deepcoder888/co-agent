@@ -54,12 +54,15 @@ test('v0531 the book file, note, engine and confirmation are checked before anyt
 });
 
 test('v0531 HTTP: POST /api/book-maker opens the terminal session with the book as the first task', async t => {
+  // After hooks run in registration order: close the app before the fixture folder is removed. The session check
+  // still writes into that folder, and removing it first once left fs.rm waiting forever (v0.53).
+  let app; t.after(() => app?.close());
   const { root, config } = await fixture(t);
   await put(path.join(config.codexAgentsDir, 'a-deepbooker.toml'), 'name="a-deepbooker"\ndescription="Creates a book Agent and complete Deepbooker reports"\nsandbox_mode="workspace-write"');
   const book = path.join(root, 'book.pdf'); await put(book, '%PDF');
   const calls = [];
-  const app = await createApp(config, { conceptAutoDaily: false, spawnImpl: fakeSpawner(calls) });
-  await app.listen(); t.after(() => app.close());
+  app = await createApp(config, { conceptAutoDaily: false, spawnImpl: fakeSpawner(calls) });
+  await app.listen();
   const base = `http://127.0.0.1:${app.server.address().port}`;
   const post = (body, token = app.token) => fetch(base + '/api/book-maker', { method: 'POST', headers: { 'content-type': 'application/json', 'x-co-agent-token': token }, body: JSON.stringify(body) });
   assert.equal((await post({ file: book, writableConfirmed: true }, 'f'.repeat(64))).status, 403);

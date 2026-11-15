@@ -63,7 +63,7 @@ test('L1 secure window options, runtime directories, log output, ready-to-show a
   await controller.ready;
   const win = h.windows[0]; assert.ok(win, JSON.stringify(h.calls));
   assert.deepEqual(win.options, { width: 1280, height: 860, minWidth: 960, minHeight: 640,
-    title: 'CO-AGENT', icon: path.resolve('assets/brand/co-agent.ico'), backgroundColor: '#ffffff', show: false,
+    title: 'CO-AGENT', icon: path.resolve('assets/brand/co-agent.ico'), backgroundColor: '#2b2118', show: false,
     webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true, plugins: true } });
   assert.equal(win.url, 'http://127.0.0.1:51234/');
   assert.ok(h.calls.some(c => Array.isArray(c) && c[0] === 'id' && c[1] === 'com.asterhouse.coagent'));

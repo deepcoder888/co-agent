@@ -74,7 +74,7 @@ test('v07 settings acceptance: settings footer version is injected from package 
   const ctx=await running(t);
   const manifest=JSON.parse(await fs.readFile('package.json','utf8'));
   const lock=JSON.parse(await fs.readFile('package-lock.json','utf8'));
-  assert.equal(manifest.version,'0.53.10');
+  assert.equal(manifest.version,'0.53.11');
   assert.equal(lock.version,manifest.version);assert.equal(lock.packages[''].version,manifest.version);
   const source=await fs.readFile('public/index.html','utf8');assert.match(source,/<!-- CO_AGENT_VERSION -->/);
   for(const entry of await fs.readdir('public',{recursive:true,withFileTypes:true})) {
@@ -85,7 +85,7 @@ test('v07 settings acceptance: settings footer version is injected from package 
     const response=await fetch(ctx.base+route);assert.equal(response.status,200);
     const html=await response.text();
     assert.ok(html.includes(`<footer>CO-AGENT v${manifest.version} ·`));
-    assert.doesNotMatch(html,/<!-- CO_AGENT_VERSION -->/);assert.ok(html.includes(ctx.app.token));assert.match(html,/data-ui="threepane"/);
+    assert.doesNotMatch(html,/<!-- CO_AGENT_VERSION -->/);assert.ok(html.includes(ctx.app.token));assert.match(html,/data-ui="shelf"/);
   }
   assert.equal((await (await fetch(ctx.base+'/api/health')).json()).version,manifest.version);
   assert.equal(ctx.calls.length,0);
@@ -106,9 +106,9 @@ async function running(t, config) {
 test('v07 settings settings API defaults/logs; preserves recommendation config; protects PUT and validates bodies', async t => {
   const ctx=await running(t), {base,send,config,calls}=ctx;
   const value=await (await fetch(`${base}/api/settings`)).json();
-  assert.equal(value.ui,'threepane'); assert.deepEqual(value.uiOptions.map(o=>o.id),themes);
+  assert.equal(value.ui,'shelf'); assert.deepEqual(value.uiOptions.map(o=>o.id),themes);
   assert.deepEqual(value.recommend,{claude:config.recommend.claude,codex:config.recommend.codex});
-  assert.match(await fs.readFile(path.join(config.dataDir,'logs/server.log'),'utf8'),/设置.*threepane/);
+  assert.match(await fs.readFile(path.join(config.dataDir,'logs/server.log'),'utf8'),/设置.*shelf/);
   assert.equal((await send({ui:'shelf'},{'X-Co-Agent-Token':''})).status,403);
   assert.equal((await send({ui:'shelf'},{Origin:'https://evil.test'})).status,403);
   const badHost = await new Promise((resolve,reject)=>{
@@ -137,8 +137,8 @@ test('v07 settings valid PUT is durable and injects first-paint theme on both in
 for(const contents of ['{', '{"version":2,"ui":"shelf"}', '{"version":1,"ui":"<bad>"}', 'null'])
   test(`v07 settings invalid persisted settings fall back without rewriting: ${contents}`,async t=>{
     const {config}=await fixture(t);const file=path.join(config.dataDir,'settings.json');await put(file,contents);
-    const ctx=await running(t,config);assert.equal((await (await fetch(ctx.base+'/api/settings')).json()).ui,'threepane');
-    assert.equal(await fs.readFile(file,'utf8'),contents);assert.match(await fs.readFile(path.join(config.dataDir,'logs/server.log'),'utf8'),/设置.*threepane/);
+    const ctx=await running(t,config);assert.equal((await (await fetch(ctx.base+'/api/settings')).json()).ui,'shelf');
+    assert.equal(await fs.readFile(file,'utf8'),contents);assert.match(await fs.readFile(path.join(config.dataDir,'logs/server.log'),'utf8'),/设置.*shelf/);
   });
 test('v07 settings failed atomic save keeps in-memory theme and returns error',async t=>{
   const ctx=await running(t);await ctx.send({ui:'editorial'});
@@ -225,7 +225,7 @@ test('v07 settings saved initial theme is selected; closing during a failed save
   assert.equal(doc.activeElement,ids['settings-open']);assert.equal(doc.documentElement.attrs['data-ui'],'shelf');
 });
 
-for(const [ui,color] of [['threepane','#ffffff'],['bento','#f3efe8'],['editorial','#f7f4ee'],['shelf','#2b2118'],['bad','#ffffff'],['corrupt','#ffffff'],['missing','#ffffff']])
+for(const [ui,color] of [['threepane','#ffffff'],['bento','#f3efe8'],['editorial','#f7f4ee'],['shelf','#2b2118'],['bad','#2b2118'],['corrupt','#2b2118'],['missing','#2b2118']])
   test(`v07 settings Electron reads ${ui} before constructing window (substitute only)`,async t=>{
     const {config}=await fixture(t);if(ui!=='missing')await put(path.join(config.dataDir,'settings.json'),ui==='corrupt'?'{':JSON.stringify({version:1,ui}));
     const app=new EventEmitter();Object.assign(app,{setPath(){},requestSingleInstanceLock:()=>true,setAppUserModelId(){},commandLine:{appendSwitch(){}},whenReady:async()=>{},quit(){}});

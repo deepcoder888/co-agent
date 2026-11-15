@@ -21,8 +21,8 @@ export async function readSettings(dataDir, log = async () => {}) {
     if (value?.version !== 1 || !validUi(value.ui)) throw new Error('版本或主题无效');
     return { version: 1, ui: value.ui, bookText };
   } catch (error) {
-    await log(`设置读取回退：${error.code || error.message}，使用 threepane`);
-    return { version: 1, ui: 'threepane', bookText: BOOK_TEXT.default };
+    await log(`设置读取回退：${error.code || error.message}，使用 shelf`);
+    return { version: 1, ui: 'shelf', bookText: BOOK_TEXT.default }; // the default layout (v0.53: 书房)
   }
 }
 
