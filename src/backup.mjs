@@ -7,6 +7,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { killProcessTree } from './concepts/runner.mjs';
 
 // Electron keeps its browser profile in the data dir too (app.setPath userData/sessionData). Those are caches and the
 // window's own state, rebuilt on start, not the user's records; logs and crash dumps are diagnostics. Anything else,
@@ -73,14 +74,26 @@ export function zipFiles(files) {
 
 // `git bundle create --all` holds every branch, tag and commit; it is restored with `git clone`. git is a console
 // program, so windowsHide keeps its window from appearing.
-export function createGitBundle(repo, file, { spawnImpl = spawn, timeoutMs = 120000 } = {}) {
+export function createGitBundle(repo, file, { spawnImpl = spawn, timeoutMs = 120000, killTree = killProcessTree } = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawnImpl('git', ['-C', repo, 'bundle', 'create', file, '--all'], { shell: false, windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
-    let stderr = '';
-    const timer = setTimeout(() => { child.kill(); reject(new Error('git bundle 超时')); }, timeoutMs);
+    const child = spawnImpl('git', ['-C', repo, 'bundle', 'create', file, '--all'], { shell: false, windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'],
+      ...(process.platform !== 'win32' ? { detached: true } : {}) });
+    let stderr = '', settled = false, stopping = false;
+    const finish = error => { if (settled) return; settled = true; clearTimeout(timer); error ? reject(error) : resolve(); };
+    // v0.53: Git for Windows' git.exe on PATH starts the real git as a child, so a timeout ends the whole tree and settles
+    // only then; otherwise the real git keeps writing the temporary bundle that createBackup is about to remove.
+    const timer = setTimeout(async () => {
+      stopping = true;
+      let error = new Error('git bundle 超时');
+      try {
+        if (process.env.NODE_TEST_CONTEXT && killTree === killProcessTree) throw new Error('测试必须注入进程树终止替身');
+        await killTree(child);
+      } catch (e) { error = new Error(`${error.message}；终止进程树失败：${e.message}`); }
+      finish(error);
+    }, timeoutMs);
     child.stderr?.on('data', chunk => { if (stderr.length < 4000) stderr += chunk; });
-    child.once('error', error => { clearTimeout(timer); reject(new Error(error.code === 'ENOENT' ? '找不到 git' : error.message)); });
-    child.once('exit', code => { clearTimeout(timer); code === 0 ? resolve() : reject(new Error(stderr.trim().split(/\r?\n/).pop() || `git 退出码 ${code}`)); });
+    child.once('error', error => { if (!stopping) finish(new Error(error.code === 'ENOENT' ? '找不到 git' : error.message)); });
+    child.once('exit', code => { if (!stopping) finish(code === 0 ? null : new Error(stderr.trim().split(/\r?\n/).pop() || `git 退出码 ${code}`)); });
   });
 }
 
@@ -97,7 +110,7 @@ const restoreNote = ({ at, version, dataDir, codeDir, code }) => [
   ...(code === true ? ['恢复代码：', `  git clone "CO-AGENT.bundle" "${codeDir}"`, '  然后在该目录运行 npm ci（安装 electron 和 @electron/packager，需要联网），',
     '  再运行 npm run package 和 pwsh -File scripts/install.ps1。', ''] : [])].join('\r\n');
 
-export function createBackup(config, { version = '', opener, spawnImpl, now = () => new Date(), bundle = createGitBundle, log = async () => {} } = {}) {
+export function createBackup(config, { version = '', opener, spawnImpl, killTree, now = () => new Date(), bundle = createGitBundle, log = async () => {} } = {}) {
   let running = null;
   async function run() {
     const at = now(), dir = config.backup.dir, codeDir = config.backup.codeDir;
@@ -106,7 +119,7 @@ export function createBackup(config, { version = '', opener, spawnImpl, now = ()
     let code = codeDir ? true : 'skipped';
     if (codeDir) {
       const temp = path.join(os.tmpdir(), `co-agent-backup-${randomUUID()}.bundle`);
-      try { await bundle(codeDir, temp, { spawnImpl }); files.push({ name: BUNDLE_NAME, data: await fs.readFile(temp), mtime: at }); }
+      try { await bundle(codeDir, temp, { spawnImpl, killTree }); files.push({ name: BUNDLE_NAME, data: await fs.readFile(temp), mtime: at }); }
       catch (error) { code = `代码打包失败：${error.message}`; }
       finally { await fs.rm(temp, { force: true }); }
     }
