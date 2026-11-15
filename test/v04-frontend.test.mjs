@@ -28,8 +28,8 @@ test('K3/K6/K7 cards use named actions, disabled reason linkage, text badges; de
   const disabled=all.find(n=>n.textContent==='在 Codex CLI 中调用'); assert.equal(disabled.disabled,true);
   assert.ok(all.some(n=>n.id===disabled.attrs['aria-describedby']&&n.textContent==='CLI 不可用'));
   const detail=new Element(doc,'div');fillDetails(doc,detail,book);
-  for(const text of ['D:\\missing.epub','rebind_book_sources.py','dry-run','对照差异手动更新 Claude 版本','保留其中专为 Claude 写的工具映射段'])assert.ok(detail.textContent.includes(text));
-  assert.doesNotMatch(detail.textContent,/删除过期|port_codex_agents/);
+  for(const text of ['D:\\missing.epub','请把书放回列出的路径','把路径改成书现在的位置','设置 → 目录 点「刷新目录」','对照差异手动更新 Claude 版本','保留其中专为 Claude 写的工具映射段'])assert.ok(detail.textContent.includes(text));
+  assert.doesNotMatch(detail.textContent,/删除过期|port_codex_agents|rebind_book_sources|\.claude[\\/]scripts|dry-run/);
   assert.ok(!descendants(detail).some(n=>n.tagName==='button'&&/rebind|port_codex/.test(n.textContent)));
 });
 test('K7 dialog moves focus, traps forward/backward Tab, Esc closes, returns focus including native close',()=>{

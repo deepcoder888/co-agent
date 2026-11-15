@@ -48,7 +48,7 @@ function build(ctx) {
     make("button", "joint-submit", "联合调用", "", {"type": "button", "aria-describedby": "joint-disabled-reason", "disabled": null}, [])]),
     make("p", "joint-disabled-reason", "选择至少一个 Agent 后可联合调用；推荐进行时请等待。", "", {}, []),
     make("p", "select-all-disabled-reason", "有推荐结果时可全选。", "", {}, []),
-    make("p", "", "Claude 使用平台禁止规则；Codex 白名单只支持事后核验，子任务文本加密，无法逐字核验。", "", {}, [])]);
+    make("p", "", "用 Claude 时，CO-AGENT 会在运行前限定它只能调用所选的 Agent；用 Codex 时，CO-AGENT 无法事先限制它调用哪些 Agent，只能在运行后核对。", "", {}, [])]);
   p.running = make("section", "running-panel", "", "scan", {"aria-labelledby": "running-title"}, [runningCloseHeading(ctx,make("h2", "running-title", "运行中的会话", "", {}, [])), make("button", "reverify-all", "全部重新核验", "", {"type": "button", "aria-label": "全部重新核验范围内 Agent 的旧记录"}, []), make("p", "reverify-all-status", "", "", {"role": "status", "aria-live": "polite"}, []), make("div", "running-list", "正在读取…", "", {"aria-live": "polite"}, [])]);
   p.history = make("section", "history-panel", "", "", {"aria-label": "历史调用"}, [
     make("h2", "", "历史调用", "", {}, []),
@@ -630,7 +630,7 @@ export function drawRunning(doc, target, value, ctx) {
 }
 const labels = { closed: '已关闭', pending: '待核验', running: '运行中', done: '完成', failed: '失败', unconfirmed: '未确认', ok: '通过', 'not-parallel': '未并行', violation: '越权', alive: '存活', exited: '已退出', mismatch: '不符' };
 export function drawJointStatus(doc, target, record, status) {
-  target.replaceChildren(node(doc, 'h3', `联合调用 · ${record.cli}`), fillAgentNames(doc,node(doc,'p'),record.whitelist.map(a=>({...a,name:record.cli==='claude'?a.claudeName:a.codexName})),'白名单：'));
+  target.replaceChildren(node(doc, 'h3', `联合调用 · ${record.cli}`), fillAgentNames(doc,node(doc,'p'),record.whitelist.map(a=>({...a,name:record.cli==='claude'?a.claudeName:a.codexName})),'可调用的 Agent：'));
   target.append(node(doc, 'p', '结果请在 CLI 窗口中查看'));
   if (record.terminalFallback === 'no-wt' || status?.terminalFallback === 'no-wt') target.append(node(doc, 'p', '未找到 Windows Terminal，窗口位置未控制', 'reason'));
   if (!status) { target.append(node(doc, 'p', '正在读取核验记录…')); return; }
@@ -643,7 +643,7 @@ export function drawJointStatus(doc, target, record, status) {
     if (status.evidenceError) target.append(node(doc, 'p', status.evidenceError, 'error'));
     return;
   }
-  for (const [key, label] of [['parallel','并行'],['whitelist','白名单'],['crossExam','交叉质询']]) if (status[key]) target.append(node(doc, 'p', `${label}：${labels[status[key].state] || status[key].state}`));
+  for (const [key, label] of [['parallel','并行'],['whitelist','调用范围'],['crossExam','交叉质询']]) if (status[key]) target.append(node(doc, 'p', `${label}：${labels[status[key].state] || status[key].state}`));
   for (const call of status.calls) target.append(node(doc, 'p', `${call.agent}：${labels[call.state] || call.state}`));
   for (const attempt of status.whitelist.deniedAttempts) target.append(node(doc, 'p', `平台已拒绝尝试：${attempt.agent} · ${JSON.stringify(attempt.evidence)}`, 'reason'));
   for (const violation of status.whitelist.violations) target.append(node(doc, 'p', `越权调用：${violation.agent} · ${JSON.stringify(violation)}`, 'reason'));

@@ -102,12 +102,18 @@ for (const engine of ['claude', 'codex']) test(`J3 ${engine} injected background
   for (const file of ['input.txt','catalog.json','prompt.txt', engine === 'codex' ? 'schema.json' : 'stdout.txt']) assert.ok((await fs.stat(path.join(config.dataDir, 'recommend', id, file))).isFile());
 });
 
-test('J3 timeout kills replacement; nonzero exit and malformed output fail without partial results', async t => {
+test('J3 timeout ends the replacement process tree; nonzero exit and malformed output fail without partial results', async t => {
   const { config } = await fixture(t); config.recommend.timeoutMs = 15;
-  const calls = [];
+  const calls = [], trees = [];
   const task = { recommendId: joint().jointId, engine: 'claude', input: '输入', createdAt: at };
-  const timeout = await runRecommendation(task, agents, config, { spawnImpl: backgroundFake(() => {}, calls) });
-  assert.equal(timeout.status, 'failed'); assert.match(timeout.error, /超时/); assert.equal(calls[0].killed, true); assert.deepEqual(timeout.results, []);
+  // v0.53: the tree is ended (an npm CLI's node.exe starts the real exe), never only the direct child.
+  const killTree = async child => { trees.push(child); child.emit('close', null, 'SIGTERM'); };
+  const timeout = await runRecommendation(task, agents, config, { spawnImpl: backgroundFake(() => {}, calls), killTree });
+  assert.equal(timeout.status, 'failed'); assert.match(timeout.error, /推荐超时（15 ms）$/); assert.deepEqual(trees, [calls[0].child]);
+  assert.equal(calls[0].killed, undefined); assert.deepEqual(timeout.results, []);
+  // A test that forgets the tree-kill replacement is refused instead of reaching the real taskkill.
+  const unguarded = await runRecommendation(task, agents, config, { spawnImpl: backgroundFake(() => {}, calls) });
+  assert.match(unguarded.error, /推荐超时.*测试必须注入进程树终止替身/); assert.equal(calls[1].killed, undefined);
   for (const [code, output] of [[1, '{"result":"{}"}'], [0, '{broken']]) {
     const result = await runRecommendation(task, agents, config, { spawnImpl: backgroundFake(({ child }) => { child.stdout.end(output); child.emit('close', code, null); }) });
     assert.equal(result.status, 'failed'); assert.deepEqual(result.results, []);
@@ -178,7 +184,7 @@ for (const [label, tools, extra, expectedParallel, expectedWhitelist] of [
     [xMeta('walkerchild',{parent_thread_id:'main',depth:1,agent_role:'Walvo'}),{type:'event_msg',payload:{type:'turn_aborted'}}],...extra];
   const { config,j }=await logs(t,'codex',[xMeta('main'),xUser('environment context'),xUser(`【CO-AGENT 联合调用 ${joint().jointId}】`),...tools],children);
   const status=await verifyJoint(j,config); assert.equal(status.parallel.state,expectedParallel); assert.equal(status.whitelist.state,expectedWhitelist);
-  assert.deepEqual(status.calls.map(c=>c.state),['done','failed']); assert.match(status.taskTextNote,/无法核验/);
+  assert.deepEqual(status.calls.map(c=>c.state),['done','failed']); assert.match(status.taskTextNote,/任务文本.*加密的，无法核对；它调用了哪些 Agent 只能在运行后核对。$/); assert.doesNotMatch(status.taskTextNote,/白名单|事后核验/);
 });
 
 test('J6 unobserved logs, malformed data and mismatched cwd cannot be reported ok',async t=>{

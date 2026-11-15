@@ -277,7 +277,7 @@ export async function verifyJoint(joint, config, { now = Date.now(), isAlive = p
   const status = { process: { state: isAlive(joint.pid) ? 'alive' : 'exited', pid: joint.pid }, cwd: { state: 'pending', observed: null },
     parallel: { state: 'pending', evidence: [] }, whitelist: { state: 'pending', violations: [], deniedAttempts: [] },
     calls: joint.whitelist.map(a => ({ agent: joint.cli === 'claude' ? a.claudeName : a.codexName, state: 'pending', evidence: [] })), overall: 'pending' };
-  if (joint.cli === 'codex') status.taskTextNote = 'Codex 子 Agent 的任务文本在日志中加密，无法核验实际收到的任务文本；白名单仅事后核验。';
+  if (joint.cli === 'codex') status.taskTextNote = 'Codex 交给各 Agent 的任务文本在日志里是加密的，无法核对；它调用了哪些 Agent 只能在运行后核对。';
   if (joint.resumeOf) status.resume = { state: 'pending' };
   if (joint.crossExam === true) status.crossExam = { state: 'pending', evidence: [] };
   try { await (joint.cli === 'claude' ? verifyClaude : verifyCodex)(joint, config, status); }
@@ -291,7 +291,7 @@ export async function verifyJoint(joint, config, { now = Date.now(), isAlive = p
   if (joint.error || status.cwd.state === 'mismatch' || status.whitelist.state === 'violation' || status.crossExam?.state === 'failed') status.overall = 'failed';
   else if (joint.resumeOf && !status.evidenceError && status.resume.state === 'ok' && status.process.state === 'alive' && status.whitelist.state === 'ok') {
     status.overall = status.calls.some(c => c.state === 'failed') ? 'failed' : 'resumed';
-    status.message = status.overall === 'resumed' ? '已恢复 · 会话文件增长，白名单已核验' : '恢复后的 Agent 调用失败';
+    status.message = status.overall === 'resumed' ? '已恢复 · 会话文件增长，调用范围已核对' : '恢复后的 Agent 调用失败';
   }
   else if (!status.evidenceError && settled && crossExamOk && status.cwd.state === 'ok' && status.parallel.state === 'ok' && status.whitelist.state === 'ok') status.overall = status.calls.some(c => c.state === 'failed') ? 'failed' : 'done';
   else if (now - Date.parse(joint.createdAt) > 900000) status.overall = 'unconfirmed';

@@ -74,7 +74,7 @@ test('v07 settings acceptance: settings footer version is injected from package 
   const ctx=await running(t);
   const manifest=JSON.parse(await fs.readFile('package.json','utf8'));
   const lock=JSON.parse(await fs.readFile('package-lock.json','utf8'));
-  assert.equal(manifest.version,'0.53.6');
+  assert.equal(manifest.version,'0.53.7');
   assert.equal(lock.version,manifest.version);assert.equal(lock.packages[''].version,manifest.version);
   const source=await fs.readFile('public/index.html','utf8');assert.match(source,/<!-- CO_AGENT_VERSION -->/);
   for(const entry of await fs.readdir('public',{recursive:true,withFileTypes:true})) {

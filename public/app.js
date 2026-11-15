@@ -55,7 +55,7 @@ export function toDetailView(agent, history, settings = {}, message = '') {
     {label:'Claude 入口文件',value:agent.platforms.claude.file||'未载明'},...(agent.book?['title','author','edition'].map((key,i)=>({label:['书名','作者','版本'][i],value:agent.book[key]||'未载明'})):[])]},
     {key:'permissions',title:'权限与模型',rows:[{label:'声明',value:permissionText(agent)}]}];
   if(agent.sources)sections.push({key:'sources',title:'原书路径',rows:[{label:'检查',value:`已检查：${agent.sources.checked?'是':'否'} · 路径 ${agent.sources.total} 条`},
-    ...agent.sources.missing.map(value=>({label:'失效',value})),...(agent.sources.missing.length?[{label:'重绑建议',value:'可用 ~/.claude/scripts/rebind_book_sources.py 重新绑定（先 dry-run）'}]:[])]});
+    ...agent.sources.missing.map(value=>({label:'失效',value})),...(agent.sources.missing.length?[{label:'怎么修复',value:'书的路径写在这个 Agent 的定义文件里（即 Codex 源文件和 Claude 入口文件）。请把书放回列出的路径，或用文本编辑器打开定义文件，把路径改成书现在的位置，然后到 设置 → 目录 点「刷新目录」。'}]:[])]});
   sections.push({key:'sync',title:'双版本同步',rows:[{label:'状态',value:agent.sync.detail&&agent.sync.detail!==agent.sync.state?`${syncLabel(agent.sync)}：${agent.sync.detail}`:syncLabel(agent.sync)},
     ...(agent.sync.state!=='同步'?[
       ...(agent.sync.descriptionDiff?[{label:'Codex 描述',value:agent.sync.descriptionDiff.codex??'（无此行）'},

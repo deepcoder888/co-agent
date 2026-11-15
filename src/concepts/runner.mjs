@@ -50,7 +50,7 @@ export function conceptArgs(config, files) {
     '-s', 'read-only', '--skip-git-repo-check', '-C', config.launchProject, '--json', '--output-schema', files.schema, '-o', files.output, '-'];
 }
 
-// The recommendation runner only kills its parent process. A1 needs a real tree kill.
+// Every claude/codex runner ends the whole tree: an npm-installed CLI runs as node.exe, which starts the real exe.
 export async function killProcessTree(child, { spawnImpl = spawn, platform = process.platform } = {}) {
   if (!Number.isSafeInteger(child?.pid) || child.pid <= 0) return;
   if (platform !== 'win32') {

@@ -146,7 +146,7 @@ function build(ctx) {
     make("button", "joint-submit", "联合调用", "", {"type": "button", "aria-describedby": "joint-disabled-reason", "disabled": null}, [])]),
     make("p", "joint-disabled-reason", "选择至少一个 Agent 后可联合调用；推荐进行时请等待。", "", {}, []),
     make("p", "select-all-disabled-reason", "有推荐结果时可全选。", "", {}, []),
-    make("p", "", "Claude 使用平台禁止规则；Codex 白名单只支持事后核验，子任务文本加密，无法逐字核验。", "", {}, [])]);
+    make("p", "", "用 Claude 时，CO-AGENT 会在运行前限定它只能调用所选的 Agent；用 Codex 时，CO-AGENT 无法事先限制它调用哪些 Agent，只能在运行后核对。", "", {}, [])]);
   p.recommendList = make('section', 'recommend-list-panel', '', '', {'aria-label':'推荐结果'}, [make('h2', '', '推荐结果', 'list-heading', {}, []), make('div','recommend-results','','',{},[])]);
   p.recommend.append(make('button','recommend-add','将已选推荐加入联合调用','text-button',{'type':'button'},[]));
   p.running = make("section", "running-panel", "", "", {"aria-labelledby": "running-title"}, [runningCloseHeading(ctx,make("h2", "running-title", "运行中的会话", "list-heading", {}, [])), make("div", "running-list", "正在读取…", "", {"aria-live": "polite"}, [])]);
@@ -765,7 +765,7 @@ export function fillDetails(doc, body, agent, stats) {
   if (agent.sources) {
     body.append(element(doc, 'h3', '原书路径'), element(doc, 'p', `已检查：${agent.sources.checked ? '是' : '否'} · 路径 ${agent.sources.total} 条`));
     for (const missing of agent.sources.missing) body.append(element(doc, 'p', missing, 'reason'));
-    if (agent.sources.missing.length) body.append(element(doc, 'p', '可用 ~/.claude/scripts/rebind_book_sources.py 重新绑定（先 dry-run）'));
+    if (agent.sources.missing.length) body.append(element(doc, 'p', '书的路径写在这个 Agent 的定义文件里（即 Codex 源文件和 Claude 入口文件）。请把书放回列出的路径，或用文本编辑器打开定义文件，把路径改成书现在的位置，然后到 设置 → 目录 点「刷新目录」。'));
   }
   if (agent.sync) {
     body.append(element(doc, 'h3', '双版本同步'), element(doc, 'p', agent.sync.detail && agent.sync.detail !== agent.sync.state ? `${syncLabel(agent.sync)}：${agent.sync.detail}` : syncLabel(agent.sync)));
@@ -871,7 +871,7 @@ export function drawRunning(doc, target, value) {
 }
 const labels = { closed: '已关闭', pending: '待核验', running: '运行中', done: '完成', failed: '失败', unconfirmed: '未确认', ok: '通过', 'not-parallel': '未并行', violation: '越权', alive: '存活', exited: '已退出', mismatch: '不符' };
 export function drawJointStatus(doc, target, record, status) {
-  target.replaceChildren(node(doc, 'h3', `联合调用 · ${record.cli}`), fillAgentNames(doc,node(doc,'p'),record.whitelist.map(a=>({...a,name:record.cli==='claude'?a.claudeName:a.codexName})),'白名单：'));
+  target.replaceChildren(node(doc, 'h3', `联合调用 · ${record.cli}`), fillAgentNames(doc,node(doc,'p'),record.whitelist.map(a=>({...a,name:record.cli==='claude'?a.claudeName:a.codexName})),'可调用的 Agent：'));
   target.append(node(doc, 'p', '结果请在 CLI 窗口中查看'));
   if (record.terminalFallback === 'no-wt' || status?.terminalFallback === 'no-wt') target.append(node(doc, 'p', '未找到 Windows Terminal，窗口位置未控制', 'reason'));
   if (!status) { target.append(node(doc, 'p', '正在读取核验记录…')); return; }
@@ -884,7 +884,7 @@ export function drawJointStatus(doc, target, record, status) {
     if (status.evidenceError) target.append(node(doc, 'p', status.evidenceError, 'error'));
     return;
   }
-  for (const [key, label] of [['parallel','并行'],['whitelist','白名单'],['crossExam','交叉质询']]) if (status[key]) target.append(node(doc, 'p', `${label}：${labels[status[key].state] || status[key].state}`));
+  for (const [key, label] of [['parallel','并行'],['whitelist','调用范围'],['crossExam','交叉质询']]) if (status[key]) target.append(node(doc, 'p', `${label}：${labels[status[key].state] || status[key].state}`));
   for (const call of status.calls) target.append(node(doc, 'p', `${call.agent}：${labels[call.state] || call.state}`));
   for (const attempt of status.whitelist.deniedAttempts) target.append(node(doc, 'p', `平台已拒绝尝试：${attempt.agent} · ${JSON.stringify(attempt.evidence)}`, 'reason'));
   for (const violation of status.whitelist.violations) target.append(node(doc, 'p', `越权调用：${violation.agent} · ${JSON.stringify(violation)}`, 'reason'));

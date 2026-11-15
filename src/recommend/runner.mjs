@@ -8,6 +8,7 @@ import { resolveCli } from '../launch/spec.mjs';
 import { scrubEnvironment } from '../launch/spawner.mjs';
 import { codexModelArgs } from '../launch/codex.mjs';
 import { auditRecommendation } from '../joint/verify.mjs';
+import { killProcessTree } from '../concepts/runner.mjs';
 
 export function recommendationCatalog(agents) {
   return agents.map(a => ({ id: a.id, name: a.name, kind: a.kind, primary: a.primary,
@@ -40,7 +41,7 @@ const schema = { type: 'object', additionalProperties: false, required: ['recomm
   recommendations: { type: 'array', maxItems: 8, items: { type: 'object', additionalProperties: false, required: ['id', 'reason'], properties: { id: { type: 'string' }, reason: { type: 'string', maxLength: 80 } } } }, note: { type: 'string' },
 } };
 
-export async function runRecommendation(record, agents, config, { spawnImpl = spawn, env = process.env } = {}) {
+export async function runRecommendation(record, agents, config, { spawnImpl = spawn, env = process.env, killTree = killProcessTree } = {}) {
   const dir = path.join(config.dataDir, 'recommend', record.recommendId);
   let stdout = '', stderr = '';
   const settings = recommendSettings(config, record.engine);
@@ -59,20 +60,31 @@ export async function runRecommendation(record, agents, config, { spawnImpl = sp
     const clean = scrubEnvironment(env);
     result.scrubbedEnv = clean.scrubbedEnv;
     await new Promise((resolve, reject) => {
-      let child, settled = false;
+      let child, settled = false, stopping = false;
       const finish = error => {
         if (settled) return;
         settled = true; clearTimeout(timer); error ? reject(error) : resolve();
       };
-      const stop = error => { finish(error); try { child?.kill(); } catch { /* Already exited. */ } };
-      const timer = setTimeout(() => stop(new Error(`推荐超时（${config.recommend.timeoutMs} ms）`)), config.recommend.timeoutMs);
+      // v0.53: an npm-installed CLI runs as node.exe <entry>.js, which starts the real exe; end the whole tree.
+      const stop = async error => {
+        if (settled || stopping) return; stopping = true;
+        try {
+          if (child) {
+            if (process.env.NODE_TEST_CONTEXT && killTree === killProcessTree) throw new Error('测试必须注入进程树终止替身');
+            await killTree(child);
+          }
+        } catch (e) { error = new Error(`${error.message}；终止进程树失败：${e.message}`); }
+        finish(error);
+      };
+      const timer = setTimeout(() => { void stop(new Error(`推荐超时（${config.recommend.timeoutMs} ms）`)); }, config.recommend.timeoutMs);
       try {
-        child = spawnImpl(exe, args, { shell: false, windowsHide: true, cwd: config.launchProject, env: clean.env, stdio: ['pipe', 'pipe', 'pipe'] });
+        child = spawnImpl(exe, args, { shell: false, windowsHide: true, cwd: config.launchProject, env: clean.env, stdio: ['pipe', 'pipe', 'pipe'],
+          ...(process.platform !== 'win32' ? { detached: true } : {}) });
         child.on('error', finish);
         child.stdout?.setEncoding('utf8'); child.stderr?.setEncoding('utf8');
         child.stdout?.on('data', chunk => { if (settled) return; stdout += chunk; if (stdout.length > 10 * 1024 * 1024) stop(new Error('推荐输出超过 10 MB')); });
         child.stderr?.on('data', chunk => { if (settled) return; stderr += chunk; if (stderr.length > 1024 * 1024) stop(new Error('推荐错误输出超过 1 MB')); });
-        child.once('close', (code, signal) => finish(code !== 0 || signal ? new Error(`推荐进程失败（退出码 ${code}${signal ? `，信号 ${signal}` : ''}）：${stderr.trim()}`) : null));
+        child.once('close', (code, signal) => { if (!stopping) finish(code !== 0 || signal ? new Error(`推荐进程失败（退出码 ${code}${signal ? `，信号 ${signal}` : ''}）：${stderr.trim()}`) : null); });
         if (!child.stdin) throw new Error('推荐进程缺少 stdin');
         child.stdin.on('error', stop);
         child.stdin.end(prompt);
