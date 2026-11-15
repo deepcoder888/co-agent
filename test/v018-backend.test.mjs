@@ -126,6 +126,10 @@ test('v018 Codex transport uses recommendation argv, stdin, fixed 180s deadline,
   let killed = 0;
   await assert.rejects(runCandidateSuggestions([candidate()],categories,[],config, { spawnImpl: () => { const c = new EventEmitter(); c.pid=123456; c.stdin=new PassThrough(); return c; }, setTimer: fn => setTimeout(fn,1), killTree: async c => {assert.equal(c.pid,123456); killed++;} }), /超时/);
   assert.equal(killed,1); await assert.rejects(runCandidateSuggestions([],categories,[],config),/测试必须注入/);
+  // v0.53: Codex ending without an answer (not signed in) is said plainly, without the missing file's path.
+  const silent = () => { const c = new EventEmitter(); c.pid = 123456; c.stdin = new PassThrough(); c.stdin.on('finish', () => c.emit('close', 0)); c.stdin.resume(); return c; };
+  await assert.rejects(runCandidateSuggestions([candidate()], categories, [], config, { spawnImpl: silent }),
+    error => /Codex 没有给出结果/.test(error.message) && !/ENOENT|out\.json/.test(error.message));
 });
 
 test('v018 routes enforce token/Origin, suggestion failure 409, acceptance refreshes registry and stats', async t => {

@@ -11,10 +11,10 @@ async function running(t) {
   let app;
   t.after(() => app?.close()); // Close background indexing before fixture cleanup.
   const { config } = await fixture(t);
-  await put(path.join(config.codexAgentsDir, 'jack.toml'), 'name="-jack"\ndescription="Role"');
+  await put(path.join(config.codexAgentsDir, 'jack.toml'), 'name="-jack"\ndescription="Role"\nsandbox_mode="read-only"'); // v0.53: declared read-only, so no write confirmation
   await put(path.join(config.codexAgentsDir, 'loki.toml'), 'name="Loki"\ndescription="Role"');
   await put(path.join(config.codexAgentsDir, 'other.toml'), 'name="Other"\ndescription="utility"');
-  await put(path.join(config.claudeAgentDirs[0], 'jack.md'), '---\nname: jack\n---');
+  await put(path.join(config.claudeAgentDirs[0], 'jack.md'), '---\nname: jack\ntools: Read, Grep\n---');
   const calls = [];
   app = await createApp(config, { spawnImpl: fakeSpawner(calls) });
   try { await app.listen(); }

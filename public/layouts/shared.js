@@ -103,7 +103,7 @@ export function renderDefaultConceptMap(ctx, model) {
     const detail = node(doc, 'article', undefined, 'concept-map-detail'); detail.id = 'concept-map-detail'; detail.setAttribute('tabindex', '-1');
     const hidden = region(doc, 'details', 'concept-map-hidden', node(doc, 'summary', '设置 · 已隐藏')); const hiddenList = node(doc, 'div'); hidden.append(hiddenList);
     panel.append(region(doc, 'header', 'concept-map-head', title, control('返回 Agent', 'back', async () => { await a.showView('catalog'); doc.getElementById('concept-map-open')?.focus(); }),
-      control('页面排版', 'settings', e => a.openSettings(e.currentTarget)), control('重新读取', 'refresh', () => a.openConceptMap()), organize), status, error,
+      control('设置', 'settings', e => a.openSettings(e.currentTarget)), control('重新读取', 'refresh', () => a.openConceptMap()), organize), status, error,
       region(doc, 'div', 'concept-map-columns', region(doc, 'aside', 'concept-map-sidebar', label, search, list, hidden), detail));
     doc.getElementById('layout-root').append(panel);
     Object.assign(r, { conceptMapPanel: panel, conceptMapTitle: title, conceptMapSearch: search, conceptMapStatus: status, conceptMapError: error,
@@ -167,6 +167,15 @@ export function pinButton(doc, agent, actions, className = '') {
   if (className) button.className = className;
   button.setAttribute('aria-pressed', String(pinned)); button.setAttribute('data-focus-key', 'detail-pin');
   return button;
+}
+
+// v0.53: nothing is registered yet. Say what CO-AGENT found on this computer and open Agent 管理 directly.
+export function emptyCatalog(ctx, empty, className = '') {
+  const found = empty.unlisted ? `CO-AGENT 在这台电脑上找到 ${empty.unlisted} 个还没登记的 Agent。在 Agent 管理里把它们设为工具 Agent 或书籍 Agent，它们就会出现在这里。`
+    : '这台电脑上还没有找到 Codex 或 Claude 的 Agent 文件。打开 Agent 管理，可以导入 Agent 文件或制作书籍 Agent。';
+  const open = action(ctx.doc, '打开 Agent 管理', event => ctx.actions.openAgentManager(event.currentTarget));
+  open.className = 'primary'; open.setAttribute('data-focus-key', 'empty-agent-manager');
+  return region(ctx.doc, 'div', `empty-catalog ${className}`.trim(), node(ctx.doc, 'h3', '还没有登记 Agent'), node(ctx.doc, 'p', found), open);
 }
 
 export function renderCandidateNotice(ctx, n = 0) {

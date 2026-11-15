@@ -23,7 +23,7 @@ function documentFixture(){const doc={activeElement:null,createElement:tag=>new 
 const book={id:'harlo',name:'Harlo',kind:'book',primary:'历史',description:'内容',book:{title:'书',author:'作者',edition:'版'},tags:[],sourceFile:'source',sources:{checked:true,total:3,missing:['D:\\missing.epub']},sync:{state:'指令不同',detail:'body differs'},platforms:{claude:{available:true},codex:{available:false,reason:'CLI 不可用'}}};
 test('K3/K6/K7 cards use named actions, disabled reason linkage, text badges; details include advisory commands only',()=>{
   const doc=documentFixture(), {card}=createCard(doc,book,{categories:[],onDetails(){},onLaunch(){}});
-  const all=descendants(card);assert.match(card.textContent,/原书路径失效 1 处/);assert.match(card.textContent,/不同步/);
+  const all=descendants(card);assert.match(card.textContent,/原书路径失效 1 处/);assert.match(card.textContent,/两个版本的指令不同/);assert.doesNotMatch(card.textContent,/不同步/);
   const launch=all.find(n=>n.textContent==='在 Claude CLI 中调用');assert.equal(launch.attrs['aria-label'],'在 Claude CLI 中调用 Harlo');
   const disabled=all.find(n=>n.textContent==='在 Codex CLI 中调用'); assert.equal(disabled.disabled,true);
   assert.ok(all.some(n=>n.id===disabled.attrs['aria-describedby']&&n.textContent==='CLI 不可用'));

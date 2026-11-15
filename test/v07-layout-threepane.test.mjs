@@ -100,7 +100,7 @@ test('threepane §3.4: detail order, chips, actionable pills, config truthfulnes
   assert.deepEqual(ids['detail-body'].children.map(n=>n.className), ['detail-hero','detail-chips','detail-summary','detail-actions','detail-meta','detail-folds']);
   assert.equal(ids['detail-title'].tagName,'H1'); assert.equal(ids['detail-title'].textContent,'Walvo');
   assert.match(doc.querySelector('.detail-subtitle').textContent,/《Dear Sample》 · 甲、乙 · 2023/);
-  assert.deepEqual(doc.querySelector('.detail-chips').children.map(n=>n.textContent),['原书可用','只读','Claude ✓ · Codex ✓','同步']);
+  assert.deepEqual(doc.querySelector('.detail-chips').children.map(n=>n.textContent),['原书可用','只读','Claude ✓ · Codex ✓','两个版本一致']);
   assert.equal(doc.querySelector('.detail-summary').textContent,'第一段说明。');
   assert.deepEqual(doc.querySelector('.detail-actions').children.map(n=>n.textContent),['在 Claude CLI 中调用','在 Codex CLI 中调用','在 CO-AGENT 中调用','继续上次会话','加入联合调用','☆ 设为常用','打开原书'] /* v0.10; v0.29 常用; v0.39 软件内调用 */);
   assert.match(doc.querySelector('.detail-meta').textContent,/模型（Claude）opus · xhigh终端窗口未提供/);
@@ -114,7 +114,7 @@ test('threepane §3.4: detail order, chips, actionable pills, config truthfulnes
   await find('继续上次会话 Walvo').fire('click'); assert.ok(calls.some(c=>c.url==='/api/resume'&&JSON.parse(c.options.body).launchId==='l1'));
   registry.agents[2].sources.missing=['missing.epub']; registry.agents[2].writable=true; registry.agents[2].platforms.codex={available:false,reason:'缺少入口'};
   registry.agents[2].sync={state:'不一致',detail:'版本不同'}; await app.actions.refresh(); await app.actions.openDetail('Jadra');
-  assert.deepEqual(doc.querySelector('.detail-chips').children.map(n=>n.textContent),['原书路径失效','可写','Claude ✓ · Codex ✕','不同步']);
+  assert.deepEqual(doc.querySelector('.detail-chips').children.map(n=>n.textContent),['原书路径失效','可写','Claude ✓ · Codex ✕','不一致']); // v0.53: the state is described, not called 不同步
   assert.equal(find('在 Codex CLI 中调用 Jadra').disabled,true); assert.equal(find('在 Codex CLI 中调用 Jadra').title,'缺少入口');
   assert.equal(find('继续上次会话 Jadra').disabled,true); assert.match(find('继续上次会话 Jadra').title,/暂无/);
 });

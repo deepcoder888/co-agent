@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { atomicWrite } from '../fsutil.mjs';
-import { resolveExecutable } from '../launch/spec.mjs';
+import { resolveCli } from '../launch/spec.mjs';
 import { dateDirs } from '../launch/verify.mjs';
 import { claudeRelay } from '../launch/claude.mjs';
 import { missingSourcesFor } from '../../public/display.js';
@@ -166,8 +166,8 @@ export function createChats(config, { getRegistry, spawnImpl, env = process.env,
     try {
       if (!agent) throw new Error('该 Agent 已不在注册表中');
       const first = !member.started, claude = chat.engine === 'claude';
-      const exe = await resolveExecutable(claude ? config.claudeExe : config.codexExe, env);
-      const args = claude ? claudeChatArgs(agent, member, config, first) : codexChatArgs(member, config, first);
+      const { exe, prefix } = await resolveCli(claude ? config.claudeExe : config.codexExe, env);
+      const args = [...prefix, ...(claude ? claudeChatArgs(agent, member, config, first) : codexChatArgs(member, config, first))];
       const own = turn.rewrites?.[agentId]?.question ?? turn.question;
       const asked = first && chat.context ? `${chat.context}\n${own}` : own;
       const prompt = claude ? asked : codexChatPrompt(agent, chat.chatId, asked, config, first);

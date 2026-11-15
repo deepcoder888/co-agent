@@ -194,7 +194,7 @@ test('T2 unsafe title and wt script fail preflight without spec or spawn', async
   for (const bad of ['"', '\n', '\r']) await assert.rejects(createLaunch({ ...agent, name: 'Book' + bad }, 'codex', config, { spawnImpl: fakeSpawner(calls) }), /双引号或换行/);
   if (process.platform === 'win32') {
     const script = path.join(root, 'wt.cmd'); await put(script, '@echo off');
-    await assert.rejects(createLaunch(agent, 'codex', { ...config, wtExe: script }, { spawnImpl: fakeSpawner(calls) }), /shell:false/);
+    await assert.rejects(createLaunch(agent, 'codex', { ...config, wtExe: script }, { spawnImpl: fakeSpawner(calls) }), /不经 shell 无法安全启动/);
   }
   assert.equal(calls.length, 0); await assert.rejects(fs.stat(path.join(config.dataDir, 'launches')), { code: 'ENOENT' });
 });

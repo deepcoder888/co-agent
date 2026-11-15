@@ -352,7 +352,7 @@ test('v034 E5 controller confirms and retries a server-side sources conflict onc
 
 test('v040 E1 E2 E4 E6 E15 E20 opening sheet counts Unicode, validates options and explicit rows, and keeps snapshot authors',async()=>{
   const {doc}=await appDocument();doc.createTextNode=text=>{const n=doc.createElement('text');n.textContent=text;return n;};
-  const model={items:[],selected:null,running:null,busy:false,error:'',books:agents.map(a=>({id:a.id,name:a.name,bookLabel:a.book.title,available:true})),
+  const model={items:[],selected:null,running:null,busy:false,error:'',books:agents.map(a=>({id:a.id,name:a.name,bookLabel:a.book.title,available:true,ready:true})),
     draft:{situation:'',options:[],explicit:false,lenses:[],parentId:null}};
   const side=doc.createElement('aside'),host=doc.createElement('div');doc.getElementById('layout-root').append(side,host);
   let fresh=true;

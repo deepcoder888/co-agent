@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { atomicWrite } from '../fsutil.mjs';
-import { resolveExecutable, prepareTerminal } from './spec.mjs';
+import { resolveExecutable, resolveCli, prepareTerminal } from './spec.mjs';
 import { spawnTerminal, applyTerminalResult, scrubEnvironment } from './spawner.mjs';
 import { processAlive, closedStatus } from './verify.mjs';
 import { codexModelArgs, codexProfileArgs } from './codex.mjs';
@@ -37,7 +37,7 @@ export async function createResume(original, session, config, { spawnImpl, env =
   try { baseline = await fs.stat(session.file); if (!baseline.isFile()) throw new Error('不是文件'); }
   catch (error) { throw new Error(`会话文件不可用：${error.message}`); }
   const args = resumeArgs(original, session.id, config);
-  const exe = await resolveExecutable(original.cli === 'claude' ? config.claudeExe : config.codexExe, env);
+  const { exe, prefix: exeArgs } = await resolveCli(original.cli === 'claude' ? config.claudeExe : config.codexExe, env);
   const pwshExe = await resolveExecutable(config.pwshExe, env);
   if (!(await fs.stat(original.cwd)).isDirectory()) throw new Error('原启动项目目录不可用');
   const launchId = randomUUID(), joint = !!original.jointId, specFile = path.join(config.dataDir, joint ? 'joints' : 'launches', `${launchId}.json`);
@@ -45,7 +45,7 @@ export async function createResume(original, session, config, { spawnImpl, env =
     agentId: original.agentId, agentName: original.agentName, mode: joint ? 'joint' : launchMode(original), cli: original.cli,
     sessionId: session.id, sessionFile: session.file, resumeOf: original.jointId || original.launchId,
     resumeBaseline: { size: baseline.size, mtimeMs: baseline.mtimeMs }, codexProfile: original.codexProfile,
-    createdAt: new Date().toISOString(), cwd: original.cwd, exe, args, specFile,
+    createdAt: new Date().toISOString(), cwd: original.cwd, exe, exeArgs, args, specFile,
     title: `CO-AGENT · ${joint ? '联合调用' : original.terminalAgentName || original.agentName} · ${launchId.slice(0, 4)}`, terminalAgentName: original.terminalAgentName || original.agentName,
     scrubbedEnv: scrubEnvironment(env).scrubbedEnv };
   const terminalConfig = await prepareTerminal(record, { ...config, launchProject: original.cwd, pwshExe }, env);

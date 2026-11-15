@@ -2,9 +2,10 @@
 // the config it started with; saved values apply after a restart. Validation is config.mjs's resolveConfig, the same
 // function that loads the file, so the app can never save a config.json it would then refuse to start with.
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { resolveConfig, readConfigOverrides, configFile } from './config.mjs';
 import { atomicWrite } from './fsutil.mjs';
-import { resolveExecutable } from './launch/spec.mjs';
+import { resolveCli } from './launch/spec.mjs';
 
 export const BASIC_KEYS = ['userName', 'codexModel', 'codexEffort', 'codexProfile', 'terminalDisplay', 'terminalWindowMode',
   'launchProject', 'catalogDir', 'readingAgentsDir', 'concept.thinkDir', 'concept.autoDaily', 'seminar.thinkDir', 'backup.dir', 'backup.codeDir',
@@ -27,13 +28,20 @@ function flatten(object, prefix = '') {
 }
 const fail = message => { throw Object.assign(new Error(message), { status: 400 }); };
 
+// v0.53: folders whose absence is normal on a new install. The first backup creates the backup folder; the default
+// catalog folder is optional, since what Agent 管理 lists is saved in the data dir.
+const normalWhenMissing = (key, value, defaults) => key === 'backup.dir' || (key === 'catalogDir' && path.resolve(value) === path.resolve(defaults.catalogDir));
+
 async function directoryExists(dir) {
   try { return (await fs.stat(dir)).isDirectory(); }
   catch { return false; }
 }
 
 // firstRunPrompt: false keeps the settings dialog from opening by itself (test fixtures stand for a configured install).
-export function createBasicConfig(config, { resolver = resolveExecutable, env = process.env, isDirectory = directoryExists,
+// An npm-installed CLI is found through its shim, which is what the user installed (v0.53).
+const findProgram = (exe, env) => resolveCli(exe, env).then(found => found.file);
+
+export function createBasicConfig(config, { resolver = findProgram, env = process.env, isDirectory = directoryExists,
   firstRunPrompt = config.firstRunPrompt !== false } = {}) {
   const options = { dataDir: config.dataDir, home: config.home };
   let work = Promise.resolve();
@@ -44,7 +52,11 @@ export function createBasicConfig(config, { resolver = resolveExecutable, env = 
       const saved = resolveConfig(overrides, options);
       const firstRun = firstRunPrompt && !(await fs.stat(configFile(config.dataDir)).then(() => true, () => false));
       const values = Object.fromEntries(BASIC_KEYS.map(key => [key, read(saved, key) ?? null]));
-      const paths = Object.fromEntries(await Promise.all(PATH_KEYS.map(async key => [key, { exists: values[key] ? await isDirectory(values[key]) : null }])));
+      const defaults = resolveConfig({}, options);
+      const paths = Object.fromEntries(await Promise.all(PATH_KEYS.map(async key => {
+        const exists = values[key] ? await isDirectory(values[key]) : null;
+        return [key, exists === false && normalWhenMissing(key, values[key], defaults) ? { exists, createdLater: true } : { exists }];
+      })));
       const environment = Object.fromEntries(await Promise.all(PROGRAMS.map(async ([name, key]) =>
         [name, await resolver(key ? config[key] : name, env).catch(() => null)])));
       return { firstRun, values, paths, environment };

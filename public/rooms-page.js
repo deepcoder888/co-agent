@@ -1,6 +1,6 @@
 import { node, action, region } from './layouts/shared.js';
 import { renderMarkdown } from './markdown.js';
-import { setStyle } from './display.js';
+import { setStyle, roomShortage, READY_TEXT } from './display.js';
 import { markAgentLink } from './agent-links.js';
 import { seminarParticipants, seminarStatus } from './seminars.js';
 import { consultLenses, consultDisclaimer, consultActive, consultDraftError, consultCounts } from './consults.js';
@@ -346,9 +346,11 @@ export function renderRooms(ctx, model, host) {
       input.addEventListener('input', () => { a.setSeminarInput(input.value); syncSeminarOpening(r.roomModel?.seminars); });
       const count = node(doc, 'span', '', 'room-count'); count.id = 'room-seminars-count';
       const start = button('开始圆桌', 'seminars-start', () => a.startSeminar(v.openInput.value), '开始这场圆桌', 'room-primary');
-      sheet.append(head, label('问题或概念', input.id), input, count, node(doc, 'p', '主持人从你的书里自动选 3–5 位最相关的作者，各自回答后写一份综合：共同答案、分歧和行动建议。', 'room-note'),
+      // v0.53: say before anyone types when there are too few books for the host to pick from.
+      const need = node(doc, 'p', '', 'room-note room-need'); need.id = 'room-seminars-need'; start.setAttribute('aria-describedby', need.id);
+      sheet.append(head, need, label('问题或概念', input.id), input, count, node(doc, 'p', '主持人从你的书里自动选 3–5 位最相关的作者，各自回答后写一份综合：共同答案、分歧和行动建议。', 'room-note'),
         region(doc, 'div', 'room-paper-foot', start));
-      Object.assign(v, { openSheet: sheet, openInput: input, openCount: count, openStart: start });
+      Object.assign(v, { openSheet: sheet, openInput: input, openCount: count, openStart: start, openNeed: need });
     }
     return v.openSheet;
   }
@@ -360,7 +362,9 @@ export function renderRooms(ctx, model, host) {
     v.openInput.disabled = s.busy;
     const full = s.active >= s.parallel;
     v.openCount.textContent = `${n} / 2000 字${full ? ` · 已有 ${s.active} 场圆桌在进行，等其中一场结束再开` : s.active ? ` · 另有 ${s.active} 场圆桌在进行` : ''}`;
-    v.openStart.disabled = s.busy || full || !text.trim() || n > 2000;
+    const short = (s.ready ?? 3) < 3;
+    v.openNeed.textContent = short ? `圆桌${roomShortage(3, s.ready, READY_TEXT)}` : ''; v.openNeed.hidden = !short;
+    v.openStart.disabled = s.busy || full || short || !text.trim() || n > 2000;
   }
   function seminarSynthesis(record, participants) {
     const result = record.result, memberFor = ref => participants.find(p => [p.id, p.agent, p.name].includes(ref));
@@ -469,9 +473,12 @@ export function renderRooms(ctx, model, host) {
       });
     }
     v.lensInputs.forEach(([lens, book, remove], i) => { lens.value = draft.lenses[i].lens; book.value = draft.lenses[i].agentId; lens.disabled = book.disabled = busy; remove.disabled = busy || draft.lenses.length <= 3; });
-    v.consultValidation.textContent = consultDraftError(draft);
+    // v0.53: 自动选择 needs as many ready books as it is asked to pick; 指定 needs 3 books Codex can run.
+    const need = draft.explicit ? 3 : draft.count ?? 3, have = c.books.filter(b => draft.explicit ? b.available : b.ready).length;
+    const shortage = have < need ? `会诊${draft.explicit ? '指定视角' : `自动选择 ${need} 本`}${roomShortage(need, have, draft.explicit ? ' Codex 能用' : READY_TEXT)}` : '';
+    v.consultValidation.textContent = shortage || consultDraftError(draft);
     const full = c.active >= c.parallel;
-    v.consultStart.disabled = busy || full || !!consultDraftError(draft);
+    v.consultStart.disabled = busy || full || !!shortage || !!consultDraftError(draft);
     v.consultStart.textContent = full ? `已有 ${c.active} 场会诊在进行` : c.active ? `开始会诊（另有 ${c.active} 场在进行）` : '开始会诊';
   }
   function consultMemo(record, lensAgents) {
@@ -538,14 +545,15 @@ export function renderRooms(ctx, model, host) {
     }
     v.councilEmpty.hidden = !!k.draft; v.councilForm.hidden = !k.draft;
     v.councilTitle.textContent = k.draft ? (k.draft.councilId ? '编辑顾问团' : '新建顾问团') : k.items.length ? '选一个顾问团' : '还没有顾问团';
-    v.councilEmpty.querySelector('.room-empty-text').textContent = k.items.length ? '在左边选一个顾问团查看历次会议，或新建一个。'
-      : '新建一个顾问团：选 2–5 本书做成员，写下长期目标。之后每次向它汇报进展，它会回顾上次的建议、调整计划。';
+    v.councilEmpty.querySelector('.room-empty-text').textContent = (k.items.length ? '在左边选一个顾问团查看历次会议，或新建一个。'
+      : '新建一个顾问团：选 2–5 本书做成员，写下长期目标。之后每次向它汇报进展，它会回顾上次的建议、调整计划。') +
+      (k.books.length < 2 ? `顾问团${roomShortage(2, k.books.length, '')}` : '');
     return v.councilSheet;
   }
   function syncCouncilOpening(k) {
     const draft = k.draft;
     for (const [key, el] of [['name', v.councilName], ['goal', v.councilGoal]]) { if (el.value !== draft[key] && doc.activeElement !== el) el.value = draft[key]; el.disabled = k.busy; }
-    const problem = councilDraftError(draft);
+    const problem = k.books.length < 2 ? `顾问团${roomShortage(2, k.books.length, '')}` : councilDraftError(draft);
     v.councilValidation.textContent = problem; v.councilSave.disabled = k.busy || !!problem; v.councilCancel.disabled = k.busy;
     const choicesKey = JSON.stringify([k.books, draft.memberIds]);
     if (v.choicesKey !== choicesKey) {

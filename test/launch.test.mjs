@@ -88,7 +88,7 @@ test('T9 preflight resolves PATH without execution; missing project/CLI/platform
   assert.equal(calls.length, 0);
   // shell:false cannot execute a Windows .cmd/.bat directly; never silently invoke a shell.
   await put(path.join(root, 'fake.cmd'), '@echo off');
-  if (process.platform === 'win32') await assert.rejects(resolveExecutable(path.join(root, 'fake.cmd')), /shell:false/);
+  if (process.platform === 'win32') await assert.rejects(resolveExecutable(path.join(root, 'fake.cmd')), /不经 shell 无法安全启动/);
 });
 
 test('T9 asynchronous terminal spawn failure is reported, not swallowed or substituted', async t => {
@@ -104,7 +104,7 @@ test('T9 asynchronous terminal spawn failure is reported, not swallowed or subst
 test('T9 PowerShell source uses array invocation, literal cwd and no eval', async () => {
   const launcher = await fs.readFile('launcher/launch.ps1', 'utf8');
   assert.match(launcher, /Set-Location -LiteralPath \$spec\.cwd/);
-  assert.match(launcher, /& \$spec\.exe @\(\$spec\.args\)/);
+  assert.match(launcher, /& \$spec\.exe @exeArgs @\(\$spec\.args\)/);
   assert.doesNotMatch(launcher, /Invoke-Expression|Start-Process|cmd\s+\/c/i);
 });
 

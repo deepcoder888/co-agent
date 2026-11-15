@@ -106,5 +106,6 @@ test('v0531 Agent 管理 page: 制作书籍 Agent needs a file and the confirmat
   await start.fire('click');
   assert.equal(get('agent-manager-status').textContent, '启动失败：找不到书籍文件：D:\\x.pdf');
   lists.bookMaker = null; get('agent-manager-close').fire('click'); await doc.getElementById('settings-agents').fire('click');
-  assert.equal(get('agent-manager-maker-missing').hidden, false); assert.match(get('agent-manager-maker-missing').textContent, /允许导入 Agent 文件/);
+  assert.equal(get('agent-manager-maker-missing').hidden, false); assert.match(get('agent-manager-maker-missing').textContent, /bookmaker\\README\.md 的步骤安装/); // v0.53: the whole setup, not only the agent file
+  assert.match(get('agent-manager-maker-missing').textContent, /DEEPBOOKER_HOME、DEEPBOOKER_READY_DIR/);
 });

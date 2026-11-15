@@ -1,5 +1,5 @@
 import { confirmMembers } from './calls.js';
-import { bookLabel } from './display.js';
+import { bookLabel, roomReady } from './display.js';
 
 // Labels mirror D66; the backend owns and validates the canonical IDs.
 export const consultLenses = [
@@ -31,7 +31,7 @@ export function createConsults({ api, getRegistry, confirm, permissionText, onSt
   const state = { items: [], selected: null, running: null, active: 0, parallel: 3, busy: false, error: '', draft: emptyDraft() };
   let disposed = false, timer, selectedId = null, listVersion = 0, detailVersion = 0;
   const snapshot = () => structuredClone({ ...state, books: (getRegistry()?.agents || []).filter(a => a.kind === 'book')
-    .map(a => ({ id: a.id, name: a.name, bookLabel: bookLabel(a), available: !!a.platforms?.codex?.available })) });
+    .map(a => ({ id: a.id, name: a.name, bookLabel: bookLabel(a), available: !!a.platforms?.codex?.available, ready: roomReady(a) })) });
   const emit = () => { if (!disposed) onState(snapshot()); };
   const running = () => !!state.running || state.items.some(consultActive) || consultActive(state.selected);
   // v0.47: up to `parallel` consults at once (the server sends the limit); a new one can start while others run.

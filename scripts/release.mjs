@@ -31,6 +31,9 @@ export async function releaseZip({ root = projectRoot } = {}) {
   }
   await walk(appDir);
   for (const file of releaseScripts) await add(file);
+  // 制作书籍 Agent needs a-deepbooker, its support files and the Deepbooker skill; bookmaker/README.md says where they go.
+  if (!await exists('bookmaker/README.md')) throw new Error('缺少 bookmaker/README.md');
+  await walk('bookmaker');
   // The public README and LICENSE: in the development repository they live in public-repo/, its own README is private.
   for (const file of ['LICENSE', 'README.md']) {
     const from = await exists(`public-repo/${file}`) ? `public-repo/${file}` : file;

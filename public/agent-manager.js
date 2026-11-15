@@ -36,7 +36,9 @@ export function mountAgentManager(doc, { api, onChanged = async () => {}, notify
   const bookConfirm = node(doc, 'input'); bookConfirm.type = 'checkbox'; bookConfirm.id = 'agent-manager-book-confirm';
   const confirmLabel = node(doc, 'label', undefined, 'agent-manager-check'); confirmLabel.append(bookConfirm, node(doc, 'span', 'a-deepbooker 会在电脑上新建 Agent 文件、知识包和报告，我已了解'));
   const bookStart = action(doc, '在终端里开始制作', () => makeBook()); bookStart.id = 'agent-manager-book-start'; bookStart.className = 'primary';
-  const makerMissing = node(doc, 'p', '这台电脑上还没有 a-deepbooker。先在下面「导入 Agent 文件」里导入它的 Agent 文件。', 'agent-manager-note'); makerMissing.id = 'agent-manager-maker-missing';
+  // v0.53: importing the agent file alone is not enough; bookmaker\README.md (in the download and the repository) lists every step.
+  const makerMissing = node(doc, 'p', '这台电脑上还没有 a-deepbooker。它除了 Agent 文件，还需要支持文件、Deepbooker 技能和两个环境变量（DEEPBOOKER_HOME、DEEPBOOKER_READY_DIR）。' +
+    '请按 CO-AGENT 下载文件夹（或代码仓库）里 bookmaker\\README.md 的步骤安装，装好后在 设置 → 目录 里点「刷新目录」。', 'agent-manager-note'); makerMissing.id = 'agent-manager-maker-missing';
   const makerForm = region(doc, 'div', 'agent-manager-form', label(doc, '书籍文件', bookFile), label(doc, '补充要求（可选）', bookNote),
     label(doc, '引擎', bookCli), confirmLabel, region(doc, 'div', 'agent-manager-row', bookStart));
   const making = region(doc, 'section', 'agent-manager-section', node(doc, 'h3', '制作书籍 Agent'),
@@ -127,8 +129,6 @@ export function mountAgentManager(doc, { api, onChanged = async () => {}, notify
     importing.hidden = !lists.allowImport;
     const maker = lists.bookMaker;
     makerMissing.hidden = !!maker; makerForm.hidden = !maker;
-    makerMissing.textContent = lists.allowImport ? '这台电脑上还没有 a-deepbooker。先在下面「导入 Agent 文件」里导入它的 Agent 文件。'
-      : '这台电脑上还没有 a-deepbooker。先在 设置 → 基本配置 里允许导入 Agent 文件，再在这里导入它。';
     if (maker) {
       const chosen = bookCli.value;
       bookCli.replaceChildren(...maker.platforms.map(p => { const option = node(doc, 'option', p === 'codex' ? 'Codex' : 'Claude'); option.value = p; return option; }));

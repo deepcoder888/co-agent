@@ -19,7 +19,7 @@ import { createChats, mountChatStart } from './chats.js';
 import { createFollowups } from './followups.js';
 import { mountBookReader } from './book-reader.js';
 import { seminarParticipants } from './seminars.js';
-import { matchesSearch, permissionText, sortAgents, statsReadable, summary, cleanTitle, bookLabel, spineTitle, authorShort, categoryShort, avatarColor, formatDate, runningName } from './display.js';
+import { matchesSearch, permissionText, accessLabel, syncLabel, sortAgents, statsReadable, summary, cleanTitle, bookLabel, spineTitle, authorShort, categoryShort, avatarColor, formatDate, runningName } from './display.js';
 export { excerpt, avatarLetter, formatDate, sortAgents, permissionText, matchesSearch } from './display.js';
 // Historical helper imports stay usable; live UI rendering is dispatched through layouts/index.
 export { createCard, fillDetails, renderStatus, drawCoverage as renderCoverage, drawRunning as renderRunning,
@@ -56,21 +56,21 @@ export function toDetailView(agent, history, settings = {}, message = '') {
     {key:'permissions',title:'权限与模型',rows:[{label:'声明',value:permissionText(agent)}]}];
   if(agent.sources)sections.push({key:'sources',title:'原书路径',rows:[{label:'检查',value:`已检查：${agent.sources.checked?'是':'否'} · 路径 ${agent.sources.total} 条`},
     ...agent.sources.missing.map(value=>({label:'失效',value})),...(agent.sources.missing.length?[{label:'重绑建议',value:'可用 ~/.claude/scripts/rebind_book_sources.py 重新绑定（先 dry-run）'}]:[])]});
-  sections.push({key:'sync',title:'双版本同步',rows:[{label:'状态',value:`${agent.sync.state}：${agent.sync.detail}`},
+  sections.push({key:'sync',title:'双版本同步',rows:[{label:'状态',value:agent.sync.detail&&agent.sync.detail!==agent.sync.state?`${syncLabel(agent.sync)}：${agent.sync.detail}`:syncLabel(agent.sync)},
     ...(agent.sync.state!=='同步'?[
       ...(agent.sync.descriptionDiff?[{label:'Codex 描述',value:agent.sync.descriptionDiff.codex??'（无此行）'},
         {label:'Claude 描述',value:agent.sync.descriptionDiff.claude??'（无此行）'}]:[]),
       ...(agent.sync.diff||[]).flatMap(diff=>[{label:'Codex',value:diff.codex??'（无此行）'},{label:'Claude',value:diff.claude??'（无此行）'}]),
-      {label:'修复建议',value:'对照差异手动更新 Claude 版本，保留其中专为 Claude 写的工具映射段'}]:[])]});
+      {label:'如需一致',value:'对照差异手动更新 Claude 版本，保留其中专为 Claude 写的工具映射段'}]:[])]});
   const counts=agent.statsDetail;
   if(counts)sections.push({key:'stats',title:'调用统计',rows:[...['last7d','total'].map((key,i)=>({label:['近 7 天','累计'][i],
     value:`调用 ${counts[key]?.calls||0} · Claude ${counts[key]?.bySource?.claude||0} / Codex ${counts[key]?.bySource?.codex||0} · 成功 ${counts[key]?.ok||0} / 失败 ${counts[key]?.failed||0} / 未知 ${counts[key]?.unknown||0}`})),
     {label:'启动',value:`近 7 天 ${counts.launches?.last7d||0} · 累计 ${counts.launches?.total||0}`},{label:'最后调用（本机时区）',value:formatDate(counts.lastAt)}]});
   return {...agent,fullDescription:agent.description||'无描述',chips:[{label:agent.kind==='book'?'书籍 Agent':'功能性 Agent',tone:'kind'},
-    {label:agent.writable?'可写':'只读',tone:agent.writable?'warning':'normal'},
+    {label:accessLabel(agent),tone:agent.writable?'warning':'normal'},
     // v0.16: role agents bind no book, so the source chip is shown for book agents only.
     ...(agent.kind==='book'?[{label:agent.sourcesOk===null?'原书路径未检查':agent.sourcesOk?'原书可用':'原书路径失效',tone:agent.sourcesOk?'success':'warning',title:agent.sourcesReason}]:[]),
-    {label:agent.sync.state==='同步'?'同步':'不同步',tone:agent.sync.state==='同步'?'success':'warning',title:agent.sync.detail},...Object.entries(agent.platforms).map(([cli,p])=>({label:`${cli} ${p.available?'可用':'不可用'}`,tone:p.available?'success':'danger',title:p.reason||''}))],
+    {label:syncLabel(agent.sync),tone:agent.sync.state==='同步'?'success':'normal',title:agent.sync.detail},...Object.entries(agent.platforms).map(([cli,p])=>({label:`${cli} ${p.available?'可用':'不可用'}`,tone:p.available?'success':'danger',title:p.reason||''}))],
     meta:{category:agent.primary,claudeModel:agent.permissions?.claude?.model||'未声明',claudeEffort:agent.permissions?.claude?.effort||'未声明',
       terminalDisplay:terminal?.display??null,terminalWindowMode:terminal?.windowMode??null,terminalReason:terminal?'':'当前设置接口未提供终端配置'},
     sections,history:history||{items:[],unavailable:[]},historyMessage:message};
@@ -123,7 +123,8 @@ export async function mountApp(doc, fetchImpl = fetch, { confirm } = {}) {
     const fallbackHistory={items:records.filter(h=>h.type==='launch'&&h.canResume&&h.agents.some(a=>a.id===selected?.id)).map(h=>({...h,launchId:h.id})),unavailable:[]};
     return {state:{...state,allAgents,pinnedIds:pins.filter(id=>allAgents.some(a=>a.id===id)),candidateCount:registry.candidates?.length||0,categories:registry.categories,display:registry.display||null,date:new Date().toISOString()},categories,
       catalog:{title:state.query.trim()?`搜索命中 ${visible.length} 个 Agent`:state.category==='all'?'全部 Agent':state.category==='pinned'?'常用 Agent':state.category==='role'?'功能性 Agent':state.category==='book'?'全部书籍 Agent':state.category,
-        count:visible.length,agents:visible,selectedId:state.selectedId,query:state.query,sort:state.sort,categories:registry.categories},
+        count:visible.length,agents:visible,selectedId:state.selectedId,query:state.query,sort:state.sort,categories:registry.categories,
+        empty:allAgents.length?null:{unlisted:registry.outOfScope?.length||0}},
       detail:toDetailView(selected,agentHistories.get(selected?.id)||fallbackHistory,ws.settings,historyMessages.get(selected?.id)),
       metrics:{recent7:sum(),recentByKind:{role:sum('role'),book:sum('book')},total:allAgents.length,roles:registry.summary.roles,books:registry.summary.books,
         sync:{ok:registry.summary.synced??null,total:allAgents.length},scopeLimited:!!stats?.limited,scopeReasons:stats?.limitedReasons||[],statsState:!stats||stats.building?'building':readable?'ready':'unavailable',
@@ -297,7 +298,7 @@ export async function mountApp(doc, fetchImpl = fetch, { confirm } = {}) {
     selectRecommendation:id=>workflow.selectRecommendation(id),reverifyJoint:id=>workflow.reverifyJoint(id),
     rerun:(type,id)=>history.execute(type,id,false),resumeHistory:(type,id)=>history.execute(type,id,true),
     selectHistory(type,id,trigger){state.view='history';state.detailOpen=true;trigger?.focus?.();history.select(type,id);},setHistoryFilter:type=>history.setFilter(type),refreshHistory:()=>history.load(),
-    openCandidates:trigger=>candidates.open(trigger),
+    openCandidates:trigger=>candidates.open(trigger),openAgentManager:trigger=>agentManager.open(trigger),
     // v0.39 在 CO-AGENT 中调用
     openChatStart:(id,trigger)=>chatStart.open(id,trigger),startChat:options=>chats.start(options),openChats:()=>chats.open(),
     selectChat:id=>chats.select(id),sendChat:()=>chats.send(),rewriteChat:()=>chats.rewrite(),editChatRewrite:(id,text)=>chats.editRewrite(id,text),clearChatRewrite:()=>chats.clearRewrite(),setChatDraft:text=>chats.setDraft(text),setChatRecipients:ids=>chats.setRecipients(ids),

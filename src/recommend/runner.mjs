@@ -4,7 +4,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { atomicWrite } from '../fsutil.mjs';
 import { normalize } from '../registry/identity.mjs';
-import { resolveExecutable } from '../launch/spec.mjs';
+import { resolveCli } from '../launch/spec.mjs';
 import { scrubEnvironment } from '../launch/spawner.mjs';
 import { codexModelArgs } from '../launch/codex.mjs';
 import { auditRecommendation } from '../joint/verify.mjs';
@@ -54,8 +54,8 @@ export async function runRecommendation(record, agents, config, { spawnImpl = sp
     await atomicWrite(path.join(dir, 'catalog.json'), JSON.stringify(catalog, null, 2) + '\n');
     await atomicWrite(path.join(dir, 'prompt.txt'), prompt);
     if (record.engine === 'codex') await atomicWrite(files.schema, JSON.stringify(schema, null, 2) + '\n');
-    const exe = await resolveExecutable(record.engine === 'claude' ? config.claudeExe : config.codexExe, env);
-    const args = recommendationArgs(record.engine, config, result.sessionId, files);
+    const { exe, prefix } = await resolveCli(record.engine === 'claude' ? config.claudeExe : config.codexExe, env);
+    const args = [...prefix, ...recommendationArgs(record.engine, config, result.sessionId, files)];
     const clean = scrubEnvironment(env);
     result.scrubbedEnv = clean.scrubbedEnv;
     await new Promise((resolve, reject) => {

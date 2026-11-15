@@ -29,7 +29,7 @@ test('v018 drawer defaults, accessible fields, sticky heading, escaped descripti
   const d=h.ids['candidate-dialog']; assert.equal(d.open,true); assert.equal(d.getAttribute('aria-labelledby'),'candidate-title');
   assert.ok(d.querySelector('.drawer-heading')); assert.match(d.textContent,/AI 正在建议书名与分类/);
   const row=d.querySelector('[data-candidate-id="newbook"]'); assert.equal(row.querySelector('input[type="checkbox"]').checked,true);
-  assert.equal(row.querySelector('select').options.length,11); assert.ok(row.querySelector('details')); assert.match(row.textContent,/原书文件 1/); assert.match(row.textContent,/Reading md/);
+  assert.equal(row.querySelector('select').options.length,11); assert.ok(row.querySelector('details')); assert.match(row.textContent,/原书文件 1/); assert.match(row.textContent,/书籍 Agent 目录里有它的 Claude 版/);assert.doesNotMatch(row.textContent,/Reading md/);
   assert.equal(d.querySelector('script'),null);
   const title=row.querySelector('[data-field="title"]'); title.value='我的书名'; await title.fire('input');
   h.resolve([suggestion]); await opening; await flush();

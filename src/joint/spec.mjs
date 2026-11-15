@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { parseFrontmatter } from '../registry/frontmatter.mjs';
 import { requiresTaskFormat } from '../config.mjs';
 import { atomicWrite } from '../fsutil.mjs';
-import { resolveExecutable, prepareTerminal } from '../launch/spec.mjs';
+import { resolveExecutable, resolveCli, prepareTerminal } from '../launch/spec.mjs';
 import { scrubEnvironment, spawnTerminal, applyTerminalResult } from '../launch/spawner.mjs';
 import { codexModelArgs, codexProfileArgs } from '../launch/codex.mjs';
 
@@ -102,15 +102,15 @@ export async function createJoint({ input, cli, agents, recommendId = null, sour
   if (!agents.length || !['claude', 'codex'].includes(cli)) throw new Error('联合调用参数无效');
   if (agents.some(a => !a.platforms[cli]?.available)) throw new Error('所选平台不可用');
   if (!(await fs.stat(config.launchProject)).isDirectory()) throw new Error('启动项目目录不可用');
-  const exe = await resolveExecutable(cli === 'claude' ? config.claudeExe : config.codexExe, env);
+  const { exe, prefix: exeArgs } = await resolveCli(cli === 'claude' ? config.claudeExe : config.codexExe, env);
   const pwshExe = await resolveExecutable(config.pwshExe, env);
   const jointId = randomUUID();
   const staged = new Set(jointPlan(agents).review);
-  const joint = { jointId, sessionId: jointId, recommendId, source, rerunOf, group, mode: 'joint', codexProfile: config.codexProfile, cli, input, cwd: config.launchProject, exe, createdAt: new Date().toISOString(),
+  const joint = { jointId, sessionId: jointId, recommendId, source, rerunOf, group, mode: 'joint', codexProfile: config.codexProfile, cli, input, cwd: config.launchProject, exe, exeArgs, createdAt: new Date().toISOString(),
     crossExam: crossExam === true,
     whitelist: agents.map(a => ({ id: a.id, codexName: a.name, claudeName: a.platforms.claude.name || a.name, ...(staged.has(a) ? { stage: 'review' } : {}) })),
     title: `CO-AGENT · 联合调用 · ${jointId.slice(0, 4)}`, scrubbedEnv: scrubEnvironment(env).scrubbedEnv };
-  joint.args = jointArgs(cli, joint, agents, { ...config, claudeExe: exe }, cli === 'claude' ? await scanClaudeTypes(config) : []);
+  joint.args = jointArgs(cli, joint, agents, { ...config, claudeExe: [exe, ...exeArgs].join(' ') }, cli === 'claude' ? await scanClaudeTypes(config) : []);
   const specFile = path.join(config.dataDir, 'joints', `${jointId}.json`);
   joint.specFile = specFile;
   const terminalConfig = await prepareTerminal(joint, { ...config, pwshExe }, env);

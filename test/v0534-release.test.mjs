@@ -15,6 +15,7 @@ async function fixture(t, { app = true } = {}) {
   const put = async (file, text) => { await fs.mkdir(path.dirname(path.join(root, file)), { recursive: true }); await fs.writeFile(path.join(root, file), text); };
   await put('package.json', '{"name":"co-agent","version":"9.8.7"}');
   for (const file of releaseScripts) await put(file, `# ${file}`);
+  await put('bookmaker/README.md', 'bookmaker readme'); await put('bookmaker/codex/agents/a-deepbooker.toml', 'name = "a-deepbooker"');
   await put('README.md', 'development notes');
   await put('public-repo/README.md', 'public readme');
   await put('public-repo/LICENSE', 'MIT License');
@@ -31,7 +32,10 @@ test('v0534 the release ZIP holds the built app, the install scripts and the pub
   assert.equal(path.basename(result.file), 'CO-AGENT-9.8.7-win32-x64.zip');
   const zip = await fs.readFile(result.file), entries = zipIndex(zip);
   assert.deepEqual([...entries.keys()].sort(), ['LICENSE', 'README.md', 'release/CO-AGENT-win32-x64/CO-AGENT.exe',
-    'release/CO-AGENT-win32-x64/resources/app/src/server.mjs', ...releaseScripts].sort());
+    'release/CO-AGENT-win32-x64/resources/app/src/server.mjs', ...releaseScripts,
+    // v0.53: the 制作书籍 Agent bundle, so a download can set up a-deepbooker as bookmaker/README.md describes.
+    'bookmaker/README.md', 'bookmaker/codex/agents/a-deepbooker.toml'].sort());
+  assert.equal(readEntry(zip, entries.get('bookmaker/README.md')).toString(), 'bookmaker readme');
   assert.equal(readEntry(zip, entries.get('README.md')).toString(), 'public readme');
   assert.equal(readEntry(zip, entries.get('release/CO-AGENT-win32-x64/resources/app/src/server.mjs')).toString(), 'x'.repeat(5000));
   const sha = createHash('sha256').update(zip).digest('hex');

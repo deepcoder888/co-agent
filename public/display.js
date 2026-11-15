@@ -36,6 +36,13 @@ export function missingSourcesFor(agent, cli) {
     : agent.sources?.missing || [];
 }
 
+// v0.53: a book a room may pick by itself, as the server checks: Codex available, no write confirmation, original book reachable.
+export const roomReady = a => a.kind === 'book' && !!a.platforms?.codex?.available && !a.writable &&
+  !((!a.sources?.missingByVersion && a.sourcesOk === false) || missingSourcesFor(a, 'codex').length);
+// The sentence shown when a room has fewer books than it needs.
+export const roomShortage = (need, have, what) => `需要至少 ${need} 个${what ? `${what}的` : ''}书籍 Agent，现在有 ${have} 个。可以在 设置 → Agent 管理 里登记更多书。`;
+export const READY_TEXT = '可直接使用（Codex 能用、不用确认写入权限、原书路径有效）';
+
 export function runningName(item) {
   return item.type === 'joint'
     ? `联合调用：${(item.whitelist || []).map(a => a.codexName || a.claudeName || a.name || a.id || '未载明').join('、')}`
@@ -127,6 +134,16 @@ export function sortAgents(agents, order, stats) {
   if (!['last7d', 'total'].includes(order) || !statsReadable(stats) || stats.building) return [...agents];
   return [...agents].sort((a, b) => (stats.perAgent[b.id]?.[order].calls || 0) - (stats.perAgent[a.id]?.[order].calls || 0));
 }
+
+// v0.53: 只读 only when every side is known read-only; a Codex agent without sandbox_mode follows the user's own default.
+export function accessLabel(agent) {
+  if (agent.access === 'unknown') return '权限未声明';
+  return agent.access === 'write' || (!agent.access && agent.writable) ? '可写' : '只读';
+}
+
+// v0.53: a user's Codex and Claude versions of one agent normally differ; say how, without calling it a fault.
+const SYNC_LABELS = { 同步: '两个版本一致', 描述不同: '两个版本的描述不同', 指令不同: '两个版本的指令不同', 描述和指令都不同: '两个版本的描述和指令都不同', 无法比较: '两个版本无法比较' };
+export const syncLabel = sync => SYNC_LABELS[sync?.state] ?? sync?.state ?? '未比较';
 
 export function permissionText(agent) {
   const c = agent.permissions?.codex || {}, a = agent.permissions?.claude || {};

@@ -1,10 +1,21 @@
-[CmdletBinding(SupportsShouldProcess)]
+﻿[CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Programs/CO-AGENT'),
     [string]$DesktopDir = [Environment]::GetFolderPath('Desktop'),
     [string]$StartMenuDir = [Environment]::GetFolderPath('Programs'),
     [switch]$Yes, [switch]$NoShortcuts
 )
+# v0.53: Windows PowerShell 5.1 (powershell.exe, "Run with PowerShell") cannot run these scripts. The UTF-8 BOM lets it
+# parse them; this check then stops with one clear message before anything PowerShell 7 needs.
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    Write-Host "CO-AGENT 需要 PowerShell 7（pwsh），这里是 Windows PowerShell $($PSVersionTable.PSVersion)，没有做任何改动。" -ForegroundColor Red
+    Write-Host '请先安装 PowerShell 7：winget install --id Microsoft.PowerShell --source winget'
+    Write-Host "然后运行：pwsh -File `"$PSCommandPath`""
+    Write-Host "CO-AGENT needs PowerShell 7 (pwsh); this is Windows PowerShell $($PSVersionTable.PSVersion), nothing was changed." -ForegroundColor Red
+    Write-Host "Install PowerShell 7 (winget install --id Microsoft.PowerShell --source winget), then run: pwsh -File `"$PSCommandPath`""
+    if ([Environment]::UserInteractive -and !([Environment]::GetCommandLineArgs() -match '^-NonI')) { Read-Host '按回车键关闭' | Out-Null }
+    exit 1
+}
 . (Join-Path $PSScriptRoot 'install-common.ps1')
 function Uninstall-CoAgent {
     [CmdletBinding(SupportsShouldProcess)]

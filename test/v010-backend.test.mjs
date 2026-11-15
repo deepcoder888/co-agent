@@ -322,7 +322,7 @@ test('v010 default opener reports both synchronous and asynchronous spawn failur
 test('v010 package and both root lockfile versions are 0.13.0 with unchanged dependencies', async () => {
   const manifest = JSON.parse(await fs.readFile('package.json', 'utf8'));
   const lock = JSON.parse(await fs.readFile('package-lock.json', 'utf8'));
-  assert.equal(manifest.version, '0.53.5'); assert.equal(lock.version, '0.53.5'); assert.equal(lock.packages[''].version, '0.53.5');
+  assert.equal(manifest.version, '0.53.6'); assert.equal(lock.version, '0.53.6'); assert.equal(lock.packages[''].version, '0.53.6');
   assert.equal(manifest.dependencies, undefined);
   assert.deepEqual(manifest.devDependencies, { '@electron/packager': '20.3.0', electron: '44.10.2' });
 });

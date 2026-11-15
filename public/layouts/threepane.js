@@ -1,9 +1,9 @@
 import { markAgentLink, fillAgentNames, openFileButton, runningMembers } from '../agent-links.js';
-import { node, action, region, runningCloseHeading, runningCloseRow, updateRunningClose, groupMembers, groupMeta, groupActions, renderCandidateNotice, pinButton, inAppButton, conceptResponse, updateConceptResponseNote, renderConceptThread } from './shared.js';
+import { node, action, region, runningCloseHeading, runningCloseRow, updateRunningClose, groupMembers, groupMeta, groupActions, renderCandidateNotice, emptyCatalog, pinButton, inAppButton, conceptResponse, updateConceptResponseNote, renderConceptThread } from './shared.js';
 import { donut, barList, columns } from '../charts.js';
 import { renderMarkdown } from '../markdown.js';
 import { manageDialog } from '../accessibility.js';
-import { avatarLetter, avatarColor, cleanTitle, formatDate, statsReadable, statsText, permissionText, summary, bookLabel, authorShort, conceptStatus } from '../display.js';
+import { avatarLetter, avatarColor, cleanTitle, formatDate, statsReadable, statsText, permissionText, accessLabel, syncLabel, summary, bookLabel, authorShort, conceptStatus } from '../display.js';
 export const initialCategory = 'role';
 // Legacy named helper, now a flat view; not used by the app controller.
 export function renderNavigation(doc, nav, registry, selected, choose) {
@@ -460,7 +460,8 @@ export function renderCatalog(ctx, model) {
     open.setAttribute('aria-pressed',String(selected)); open.append(avatar(doc,agent),rowCopy(doc,agent,selected)); el.append(open); target.append(el);
     rendered.set(agent.id, {card:el,buttons:[]});
   }
-  if(!model.agents.length)target.append(node(doc,'p',model.query?'没有匹配的 Agent':'当前分类没有 Agent。','empty-list'));
+  if(model.empty)target.append(emptyCatalog(ctx,model.empty,'empty-list'));
+  else if(!model.agents.length)target.append(node(doc,'p',model.query?'没有匹配的 Agent':'当前分类没有 Agent。','empty-list'));
   return rendered;
 }
 export function renderCategories(ctx, categories) {
@@ -489,9 +490,9 @@ export function renderDetail(ctx, model) {
   const chips=region(doc,'div','detail-chips');
   const chip=(text,cls='',hint='')=>{const n=node(doc,'span',text,`detail-chip ${cls}`.trim());n.title=hint;chips.append(n);};
   if (model.kind==='book') chip(model.sourcesOk===null?'原书路径未检查':model.sourcesOk?'原书可用':'原书路径失效',model.sourcesOk===null?'':model.sourcesOk?'source-ok':'source-missing',model.sourcesReason);
-  chip(model.writable?'可写':'只读');
+  chip(accessLabel(model));
   chip(`Claude ${model.platforms.claude?.available?'✓':'✕'} · Codex ${model.platforms.codex?.available?'✓':'✕'}`,'',Object.entries(model.platforms).filter(([,p])=>!p.available).map(([cli,p])=>`${cli}：${p.reason||'入口不可用'}`).join('；'));
-  chip(model.sync.state==='同步'?'同步':'不同步','',model.sync.detail);
+  chip(syncLabel(model.sync),'',model.sync.detail);
   body.append(chips,node(doc,'p',summary(model.description)||'无描述','detail-summary'));
   const controls=region(doc,'div','detail-actions');
   for (const [cli,name] of [['claude','Claude'],['codex','Codex']]) {
@@ -624,7 +625,7 @@ export function renderCoverage(ctx, model) {
   r['coverage-list'].replaceChildren(node(ctx.doc,'h2','扫描与覆盖','list-heading'),jumpLink(ctx.doc,'目录扫描','scan',`角色 ${registry.summary.roles} · 书籍 ${registry.summary.books}`),jumpLink(ctx.doc,'数据覆盖','stats-coverage',model.statsLoading?'统计中…':`${model.stats?.sources?.length||0} 个来源`));
   for (const [index,source] of (model.stats?.sources||[]).entries()) {
     const heading=r['stats-detail'].querySelectorAll('h3')[index];
-    if (heading) {heading.id=`coverage-source-${index}`;r['coverage-list'].append(jumpLink(ctx.doc,source.id,heading.id,source.available?'来源可读':'来源不可读'));}
+    if (heading) {heading.id=`coverage-source-${index}`;r['coverage-list'].append(jumpLink(ctx.doc,source.id,heading.id,source.available?'来源可读':source.missing?'还没有记录':'来源不可读'));}
   }
   r['scan-summary'].textContent=`目录扫描 · ${formatDate(registry.scannedAt)} · 范围外 ${registry.summary.outOfScope||0} · 无法解析 ${registry.summary.failed||0}`;
   const target=r['scan-detail'];target.replaceChildren();
@@ -720,9 +721,9 @@ export function createCard(doc, agent, { categories, onLaunch, onDetails, stats,
   detailButton.setAttribute('data-focus-key', `${recommendation ? 'recommend' : 'card'}-detail-${agent.id}`);
   name.append(detailButton);
   heading.append(avatar, name); card.append(heading);
-  if (agent.writable) heading.append(element(doc, 'strong', '可写', 'writable-badge'));
+  if (agent.writable) heading.append(element(doc, 'strong', accessLabel(agent), 'writable-badge'));
   if (agent.kind === 'book' && agent.sources) card.append(element(doc, 'p', !agent.sources.checked ? '原书路径未检查' : agent.sources.missing.length ? `原书路径失效 ${agent.sources.missing.length} 处` : '原书可用', agent.sources.missing.length ? 'reason source-badge' : 'tag'));
-  if (agent.sync && agent.sync.state !== '同步') card.append(element(doc, 'p', `不同步 · ${agent.sync.state}`, 'reason sync-badge'));
+  if (agent.sync && agent.sync.state !== '同步') card.append(element(doc, 'p', syncLabel(agent.sync), 'tag sync-badge'));
   heading.append(statsBadge(doc, stats, agent.id));
   const tag = element(doc, 'div', undefined, 'tag');
   tag.append(categoryIcon(doc, tone), element(doc, 'span', agent.primary)); card.append(tag);
@@ -767,8 +768,8 @@ export function fillDetails(doc, body, agent, stats) {
     if (agent.sources.missing.length) body.append(element(doc, 'p', '可用 ~/.claude/scripts/rebind_book_sources.py 重新绑定（先 dry-run）'));
   }
   if (agent.sync) {
-    body.append(element(doc, 'h3', '双版本同步'), element(doc, 'p', `${agent.sync.state}：${agent.sync.detail}`));
-    if (agent.sync.state !== '同步') body.append(element(doc, 'p', '修复建议：对照差异手动更新 Claude 版本，保留其中专为 Claude 写的工具映射段'));
+    body.append(element(doc, 'h3', '双版本同步'), element(doc, 'p', agent.sync.detail && agent.sync.detail !== agent.sync.state ? `${syncLabel(agent.sync)}：${agent.sync.detail}` : syncLabel(agent.sync)));
+    if (agent.sync.state !== '同步') body.append(element(doc, 'p', '如需一致：对照差异手动更新 Claude 版本，保留其中专为 Claude 写的工具映射段'));
   }
   body.append(statsBadge(doc, stats, agent.id));
   if (!statsReadable(stats) || stats.building || !stats.perAgent[agent.id]) return;
@@ -788,7 +789,7 @@ export function drawCoverage(doc, target, stats) {
   target.append(element(doc, 'p', stats.building ? '统计中…' : `更新时间（本机时区）：${formatDate(stats.generatedAt)}`));
   if (stats.dataDirMigration) target.append(element(doc, 'p', stats.dataDirMigration));
   for (const source of stats.sources) {
-    target.append(element(doc, 'h3', source.id), element(doc, 'p', `${source.path}：${source.available ? '可读' : '不可读'} · 文件 ${source.files} / 解析 ${source.parsedFiles} · 坏行 ${source.badLines}`),
+    target.append(element(doc, 'h3', source.id), element(doc, 'p', `${source.path}：${source.available ? '可读' : source.missing ? '还没有记录' : '不可读'} · 文件 ${source.files} / 解析 ${source.parsedFiles} · 坏行 ${source.badLines}`),
       element(doc, 'p', `覆盖（本机时区）：${formatDate(source.earliestAt)} → ${formatDate(source.latestAt)}`));
     const failures = element(doc, 'ul');
     for (const failed of source.failedFiles) failures.append(element(doc, 'li', `${failed.file}：${failed.reason}`));

@@ -19,7 +19,7 @@ CO-AGENT 是一个运行在本机的 Windows 桌面软件，用来浏览、统�
   - 顾问团：一组固定的书反复开会。
 - **每日概念**：每天由一个书籍 Agent 讲一个读者「不知道自己不知道」的概念，也可以手动生成。
 - **读书**：在软件里阅读书籍 Agent 绑定的原书（PDF / EPUB），记住阅读位置，记录研读时长。
-- **制作书籍 Agent**：在 设置 → Agent 管理 里选一本书（PDF、EPUB、MOBI 或 AZW3），CO-AGENT 会在终端里打开一个 a-deepbooker 会话。它把这本书做成书籍 Agent，同时生成完整报告。整个过程在终端里进行，需要你确认它的操作。a-deepbooker 和它需要的文件在本仓库的 `bookmaker/` 文件夹里，安装方法见 [bookmaker/README.md](bookmaker/README.md)。
+- **制作书籍 Agent**：在 设置 → Agent 管理 里选一本书（PDF、EPUB、MOBI 或 AZW3），CO-AGENT 会在终端里打开一个 a-deepbooker 会话。它把这本书做成书籍 Agent，同时生成完整报告。整个过程在终端里进行，需要你确认它的操作。a-deepbooker 和它需要的文件在本仓库（以及下载的 ZIP）的 `bookmaker/` 文件夹里，安装方法见 [bookmaker/README.md](bookmaker/README.md)。
 - **其他**：四种排版（三栏、便当格、杂志、书房），一键备份。
 
 ### 需要什么
@@ -125,7 +125,7 @@ CO-AGENT is a local Windows desktop app for browsing, counting and launching you
   - councils, a fixed set of books that meets repeatedly.
 - **Daily concept**: each day one book agent explains a concept readers "don't know they don't know". You can also generate one by hand.
 - **Reading**: read a book agent's original book (PDF / EPUB) in the app, with saved positions and reading time.
-- **Making book agents**: in Settings → Agent 管理, choose a book (PDF, EPUB, MOBI or AZW3) and CO-AGENT opens an a-deepbooker session in Windows Terminal. a-deepbooker turns the book into a book agent and writes its full reports. The work runs in the terminal, where you approve what it does. a-deepbooker and the files it needs are in this repository's `bookmaker/` folder; see [bookmaker/README.md](bookmaker/README.md) to install them.
+- **Making book agents**: in Settings → Agent 管理, choose a book (PDF, EPUB, MOBI or AZW3) and CO-AGENT opens an a-deepbooker session in Windows Terminal. a-deepbooker turns the book into a book agent and writes its full reports. The work runs in the terminal, where you approve what it does. a-deepbooker and the files it needs are in the `bookmaker/` folder of this repository and of the download ZIP; see [bookmaker/README.md](bookmaker/README.md) to install them.
 - **Other**: four layouts and one-click backup.
 
 ### Requirements

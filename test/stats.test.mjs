@@ -135,7 +135,7 @@ test('S4 coverage limitations distinguish historical gaps from recent failure/un
   await stats.refresh(); assert.equal(stats.snapshot().last7dLimited, false);
   config.codexArchiveDirs = [path.join(config.dataDir, 'nonexistent')];
   const missing = createStats(config, agents); await missing.refresh(); assert.equal(missing.snapshot().last7dLimited, true);
-  assert.match(missing.snapshot().limitedReasons.join(''), /不可读/);
+  assert.match(missing.snapshot().limitedReasons.join(''), /还没有 Codex 归档会话记录/); // v0.53: a missing folder is said plainly
 });
 
 test('S4 refresh single flight exposes building and recovers write error honestly', async t => {

@@ -1,4 +1,4 @@
-Set-StrictMode -Version Latest
+﻿Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $script:CoSource = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 

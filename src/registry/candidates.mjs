@@ -6,7 +6,7 @@ import { atomicWrite } from '../fsutil.mjs';
 import { normalize } from './identity.mjs';
 import { extractBookFiles, fileExists } from './sources.mjs';
 import { recommendationArgs } from '../recommend/runner.mjs';
-import { resolveExecutable } from '../launch/spec.mjs';
+import { resolveCli } from '../launch/spec.mjs';
 import { scrubEnvironment } from '../launch/spawner.mjs';
 import { killProcessTree } from '../concepts/runner.mjs';
 import { readCatalogFile } from '../catalog.mjs';
@@ -144,7 +144,7 @@ export async function runCandidateSuggestions(candidates, categories, examples, 
   const prompt = suggestionPrompt(candidates, categories, examples);
   await atomicWrite(files.schema, JSON.stringify(suggestionSchema(categories)), io);
   await atomicWrite(path.join(dir, 'prompt.txt'), prompt, io);
-  const exe = await resolveExecutable(config.codexExe, env), clean = scrubEnvironment(env);
+  const { exe, prefix } = await resolveCli(config.codexExe, env), clean = scrubEnvironment(env);
   let stdout = '', stderr = '';
   try {
     await new Promise((resolve, reject) => {
@@ -164,7 +164,7 @@ export async function runCandidateSuggestions(candidates, categories, examples, 
       if (signal?.aborted) { finish(new Error('建议已中断')); return; }
       signal?.addEventListener('abort', abort, { once: true });
       try {
-        child = spawnImpl(exe, recommendationArgs('codex', config, null, files), { cwd: config.launchProject, shell: false, windowsHide: true,
+        child = spawnImpl(exe, [...prefix, ...recommendationArgs('codex', config, null, files)], { cwd: config.launchProject, shell: false, windowsHide: true,
           ...(process.platform !== 'win32' ? { detached: true } : {}), env: clean.env, stdio: ['pipe','pipe','pipe'] });
         child.once('error', error => { void stop(error); });
         child.stdout?.setEncoding('utf8'); child.stderr?.setEncoding('utf8');
@@ -175,7 +175,9 @@ export async function runCandidateSuggestions(candidates, categories, examples, 
         child.stdin.on('error', error => { void stop(error); }); child.stdin.end(prompt);
       } catch (error) { void stop(error); }
     });
-    if ((await io.stat(files.output)).size > 10 * 1024 * 1024) throw new Error('建议 JSON 超过 10 MB');
+    // Codex ended without writing its answer (not signed in, wrong model, …): say that, not the missing file's path.
+    const written = await io.stat(files.output).catch(error => { if (error.code === 'ENOENT') throw new Error('Codex 没有给出结果，请确认 Codex CLI 已登录并且能正常使用'); throw error; });
+    if (written.size > 10 * 1024 * 1024) throw new Error('建议 JSON 超过 10 MB');
     return JSON.parse(await io.readFile(files.output, 'utf8'));
   } finally {
     await atomicWrite(path.join(dir, 'stdout.txt'), stdout, io);

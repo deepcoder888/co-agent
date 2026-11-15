@@ -1,5 +1,5 @@
 import { markAgentLink, fillAgentNames, openFileButton, runningMembers } from '../agent-links.js';
-import { node, action, region, runningCloseHeading, runningCloseRow, updateRunningClose, renderCandidateNotice, pinButton, inAppButton, conceptResponse, conceptResponseNote, renderConceptThread } from './shared.js';
+import { node, action, region, runningCloseHeading, runningCloseRow, updateRunningClose, renderCandidateNotice, emptyCatalog, pinButton, inAppButton, conceptResponse, conceptResponseNote, renderConceptThread } from './shared.js';
 import { renderMarkdown } from '../markdown.js';
 import { donut, barList, columns } from '../charts.js';
 import { manageDialog } from '../accessibility.js';
@@ -965,7 +965,7 @@ export function renderCatalog(ctx, model) {
   r['view-title'].textContent = model.title; r['view-title'].hidden = !model.query.trim();
   // Polling must not replace the focused book or reset horizontal shelf scrolling.
   const staff = ordered(s.allAgents.filter(agent => agent.kind === 'role' && (!model.query.trim() || matchesSearch(agent, model.query))), staffOrder);
-  const key = JSON.stringify([staff, model.agents, model.sort, model.categories, s.category, s.selectedId, model.query, s.pinnedIds, bookOrder(s)]);
+  const key = JSON.stringify([staff, model.agents, model.sort, model.categories, s.category, s.selectedId, model.query, s.pinnedIds, bookOrder(s), model.empty]);
   if (r.catalogKey !== key) {
     r.catalogKey = key;
     r.catalogNeedsFit = true;
@@ -999,12 +999,13 @@ export function renderCatalog(ctx, model) {
       if (!books.length) row.append(node(doc, 'p', '当前分类没有书籍。', 'muted'));
       r.navigation.append(region(doc, 'section', 'shelf-layer', heading, row, region(doc, 'div', 'wood-edge')));
     }
+    if (model.empty) r.navigation.append(emptyCatalog(ctx, model.empty, 'shelf-layer'));
     // Books rise into place one after another when the room or a category opens, not on every repaint.
     Array.from(r.navigation.querySelectorAll('.book-spine')).forEach((spine, index) => setStyle(spine, { '--i': String(Math.min(index, 24)) }));
     const shape = JSON.stringify([s.category, model.sort]);
     if (r.catalogShape !== shape) { r.catalogShape = shape; enter(r.navigation, 1000); }
     r['shelf-empty'].textContent = model.query ? '没有匹配的 Agent' : '当前分类没有 Agent。';
-    r['shelf-empty'].hidden = !!model.agents.length || !!staff.length;
+    r['shelf-empty'].hidden = !!model.agents.length || !!staff.length || !!model.empty;
   }
   updateVisibility(ctx);
   if (s.view === 'catalog' && r.catalogNeedsFit) {
@@ -1177,7 +1178,7 @@ export function drawCoverage(doc, target, stats) {
   target.append(node(doc, 'p', stats.building ? '统计中…' : `更新时间（本机时区）：${formatDate(stats.generatedAt)}`));
   if (stats.dataDirMigration) target.append(node(doc, 'p', stats.dataDirMigration));
   for (const source of stats.sources) {
-    target.append(node(doc, 'h3', source.id), node(doc, 'p', `${source.path}：${source.available ? '可读' : '不可读'} · 文件 ${source.files} / 解析 ${source.parsedFiles} · 坏行 ${source.badLines}`),
+    target.append(node(doc, 'h3', source.id), node(doc, 'p', `${source.path}：${source.available ? '可读' : source.missing ? '还没有记录' : '不可读'} · 文件 ${source.files} / 解析 ${source.parsedFiles} · 坏行 ${source.badLines}`),
       node(doc, 'p', `覆盖（本机时区）：${formatDate(source.earliestAt)} → ${formatDate(source.latestAt)}`));
     const failures = node(doc, 'ul');
     for (const failed of source.failedFiles) failures.append(node(doc, 'li', `${failed.file}：${failed.reason}`));

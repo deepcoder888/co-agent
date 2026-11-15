@@ -1,6 +1,6 @@
 import { markAgentLink } from './agent-links.js';
 import { manageDialog } from './accessibility.js';
-import { avatarColor, avatarLetter, bookLabel, authorShort, setStyle, summary, cleanTitle, missingSourcesFor, readingQuote } from './display.js';
+import { avatarColor, avatarLetter, bookLabel, authorShort, setStyle, summary, cleanTitle, missingSourcesFor, readingQuote, accessLabel } from './display.js';
 
 export function node(doc, tag, text, className) {
   const el = doc.createElement(tag);
@@ -17,7 +17,7 @@ export async function confirmMembers(members, cli, { confirm, permissionText }) 
   const unavailable = members.filter(a => !a?.platforms[cli]?.available);
   if (unavailable.length) throw new Error(`所选 CLI 不可用：${unavailable.map(a => `${a?.name || '已移除的 Agent'}：${a?.platforms[cli]?.reason || '入口不可用'}`).join('；')}`);
   const writable = members.filter(a => a.writable), missing = members.filter(a => missingSourcesFor(a, cli).length);
-  if (writable.length && !await confirm(`以下 Agent 可写，请确认后执行：\n${writable.map(a => `${a.name}\n${permissionText(a)}`).join('\n\n')}`)) return null;
+  if (writable.length && !await confirm(`以下 Agent 可写或权限未声明，请确认后执行：\n${writable.map(a => `${a.name}\n${permissionText(a)}`).join('\n\n')}`)) return null;
   if (missing.length && !await confirm(`原书路径失效，请确认后执行：\n${missing.map(a => `${a.name}：${missingSourcesFor(a, cli).join('；')}`).join('\n')}`)) return null;
   return { ...(writable.length ? { writableConfirmed: true } : {}), ...(missing.length ? { sourcesConfirmed: true } : {}) };
 }
@@ -84,7 +84,7 @@ export function mountJointBuilder(doc, { api, getRegistry, matchesSearch, confir
         Array.from(results.querySelectorAll('input')).find(n => n.getAttribute('aria-label') === `选择 ${a.name}`)?.focus();
       });
       const {avatar, text} = identity(a);
-      const issues = [!a.platforms[cli.value]?.available ? `不可用：${a.platforms[cli.value]?.reason || '入口不可用'}` : '', a.writable ? '可写，执行前需确认' : '', missingSourcesFor(a, cli.value).length ? '原书路径失效，执行前需确认' : ''].filter(Boolean);
+      const issues = [!a.platforms[cli.value]?.available ? `不可用：${a.platforms[cli.value]?.reason || '入口不可用'}` : '', a.writable ? `${accessLabel(a)}，执行前需确认` : '', missingSourcesFor(a, cli.value).length ? '原书路径失效，执行前需确认' : ''].filter(Boolean);
       if (issues.length) text.append(node(doc, 'span', issues.join(' · '), 'reason'));
       label.append(check, avatar, text); return label;
     };
@@ -214,7 +214,7 @@ export function mountPerspectivePicker(doc, { api, getRegistry, onRun, onContinu
       const text = markAgentLink(node(doc, 'span', undefined, 'builder-identity'), a); text.append(node(doc, 'strong', label(a)));
       if (reason) text.append(node(doc, 'span', reason, 'muted'));
       if (!a.platforms?.codex?.available) text.append(node(doc, 'span', a.platforms?.codex?.reason || 'Codex 不可用，请取消选择', 'reason'));
-      if (a.writable || missingSourcesFor(a, 'codex').length) text.append(node(doc, 'span', [a.writable ? '可写，执行前需确认' : '', missingSourcesFor(a, 'codex').length ? '原书路径失效，执行前需确认' : ''].filter(Boolean).join(' · '), 'reason'));
+      if (a.writable || missingSourcesFor(a, 'codex').length) text.append(node(doc, 'span', [a.writable ? `${accessLabel(a)}，执行前需确认` : '', missingSourcesFor(a, 'codex').length ? '原书路径失效，执行前需确认' : ''].filter(Boolean).join(' · '), 'reason'));
       row.append(check, avatar, text); return row;
     }
     recommended.replaceChildren(node(doc, 'h3', '推荐'));

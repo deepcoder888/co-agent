@@ -73,7 +73,7 @@ for (const cli of ['codex', 'claude']) for (const [route, invoke] of Object.entr
     const path = 'fixture.epub（仅 Claude 版本）', agent = member({ writable: true,
       sources: { checked: true, total: 1, missing: [path], missingByVersion: { codex: [], claude: ['fixture.epub'] } } });
     const h = await mounted(t, { agent, cli }); await invoke(h.app, cli);
-    assert.deepEqual(h.prompts, [`以下 Agent 可写，请确认后执行：\nAuthor\n${permissionText(agent)}`,
+    assert.deepEqual(h.prompts, [`以下 Agent 可写或权限未声明，请确认后执行：\nAuthor\n${permissionText(agent)}`,
       ...(cli === 'claude' ? ['原书路径失效，请确认后执行：\nAuthor：fixture.epub'] : [])]);
     const [request] = executionRequests(h); assert.equal(executionRequests(h).length, 1);
     assert.equal(request.url, route === 'launch' ? '/api/launch' : route === 'rerun' ? '/api/history/rerun' : '/api/resume');
@@ -119,21 +119,21 @@ test('v029 5.2 sync details preserve aligned rows, missing-line markers and safe
   const agent = toAgentView(member({ sync: differences })), before = structuredClone(agent);
   const rows = toDetailView(agent).sections.find(s => s.key === 'sync').rows;
   assert.deepEqual(rows, [
-    { label: '状态', value: '描述和指令都不同：有删改' },
+    { label: '状态', value: '两个版本的描述和指令都不同：有删改' },
     { label: 'Codex 描述', value: '原描述' }, { label: 'Claude 描述', value: 'Claude 描述 <img src=x>' },
     { label: 'Codex', value: '原指令 <script>literal</script>' }, { label: 'Claude', value: '改写的指令' },
     { label: 'Codex', value: '被删除的行' }, { label: 'Claude', value: '（无此行）' },
     { label: 'Codex', value: '（无此行）' }, { label: 'Claude', value: '另一行' },
-    { label: '修复建议', value: '对照差异手动更新 Claude 版本，保留其中专为 Claude 写的工具映射段' },
+    { label: '如需一致', value: '对照差异手动更新 Claude 版本，保留其中专为 Claude 写的工具映射段' },
   ]);
   assert.deepEqual(agent, before);
   for (const state of ['描述不同', '指令不同', '无法比较']) {
     const legacy = toDetailView(toAgentView(member({ sync: { state, detail: '旧接口' } }))).sections.find(s => s.key === 'sync').rows;
-    assert.equal(legacy.length, 2); assert.equal(legacy[1].label, '修复建议');
+    assert.equal(legacy.length, 2); assert.equal(legacy[1].label, '如需一致');
   }
   const detail = '描述与正文一致；Claude 版本另有 3 行附加内容（如工具映射）';
   const synced = toDetailView(toAgentView(member({ sync: { ...differences, state: '同步', detail } }))).sections.find(s => s.key === 'sync').rows;
-  assert.deepEqual(synced, [{ label: '状态', value: `同步：${detail}` }]);
+  assert.deepEqual(synced, [{ label: '状态', value: `两个版本一致：${detail}` }]);
 });
 
 function isolated(t, ui, view) {
@@ -252,9 +252,9 @@ test('v029 5.5 concept state remains unknown on first failure and becomes empty 
   response.resolve({ items: [], today: null, running: null }); await third;
 });
 
-test('v029 5.6 manifest and both lockfile version fields are 0.53.5', async () => {
+test('v029 5.6 manifest and both lockfile version fields are 0.53.6', async () => {
   const [manifest, lock] = await Promise.all(['package.json', 'package-lock.json'].map(async file => JSON.parse(await fs.readFile(file, 'utf8'))));
-  assert.equal(manifest.version, '0.53.5'); assert.equal(lock.version, '0.53.5'); assert.equal(lock.packages[''].version, '0.53.5');
+  assert.equal(manifest.version, '0.53.6'); assert.equal(lock.version, '0.53.6'); assert.equal(lock.packages[''].version, '0.53.6');
   assert.equal(manifest.dependencies, undefined);
   assert.deepEqual(manifest.devDependencies, { '@electron/packager': '20.3.0', electron: '44.10.2' });
 });

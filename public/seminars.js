@@ -1,5 +1,5 @@
 import { confirmMembers } from './calls.js';
-import { conceptStatus } from './display.js';
+import { conceptStatus, roomReady } from './display.js';
 
 const active = value => ['queued', 'running'].includes(value?.status);
 const recordView = record => record ? { ...record, terms: record.result?.terms ?? record.terms ?? [] } : null;
@@ -28,6 +28,7 @@ export function createSeminars({ api, getRegistry, confirm, permissionText, onSt
   let disposed = false, timer, selectedId = null, listVersion = 0, detailVersion = 0;
   const watched = new Map();
   const snapshot = () => structuredClone({ ...state, items: state.items.map(recordView), selected: recordView(state.selected),
+    ready: (getRegistry()?.agents || []).filter(roomReady).length,
     terms: state.selected?.result?.terms ?? state.selected?.terms ?? [] });
   const emit = () => { if (!disposed) onState(snapshot()); };
   const running = () => !!state.running || state.items.some(active) || active(state.selected) || watched.size > 0;

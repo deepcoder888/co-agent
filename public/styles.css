@@ -269,6 +269,7 @@ dialog > .drawer-heading.is-stuck {
 #settings-dialog .settings-basic-field > :is(input,select,textarea) { width:100%; min-width:0; }
 #settings-dialog .settings-basic-field > small { font-size:12px; color:var(--muted); }
 #settings-dialog .settings-basic-field > .settings-basic-missing { color:var(--danger-text); }
+#settings-dialog .settings-basic-field > .settings-basic-later { color:var(--muted); }
 #settings-dialog .settings-basic-check { display:flex; align-items:center; gap:8px; margin:14px 0 4px; font-size:13px; }
 #settings-dialog .settings-basic h4 { margin:14px 0 6px; font-size:14px; }
 #settings-dialog .settings-basic-env { margin:0 0 12px; padding-left:18px; font-size:12px; line-height:1.7; color:var(--muted); overflow-wrap:anywhere; }
@@ -299,6 +300,7 @@ dialog > .drawer-heading.is-stuck {
 .agent-manager-dialog .agent-manager-check { grid-column:1 / -1; display:flex; align-items:center; gap:8px; font-size:13px; }
 @media (max-width:760px) { .agent-manager-dialog .agent-manager-form { grid-template-columns:minmax(0,1fr); } }
 #settings-title { font-size:26px; font-weight:600; }
+.settings-style-title { margin:4px 0 0; }
 #settings-close { border:0; background:none; font-size:15px; padding:8px 4px; }
 .picker-subtitle { color:var(--muted); font-size:14px; margin:6px 0 22px; }
 #settings-dialog .theme-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; font-family:var(--picker-ui); color:var(--picker-ink); }
@@ -384,11 +386,7 @@ dialog > .drawer-heading.is-stuck {
   #settings-dialog { padding:20px; }
   #settings-dialog .theme-options { grid-template-columns:1fr; }
 }
-.settings-license { font-size:12px; line-height:1.6; color:var(--muted); }
-.settings-license {
-  border-top:1px solid var(--line);
-  padding-top:14px
-}
+#settings-dialog > footer { font-size:12px; line-height:1.6; color:var(--muted); border-top:1px solid var(--line); padding-top:14px; }
 /* Accessible chart primitives and temporary, skinnable A2 statistics composition. */
 .chart-data,.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
 .stats-entry { position:fixed; bottom:16px; right:20px; z-index:5; box-shadow:0 2px 8px #0002; }
@@ -1073,3 +1071,8 @@ dialog#chat-start .actions #chat-start-cancel { background:transparent; color:in
 /* v0.41 在软件中阅读原书: the shelf's reading mode, opened from every layout. The host carries data-ui="shelf" so the
    shelf reader rules apply (its extras are at the end of layouts/shelf.css); the host itself takes no box. */
 .book-reader-host { display:contents !important; }
+
+/* v0.53 empty catalog: nothing registered yet; the button opens Agent 管理. */
+.empty-catalog { display:grid; gap:8px; justify-items:start; padding:16px 4px; max-width:46em; }
+.empty-catalog h3 { margin:0; }
+.empty-catalog p { margin:0; line-height:1.7; }

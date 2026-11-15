@@ -10,6 +10,8 @@ const DAY = 24 * 60 * 60 * 1000, WEEK = 7 * DAY, MONTH = 30 * DAY;
 const localDay = new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit' });
 const bucket = () => ({ calls: 0, ok: 0, failed: 0, unknown: 0, bySource: { claude: 0, codex: 0 } });
 const explanation = '仅解析 session_meta 首行与末尾最多 256 KB；中段坏行不可见；未知状态不代表成功或失败。';
+const missingText = id => id === 'claude' ? '还没有 Claude 会话记录（这台电脑上还没用过 Claude CLI）'
+  : id === 'codex-archive' ? '还没有 Codex 归档会话记录' : '还没有 Codex 会话记录（这台电脑上还没用过 Codex CLI）';
 const errorText = error => error.code && !error.message.startsWith(`${error.code}:`) ? `${error.code}: ${error.message}` : error.message;
 
 export function aggregate(events, agents, sources, now = Date.now()) {
@@ -23,7 +25,7 @@ export function aggregate(events, agents, sources, now = Date.now()) {
   const limitedReasons = [], last7dLimitedReasons = [], last30dLimitedReasons = [];
   for (const source of sources) {
     if (!source.available) {
-      const reason = `${source.id} 来源不可读：${source.path}（${source.notes?.join('；') || '目录不可用'}）`;
+      const reason = source.missing ? source.notes[0] : `${source.id} 来源不可读：${source.path}（${source.notes?.join('；') || '目录不可用'}）`;
       limitedReasons.push(reason); last7dLimitedReasons.push(reason); last30dLimitedReasons.push(reason);
     }
     if (source.failedFiles?.length) {
@@ -80,7 +82,9 @@ async function collect(source, recursive, match) {
     try { entries = await fs.readdir(dir, { withFileTypes: true }); }
     catch (error) {
       if (root && source.id === 'hub' && error.code === 'ENOENT') return;
-      if (root) { source.available = false; source.notes.push(errorText(error)); }
+      // v0.53: a session folder that does not exist yet only means that CLI has not been used here; say so plainly.
+      if (root && error.code === 'ENOENT') { source.available = false; source.missing = true; source.notes.push(missingText(source.id)); }
+      else if (root) { source.available = false; source.notes.push(errorText(error)); }
       else source.failedFiles.push({ file: dir, reason: errorText(error) });
       if (error.code !== 'ENOENT') unreadable.push(dir);
       return;

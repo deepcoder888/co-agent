@@ -1,5 +1,5 @@
 import { markAgentLink, fillAgentNames, openFileButton, runningMembers } from '../agent-links.js';
-import { node, action, region, runningCloseHeading, runningCloseRow, updateRunningClose, renderCandidateNotice, pinButton, inAppButton, conceptResponse, conceptResponseNote, renderConceptThread } from './shared.js';
+import { node, action, region, runningCloseHeading, runningCloseRow, updateRunningClose, renderCandidateNotice, emptyCatalog, pinButton, inAppButton, conceptResponse, conceptResponseNote, renderConceptThread } from './shared.js';
 import { donut, barList, columns } from '../charts.js';
 import { renderMarkdown } from '../markdown.js';
 import { manageDialog } from '../accessibility.js';
@@ -385,7 +385,8 @@ export function renderCatalog(ctx, model) {
   r.cards.replaceChildren(...model.agents.map(agent => {
     const card = agentTile(ctx, agent); if (agent.id === model.selectedId) card.setAttribute('data-selected', 'true'); return card;
   }));
-  if (!model.agents.length) r.cards.append(node(ctx.doc, 'p', model.query ? '没有匹配的 Agent' : '当前分类没有 Agent。', 'empty-tile'));
+  if (model.empty) r.cards.append(emptyCatalog(ctx, model.empty, 'empty-tile'));
+  else if (!model.agents.length) r.cards.append(node(ctx.doc, 'p', model.query ? '没有匹配的 Agent' : '当前分类没有 Agent。', 'empty-tile'));
 }
 export function renderCategories(ctx, categories) {
   renderCandidateNotice(ctx, ctx.state.candidateCount);
@@ -571,7 +572,7 @@ export function drawCoverage(doc, target, stats) {
   target.append(element(doc, 'p', stats.building ? '统计中…' : `更新时间（本机时区）：${formatDate(stats.generatedAt)}`));
   if (stats.dataDirMigration) target.append(element(doc, 'p', stats.dataDirMigration));
   for (const source of stats.sources) {
-    target.append(element(doc, 'h3', source.id), element(doc, 'p', `${source.path}：${source.available ? '可读' : '不可读'} · 文件 ${source.files} / 解析 ${source.parsedFiles} · 坏行 ${source.badLines}`),
+    target.append(element(doc, 'h3', source.id), element(doc, 'p', `${source.path}：${source.available ? '可读' : source.missing ? '还没有记录' : '不可读'} · 文件 ${source.files} / 解析 ${source.parsedFiles} · 坏行 ${source.badLines}`),
       element(doc, 'p', `覆盖（本机时区）：${formatDate(source.earliestAt)} → ${formatDate(source.latestAt)}`));
     const failures = element(doc, 'ul');
     for (const failed of source.failedFiles) failures.append(element(doc, 'li', `${failed.file}：${failed.reason}`));

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { atomicWrite } from '../fsutil.mjs';
-import { resolveExecutable } from '../launch/spec.mjs';
+import { resolveCli } from '../launch/spec.mjs';
 import { scrubEnvironment } from '../launch/spawner.mjs';
 import { codexModelArgs, codexProfileArgs } from '../launch/codex.mjs';
 import { responseBody } from '../../public/display.js';
@@ -164,7 +164,7 @@ export async function runJsonProcess({ id, namespace, prompt, schema, timeoutMs,
   const files = { schema: path.join(dir, 'schema.json'), output: path.join(dir, 'out.json') };
   await write(path.join(dir, 'prompt.txt'), prompt);
   await write(files.schema, JSON.stringify(schema, null, 2) + '\n');
-  const exe = await resolveExecutable(config.codexExe, env), clean = scrubEnvironment(env);
+  const { exe, prefix } = await resolveCli(config.codexExe, env), clean = scrubEnvironment(env);
   let stdout = '', stderr = '', failure;
   try {
     await new Promise((resolve, reject) => {
@@ -184,7 +184,7 @@ export async function runJsonProcess({ id, namespace, prompt, schema, timeoutMs,
       if (signal?.aborted) { finish(new Error('进程中断')); return; }
       signal?.addEventListener('abort', abort, { once: true });
       try {
-        child = spawnImpl(exe, conceptArgs(config, files), { cwd: config.launchProject, shell: false, windowsHide: true,
+        child = spawnImpl(exe, [...prefix, ...conceptArgs(config, files)], { cwd: config.launchProject, shell: false, windowsHide: true,
           ...(process.platform !== 'win32' ? { detached: true } : {}), env: clean.env, stdio: ['pipe','pipe','pipe'] });
         child.once('error', error => { void stop(error); });
         child.stdout?.setEncoding('utf8'); child.stderr?.setEncoding('utf8');
