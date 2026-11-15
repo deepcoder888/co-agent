@@ -110,7 +110,12 @@ const restoreNote = ({ at, version, dataDir, codeDir, code }) => [
   ...(code === true ? ['恢复代码：', `  git clone "CO-AGENT.bundle" "${codeDir}"`, '  然后在该目录运行 npm ci（安装 electron 和 @electron/packager，需要联网），',
     '  再运行 npm run package 和 pwsh -File scripts/install.ps1。', ''] : [])].join('\r\n');
 
-export function createBackup(config, { version = '', opener, spawnImpl, killTree, now = () => new Date(), bundle = createGitBundle, log = async () => {} } = {}) {
+// v0.53: fs.rm retries EBUSY and EPERM with a linear backoff (100 + 200 + 300 ms), for a handle that git releases a
+// moment after its process tree is ended. `remove` is replaceable only so a test can make a readable file unremovable.
+const removeTemp = file => fs.rm(file, { force: true, maxRetries: 3, retryDelay: 100 });
+
+export function createBackup(config, { version = '', opener, spawnImpl, killTree, now = () => new Date(), bundle = createGitBundle, log = async () => {},
+  remove = removeTemp } = {}) {
   let running = null;
   async function run() {
     const at = now(), dir = config.backup.dir, codeDir = config.backup.codeDir;
@@ -121,7 +126,11 @@ export function createBackup(config, { version = '', opener, spawnImpl, killTree
       const temp = path.join(os.tmpdir(), `co-agent-backup-${randomUUID()}.bundle`);
       try { await bundle(codeDir, temp, { spawnImpl, killTree }); files.push({ name: BUNDLE_NAME, data: await fs.readFile(temp), mtime: at }); }
       catch (error) { code = `代码打包失败：${error.message}`; }
-      finally { await fs.rm(temp, { force: true }); }
+      // v0.53: a temporary bundle that cannot be removed never costs the records backup; the log names it for deleting by hand.
+      finally {
+        try { await remove(temp); }
+        catch (error) { try { await log(`备份：临时代码包未能删除，请手动删除 ${temp}：${error.message}`); } catch { /* the backup is written even if logging fails */ } }
+      }
     }
     files.push({ name: NOTE_NAME, data: Buffer.from(`﻿${restoreNote({ at, version, dataDir: config.dataDir, codeDir, code })}`, 'utf8'), mtime: at });
     const archive = zipFiles(files), file = path.join(dir, `CO-AGENT 备份 ${stamp(at)}.zip`);

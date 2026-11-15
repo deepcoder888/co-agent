@@ -48,11 +48,11 @@ test('v049 collectRecords: records at every depth; Electron caches, logs, crash 
 });
 
 test('v049 createBackup: one ZIP with records, code bundle and restore note; revealed; never replaces an earlier one', async t => {
-  const { root, data } = await dataDir(t), revealed = [], bundled = [];
+  const { root, data } = await dataDir(t), revealed = [], bundled = [], temps = [];
   const config = { dataDir: data, backup: { dir: path.join(root, '备份'), codeDir: 'D:\\repo' } };
   const at = new Date(2026, 10, 8, 15, 30, 5);
   const backup = createBackup(config, { version: '0.49.0', now: () => at, opener: async (file, options) => revealed.push([file, options]),
-    bundle: async (repo, file) => { bundled.push(repo); await fs.writeFile(file, 'bundle-bytes'); } });
+    bundle: async (repo, file) => { bundled.push(repo); temps.push(file); await fs.writeFile(file, 'bundle-bytes'); } });
   const result = await backup.start();
   assert.equal(result.file, path.join(root, '备份', 'CO-AGENT 备份 2026-11-08 153005.zip'));
   assert.deepEqual({ records: result.records, code: result.code }, { records: 3, code: 'included' });
@@ -65,7 +65,9 @@ test('v049 createBackup: one ZIP with records, code bundle and restore note; rev
   const note = files.get('恢复说明.txt').toString('utf8');
   assert.match(note, /v0\.49\.0/); assert.ok(note.includes(data), 'the note says where the records go back');
   assert.match(note, /git clone "CO-AGENT\.bundle" "D:\\repo"/); assert.match(note, /先退出 CO-AGENT/);
-  assert.equal((await fs.readdir(os.tmpdir())).filter(n => n.startsWith('co-agent-backup-') && n.endsWith('.bundle')).length, 0, 'the temporary bundle is removed');
+  // v0.53: only this backup's own temporary file; v0539-backup-temp leaves one on purpose while it runs in parallel.
+  assert.equal(temps.length, 1); assert.equal(path.dirname(temps[0]), os.tmpdir());
+  await assert.rejects(fs.stat(temps[0]), { code: 'ENOENT' }, 'the temporary bundle is removed');
   await assert.rejects(backup.start(), error => error.status === 409 && /已存在/.test(error.message));
   assert.equal((await fs.readFile(result.file)).equals(buffer), true, 'the earlier backup is untouched');
 });
