@@ -1,6 +1,6 @@
 {
   "name": "co-agent",
-  "version": "0.53.9",
+  "version": "0.53.10",
   "main": "electron/main.cjs",
   "productName": "CO-AGENT",
   "type": "module",

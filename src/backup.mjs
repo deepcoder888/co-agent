@@ -117,6 +117,8 @@ const removeTemp = file => fs.rm(file, { force: true, maxRetries: 3, retryDelay:
 export function createBackup(config, { version = '', opener, spawnImpl, killTree, now = () => new Date(), bundle = createGitBundle, log = async () => {},
   remove = removeTemp } = {}) {
   let running = null;
+  // v0.53: logging is best effort; a log that throws or rejects never fails a backup.
+  const note = async message => { try { await log(message); } catch { /* the backup is written even if logging fails */ } };
   async function run() {
     const at = now(), dir = config.backup.dir, codeDir = config.backup.codeDir;
     const files = await collectRecords(config.dataDir);
@@ -129,7 +131,7 @@ export function createBackup(config, { version = '', opener, spawnImpl, killTree
       // v0.53: a temporary bundle that cannot be removed never costs the records backup; the log names it for deleting by hand.
       finally {
         try { await remove(temp); }
-        catch (error) { try { await log(`备份：临时代码包未能删除，请手动删除 ${temp}：${error.message}`); } catch { /* the backup is written even if logging fails */ } }
+        catch (error) { await note(`备份：临时代码包未能删除，请手动删除 ${temp}：${error.message}`); }
       }
     }
     files.push({ name: NOTE_NAME, data: Buffer.from(`﻿${restoreNote({ at, version, dataDir: config.dataDir, codeDir, code })}`, 'utf8'), mtime: at });
@@ -139,7 +141,7 @@ export function createBackup(config, { version = '', opener, spawnImpl, killTree
     try { await fs.writeFile(file, archive, { flag: 'wx' }); }
     catch (error) { if (error.code === 'EEXIST') fail('同名备份已存在，请稍后再试', 409); throw error; }
     const records = files.filter(f => f.name.startsWith('data/')).length;
-    await log(`备份：${file}，${records} 个记录文件，${archive.length} 字节${code === true || code === 'skipped' ? '' : `；${code}`}`);
+    await note(`备份：${file}，${records} 个记录文件，${archive.length} 字节${code === true || code === 'skipped' ? '' : `；${code}`}`);
     try { await opener?.(file, { reveal: true, exists: true, target: 'backup' }); } catch { /* the backup is written even if Explorer fails */ }
     return { file, size: archive.length, records, code: code === true ? 'included' : code };
   }
