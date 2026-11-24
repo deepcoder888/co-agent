@@ -96,6 +96,9 @@
 [data-ui="bento"] .ask-actions { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
 [data-ui="bento"] .compose { border:1px solid #b9b2a6; border-radius:999px; padding:8px 14px; background:transparent; color:#f3efe8; font-size:14px; }
 [data-ui="bento"] .compose:hover:enabled { background:#2c2925; }
+/* The room entries on the dark ask tile are gold text links (v0.11 look; v0.40 dropped the rule with the old seminar page). */
+[data-ui="bento"] .bento-seminar-entry { color:#f0b44c; border:0; border-radius:10px; padding:4px 0; font-size:13px; background:transparent; }
+[data-ui="bento"] .bento-seminar-entry:hover:enabled { color:#f3efe8; background:transparent; text-decoration:underline; text-underline-offset:4px; }
 [data-ui="bento"] .engine-control { display:flex; align-items:center; font-size:13px; color:#b9b2a6; }
 [data-ui="bento"] #recommend-engine { background:transparent; border:0; padding:4px 0; border-radius:0; max-width:250px; font-size:13px; color:#b9b2a6; cursor:pointer; }
 [data-ui="bento"] #recommend-engine option { background:#1c1b19; color:#f3efe8; }
