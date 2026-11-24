@@ -301,6 +301,8 @@ export function mountBookReader(doc, { api, getRegistry, setTimer = setTimeout, 
       const info = await api(`/api/books/${encodeURIComponent(agentId)}/${index}`);
       if (mine !== ticket) return;
       state.info = info; state.format = info.format; fillFiles(info);
+      // 2026-11-17: an English book is set in a Latin serif (in the Chinese serif its curly quotes are a full character wide).
+      dialog.setAttribute('data-reader-lang', info.format === 'epub' && info.lang === 'en' ? 'en' : 'zh');
       if (info.format === 'pdf') {
         rail.reveal(); setDialogClass();
         head(`原书 · PDF`, info.label);

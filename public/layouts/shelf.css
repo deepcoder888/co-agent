@@ -2152,6 +2152,8 @@
 /* v0.41 在软件中阅读原书: the extras of the book reader (public/book-reader.js), which opens from every layout inside a
    data-ui="shelf" host, so it shares the reading mode above. */
 [data-ui="shelf"] .book-reader [hidden] { display:none !important; }
+/* 2026-11-17: English books read in a Latin serif first; the Chinese serif stays behind it for any Chinese in the book. */
+[data-ui="shelf"] dialog.book-reader[data-reader-lang="en"] { --reader-song:Georgia,"Palatino Linotype","Book Antiqua",Cambria,"Songti SC","Noto Serif SC","Source Han Serif SC","SimSun",serif; }
 [data-ui="shelf"] .book-reader-tools { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; margin:-72px 0 48px; font:14px var(--font-ui); }
 [data-ui="shelf"] .book-reader.is-pdf .book-reader-tools { margin:-40px 0 12px; }
 [data-ui="shelf"] .book-reader-file-label { color:var(--reader-muted); font-size:13px; }

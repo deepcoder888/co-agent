@@ -366,3 +366,14 @@ test('v05314 styles: measure by characters, variables for body type, readable co
   }
   assert.match(css, /\.book-reader-pdf \{[^}]*background:#fff;/, 'a PDF stays on white');
 });
+
+// 2026-11-17: an English EPUB is set in a Latin serif; Chinese books and PDFs keep the Chinese serif.
+test('v05315 reader: an English book marks the dialog for the Latin serif, a Chinese book and a PDF do not', async t => {
+  const h = await readerHarness(t, { info: [{ ...epubInfo, lang: 'en' }, pdfInfo], chapters: chapterText });
+  await h.reader.open('walvo');
+  assert.equal(h.dialog.getAttribute('data-reader-lang'), 'en');
+  const files = h.doc.getElementById('book-reader-file'); files.value = '1'; await files.fire('change');
+  assert.equal(h.dialog.getAttribute('data-reader-lang'), 'zh', 'a PDF has its own fonts');
+  const css = await (await import('node:fs/promises')).readFile(new URL('../public/layouts/shelf.css', import.meta.url), 'utf8');
+  assert.match(css, /dialog\.book-reader\[data-reader-lang="en"\] \{ --reader-song:Georgia,/);
+});
