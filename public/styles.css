@@ -987,6 +987,8 @@ dialog#chat-start .actions #chat-start-cancel { background:transparent; color:in
 .room-unanimous { color:#2f6b45; font-size:13px; }
 .room-majority { color:#8a5a2b; font-size:13px; }
 .room-unsure { color:#8c2f39; font-size:13px; }
+/* Must outrank .room-paper small, which sets the colour of every small in the synthesis. */
+.room-paper .room-unverified { color:#8c2f39; }
 .room-note { margin:0; font-size:13px; line-height:1.6; color:#7a6650; }
 .room-error-text { margin:0; color:#8c2f39; white-space:pre-wrap; }
 .room-situation { margin:0 0 12px; font:15px/1.8 var(--chat-serif); }

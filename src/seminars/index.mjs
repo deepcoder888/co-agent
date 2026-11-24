@@ -92,7 +92,8 @@ export function createSeminars(config, getRegistry, { now = () => new Date(), ru
     async list(limit = 30) {
       if (!Number.isInteger(limit) || limit < 1 || limit > 200) fail(400, 'limit 必须为 1–200 的整数');
       return exclusive(() => structuredClone({ items: sorted().slice(0, limit).map(({ catalog, result, ...r }) => ({ ...r,
-        result: result ? { terms: result.terms, selected: result.selected, perAgent: result.perAgent.map(({ analysis, ...a }) => a), commonAnswer: { summary: result.commonAnswer.summary } } : null,
+        result: result ? { terms: result.terms, selected: result.selected, ...(result.sourceCheck ? { sourceCheck: result.sourceCheck } : {}),
+          perAgent: result.perAgent.map(({ analysis, ...a }) => a), commonAnswer: { summary: result.commonAnswer.summary } } : null,
       })), running: running(), active: sorted().filter(active).length, parallel: seminarLimits.parallel }));
     },
     async start(body) {

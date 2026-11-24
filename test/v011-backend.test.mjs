@@ -14,12 +14,14 @@ const book = (id, extra = {}) => ({ id, name: id.toUpperCase(), kind: 'book', de
   book: { title: `《${id}的书》`, author: `${id}作者` }, platforms: { codex: { available: true } }, sources: { missing: [] }, ...extra });
 const agents = ['one','two','three','four','five','six','seven','eight'].map(id => book(id));
 const term = { zh: '习惯', en: 'Habit', fr: 'Habitude' };
+// v0.53.12: every attribution quotes the participant's own analysis, which contains this sentence.
+const quote = '第三章说习惯靠线索维持', cite = agent => ({ agent, quote });
 function output(names = ['ONE','TWO','THREE']) {
   return { selected: names.map(agent => ({ agent, reason: `${agent}直接论述` })),
-    perAgent: names.map(agent => ({ agent, analysis: `BOOK：第三章\r\nINFERENCE：${agent}原文\n覆盖程度：直接`, coverage: '直接' })),
-    commonAnswer: { summary: '共同结论', points: [{ text: '全体支持', support: names, strength: '全员一致' }, { text: '多数支持', support: names.slice(0, Math.floor(names.length / 2) + 1), strength: '多数同意' }] },
-    divergences: [{ topic: '分歧', positions: names.slice(0, 2).map(agent => ({ agent, view: '立场和理由' })) }],
-    actions: [1,2,3].map(n => ({ text: `建议${n}`, basis: [names[0]] })), terms: [term] };
+    perAgent: names.map(agent => ({ agent, analysis: `BOOK：${quote}。\r\nINFERENCE：${agent}原文\n覆盖程度：直接`, coverage: '直接' })),
+    commonAnswer: { summary: '共同结论', points: [{ text: '全体支持', support: names.map(cite), strength: '全员一致' }, { text: '多数支持', support: names.slice(0, Math.floor(names.length / 2) + 1).map(cite), strength: '多数同意' }] },
+    divergences: [{ topic: '分歧', positions: names.slice(0, 2).map(agent => ({ agent, view: '立场和理由', quote })) }],
+    actions: [1,2,3].map(n => ({ text: `建议${n}`, basis: [cite(names[0])] })), terms: [term] };
 }
 const record = () => ({ seminarId: randomUUID(), createdAt: at, input: '为什么人很难改变习惯？', mode: 'auto', requestedAgents: null, catalog: agents });
 async function setup(t, options = {}, list = agents) {
@@ -72,8 +74,9 @@ test('v011 schema and validator recount strength, reject minority/duplicates/for
   for (const mutate of [
     o => o.selected.pop(), o => o.selected.push(o.selected[0]), o => o.selected[0].agent = 'ROLE',
     o => o.perAgent.pop(), o => o.perAgent[0].coverage = 'unknown', o => o.perAgent[0].analysis = '',
-    o => o.commonAnswer.points[0].support = ['ONE'], o => o.commonAnswer.points[0].support = ['ONE','ONE','TWO'],
-    o => o.actions[0].basis = ['ROLE'], o => o.actions.pop(), o => o.divergences[0].positions[0].agent = 'ROLE',
+    o => o.commonAnswer.points[0].support = ['ONE'].map(cite), o => o.commonAnswer.points[0].support = ['ONE','ONE','TWO'].map(cite),
+    o => o.actions[0].basis = [cite('ROLE')], o => o.actions.pop(), o => o.divergences[0].positions[0].agent = 'ROLE',
+    o => o.commonAnswer.points[0].support = ['ONE','TWO','THREE'], o => o.actions[0].basis[0].quote = '太短', o => delete o.divergences[0].positions[0].quote,
     o => o.terms = [], o => o.terms = [term,term,term,term], o => o.terms[0] = { ...term, zh: '多于八个汉字的概念名称' }, o => o.extra = true,
   ]) { const value = output(); mutate(value); assert.throws(() => validateSeminar(value, r)); }
   const eight = agents.map(a => a.name), explicit = { ...r, mode: 'explicit', requestedAgents: agents.map(a => a.id) };
@@ -94,6 +97,10 @@ test('v011 engine saves enriched results, verification warnings, list/detail, an
   assert.equal(r.result.perAgent[0].analysis, output().perAgent[0].analysis);
   assert.equal((await engine.list()).items[0].seminarId, seminarId);
   assert.equal((await engine.list()).running, null);
+  // v0.53.12: 3 + 2 support quotes, 2 positions and 3 action quotes, all found in the analyses.
+  assert.deepEqual(r.result.sourceCheck, { total: 10, unverified: 0 });
+  assert.deepEqual((await engine.list()).items[0].result.sourceCheck, { total: 10, unverified: 0 });
+  assert.equal((await engine.list()).items[0].result.commonAnswer.points, undefined);
   assert.deepEqual(JSON.parse(await fs.readFile(path.join(config.dataDir,'seminars',seminarId+'.json'))), r);
   const rerun = await engine.start({ input: r.input, agentIds: ['one','two','three'], parentId: seminarId }); await engine.idle();
   assert.equal((await engine.get(rerun.seminarId)).parentId, seminarId);
@@ -159,6 +166,29 @@ test('v011 THINK structure, terms, exact analysis, 40 code points, exclusive suf
   const failed = await setup(t, { thinkWriter: async () => { throw Error('fixture denied'); } });
   const id = await failed.engine.start({ input: 'x' }); await failed.engine.idle();
   const value = await failed.engine.get(id.seminarId); assert.equal(value.status, 'done'); assert.match(value.thinkError, /denied/);
+});
+
+test('v0.53.12 THINK lists each quote under its point, action and position, with the source check above the summary', async t => {
+  const { seminarMarkdown } = await import('../src/seminars/think.mjs');
+  const { engine } = await setup(t); const started = await engine.start({ input: '为什么人很难改变习惯？' }); await engine.idle();
+  const r = await engine.get(started.seminarId);
+  r.result.commonAnswer.points[0].evidence[1].verified = false; r.result.divergences[0].positions[1].verified = false; r.result.sourceCheck.unverified = 2;
+  const markdown = seminarMarkdown(r);
+  assert.ok(markdown.includes(`## 共同答案\n\n原文回查：10 处依据，2 处未在作者原文中找到。\n\n共同结论\n\n`));
+  assert.ok(markdown.includes(`- 【全员一致】全体支持（支持：ONE、TWO、THREE）\n  - ONE：「${quote}」\n  - TWO：「${quote}」（未在原文中找到）\n  - THREE：「${quote}」\n`));
+  assert.ok(markdown.includes(`- ONE：立场和理由——「${quote}」\n- TWO：立场和理由——「${quote}」（未在原文中找到）`));
+  assert.ok(markdown.includes(`1. 建议1（依据：ONE）\n   - ONE：「${quote}」\n2. 建议2`));
+});
+
+test('v0.53.12 THINK output of a record saved before 原文回查 is unchanged', async () => {
+  const { seminarMarkdown } = await import('../src/seminars/think.mjs');
+  const { localTime } = await import('../src/concepts/index.mjs');
+  const old = { input: '问题', createdAt: at, result: { terms: [term], selected: [{ agent: 'ONE', reason: '理由' }],
+    perAgent: [{ agent: 'ONE', name: '一号', bookLabel: '《一的书》', analysis: '分析原文', coverage: '直接' }],
+    commonAnswer: { summary: '总结', points: [{ text: '要点', support: ['ONE'], strength: '全员一致' }] },
+    divergences: [{ topic: '议题', positions: [{ agent: 'ONE', view: '立场' }] }], actions: [{ text: '行动', basis: ['ONE'] }] } };
+  assert.equal(seminarMarkdown(old), `# 研讨：问题\n\n核心概念：习惯 · Habit · Habitude\n\n日期：${localTime(new Date(at)).day}（本机时区）\n\n参加者：\n- 一号 · 《一的书》 · 理由\n\n` +
+    '## 共同答案\n\n总结\n\n- 【全员一致】要点（支持：一号）\n\n## 分歧点\n\n### 议题\n\n- 一号：立场\n\n## 行动建议\n\n1. 行动（依据：一号）\n\n## 各作者的看法\n\n### 一号 · 《一的书》\n\n分析原文\n');
 });
 
 test('v011 process uses existing argv/env scrubbing, files and stdin; timeout/abort await process-tree kill', async t => {

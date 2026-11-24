@@ -368,24 +368,33 @@ export function renderRooms(ctx, model, host) {
   }
   function seminarSynthesis(record, participants) {
     const result = record.result, memberFor = ref => participants.find(p => [p.id, p.agent, p.name].includes(ref));
-    const names = ids => (ids || []).map(id => memberFor(id)?.name || id).join('、');
+    const nameOf = id => memberFor(id)?.name || id, names = ids => (ids || []).map(nameOf).join('、');
+    // 原文回查 (2026-11-16): found quotes show on hover; quotes not found in that author's analysis are marked.
+    const cited = (label, ids, evidence = []) => {
+      const list = node(doc, 'small', ` · ${label}：${names(ids)}`), found = evidence.filter(e => e.verified === true), missing = evidence.filter(e => e.verified === false);
+      if (found.length) list.setAttribute('title', found.map(e => `${nameOf(e.agent)}：「${e.quote}」`).join('\n'));
+      return [list, missing.length ? node(doc, 'small', ` · 未在${missing.map(e => `「${nameOf(e.agent)}」`).join('、')}的原文中找到`, 'room-unverified') : null];
+    };
     const parallel = record.verify?.parallel, parallelOk = parallel === true || parallel === 'ok' || parallel?.state === 'ok';
     const verified = record.verify?.state === 'ok' && parallelOk && !record.verify?.violations?.length;
     const sheet = paper('room-synthesis', '综', '主持人综合', verified ? '核验通过' : `核验：${record.verify?.state || '未确认'}`);
     const points = node(doc, 'ul', undefined, 'room-points');
     for (const point of result.commonAnswer?.points || []) {
       const tone = point.strength === '全员一致' ? 'room-unanimous' : point.strength === '多数同意' ? 'room-majority' : 'room-unsure';
-      points.append(region(doc, 'li', '', node(doc, 'span', point.text), node(doc, 'span', ` ${point.strength || '共识未确认'}`, tone), node(doc, 'small', ` · 支持：${names(point.support)}`)));
+      points.append(region(doc, 'li', '', node(doc, 'span', point.text), node(doc, 'span', ` ${point.strength || '共识未确认'}`, tone), ...cited('支持', point.support, point.evidence)));
     }
     const divergences = (result.divergences || []).map(d => region(doc, 'p', '', node(doc, 'strong', `${d.topic}：`),
-      node(doc, 'span', (d.positions || []).map(p => `${memberFor(p.agent)?.name || p.agent}：${p.view}`).join('；'))));
+      node(doc, 'span', (d.positions || []).map(p => `${nameOf(p.agent)}：${p.view}${p.verified === false ? '（未在原文中找到）' : ''}`).join('；'))));
     const actions = node(doc, 'ol');
-    for (const item of result.actions || []) actions.append(region(doc, 'li', '', node(doc, 'span', item.text), node(doc, 'small', ` · 依据：${names(item.basis)}`)));
+    for (const item of result.actions || []) actions.append(region(doc, 'li', '', node(doc, 'span', item.text), ...cited('依据', item.basis, item.evidence)));
     sheet.append(region(doc, 'div', 'room-synthesis-grid',
       section('共同答案', node(doc, 'p', result.commonAnswer?.summary || '暂无共同答案'), points),
       section('分歧', ...(divergences.length ? divergences : [node(doc, 'p', '未列出分歧点。')])),
       section('行动建议', actions)));
     if (record.strengthCorrected || result.strengthCorrected || (result.commonAnswer?.points || []).some(p => p.strengthCorrected)) sheet.append(node(doc, 'p', '共识强度已由服务器按支持人数修正。', 'room-note'));
+    const check = result.sourceCheck;
+    if (check) sheet.append(node(doc, 'p', check.unverified ? `原文回查：综合引用的 ${check.total} 处依据中有 ${check.unverified} 处未在作者原文中找到，已逐条标出。`
+      : `原文回查：综合引用的 ${check.total} 处依据均见于作者原文。`, 'room-note'));
     if (record.verify?.violations?.length) sheet.append(node(doc, 'p', `核验提示：${JSON.stringify(record.verify.violations)}`, 'room-note'));
     return sheet;
   }

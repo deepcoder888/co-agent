@@ -131,6 +131,9 @@ for(const ui of Object.keys(layouts))test(`v040 ${ui}: 圆桌 opens as a chat-pa
   assert.equal(h.doc.getElementById('chat-room-seminars').getAttribute('aria-current'),'page');assert.equal(h.doc.getElementById('room-side-seminars').hidden,false);
   for(const text of ['共同说明','全员一致','多数同意','理由b0','直接','立场甲','行动3','完整观点','核验','合成另存失败','Énergie','主持人综合'])assert.ok(main.textContent.includes(text),text);
   assert.ok(main.querySelector('.room-unanimous'));assert.ok(main.querySelector('.room-majority'));assert.equal(main.querySelectorAll('.room-author').length,3);
+  // v0.53.12: a record saved before 原文回查 shows no source-check line, marks or quote titles.
+  assert.ok(!main.textContent.includes('原文回查'));assert.ok(!main.textContent.includes('未在'));assert.equal(main.querySelector('.room-unverified'),null);
+  assert.ok(main.querySelectorAll('small').every(s=>!s.getAttribute('title')));
   for(const name of ['openSeminars','startSeminar','selectSeminar','openSeminarAddPicker','rerunSeminar','continueSeminarInJoint','openRoom','newRoomRecord','sendFollowup'])assert.equal(typeof h.app.actions[name],'function',name);
   assert.deepEqual(h.app.snapshot().concepts.selected.term,terms[0]);assert.equal(h.app.snapshot().concepts.selected.result.markdown,'原讲解');
   const read=main.querySelector('.room-read');await read.fire('click');const sheet=read.parentElement;assert.match(sheet.className,/is-open/);
@@ -142,6 +145,27 @@ for(const ui of Object.keys(layouts))test(`v040 ${ui}: 圆桌 opens as a chat-pa
   await h.doc.getElementById('room-seminars-start').fire('click');const post=h.requests.find(r=>r.url==='/api/seminars'&&r.body);assert.deepEqual(post.body,{input:'未提交草稿'});assert.equal(post.opts.headers['X-Co-Agent-Token'],'synthetic-token');assert.equal(post.opts.method,'POST');assert.match(main.textContent,/排队中/);
   await h.app.actions.selectSeminar('s1');assert.equal(h.app.snapshot().chat.seminars.selected.seminarId,'s1');
   await h.app.actions.showView('catalog');assert.equal(page.hidden,true);assert.ok(!h.doc.getElementById('catalog').closest('[hidden]'));
+});
+test('v0.53.12 圆桌 synthesis marks quotes not found in the author\'s analysis, shows found quotes on hover and states the source check',async t=>{
+  const h=await appFixture(t,'shelf'),quote=id=>`作者${id}原文里的一句话`,cite=(id,verified)=>({agent:`cli-${id}`,quote:quote(id),verified});
+  const marked=record(),result=marked.result,[all,most]=result.commonAnswer.points;
+  all.evidence=[cite('b0',true),cite('b1',false),cite('b2',false)];most.evidence=[cite('b0',true),cite('b1',true)];
+  result.divergences[0].positions=[{agent:'cli-b0',view:'立场甲',quote:quote('b0'),verified:true},{agent:'cli-b1',view:'立场乙',quote:quote('b1'),verified:false}];
+  for(const action of result.actions)action.evidence=[cite('b0',true),cite('b2',action.text==='行动1'?false:true)];
+  result.sourceCheck={total:13,unverified:4};h.data.records.set('s1',marked);
+  const clean=record('s2');clean.result.sourceCheck={total:13,unverified:0};h.data.records.set('s2',clean);
+  await h.doc.getElementById('seminars-open').fire('click');const main=h.doc.querySelector('.room-main[data-room="seminars"]');
+  assert.ok(main.textContent.includes('原文回查：综合引用的 13 处依据中有 4 处未在作者原文中找到，已逐条标出。'));
+  const marks=main.querySelectorAll('.room-unverified');assert.equal(marks.length,2);
+  assert.equal(marks[0].textContent,' · 未在「作者b1」、「作者b2」的原文中找到');assert.equal(marks[1].textContent,' · 未在「作者b2」的原文中找到');
+  const titled=main.querySelectorAll('small').filter(s=>s.getAttribute('title'));
+  assert.equal(titled[0].textContent,' · 支持：作者b0、作者b1、作者b2');assert.equal(titled[0].getAttribute('title'),'作者b0：「作者b0原文里的一句话」');
+  assert.equal(titled[1].getAttribute('title'),'作者b0：「作者b0原文里的一句话」\n作者b1：「作者b1原文里的一句话」');
+  assert.equal(titled[2].textContent,' · 依据：作者b0、作者b2');assert.equal(titled[2].getAttribute('title'),'作者b0：「作者b0原文里的一句话」');
+  assert.equal(titled[3].getAttribute('title'),'作者b0：「作者b0原文里的一句话」\n作者b2：「作者b2原文里的一句话」');
+  assert.ok(main.textContent.includes('作者b0：立场甲；作者b1：立场乙（未在原文中找到）'));
+  await h.app.actions.selectSeminar('s2');
+  assert.ok(main.textContent.includes('原文回查：综合引用的 13 处依据均见于作者原文。'));assert.equal(main.querySelector('.room-unverified'),null);
 });
 test('v040 switching layouts keeps the 圆桌 room, its draft and selection',async t=>{
   const h=await appFixture(t,'threepane');await h.app.actions.openSeminars();await h.app.actions.newRoomRecord('seminars');const input=h.doc.getElementById('room-seminars-question');input.value='保留问题';await input.fire('input');h.app.actions.openSettings();
