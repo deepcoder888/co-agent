@@ -117,9 +117,9 @@ test('v042 HTTP: facts, token-guarded reading time, and the description size in 
   assert.equal(saved.bookText, 130); assert.equal(saved.ui, 'shelf', 'the size alone leaves the layout');
   assert.equal((await (await put({ ui: 'shelf' })).json()).bookText, 130, 'the layout alone leaves the size');
   for (const bad of [{ bookText: 75 }, { bookText: 125 }, { bookText: 170 }, { bookText: '130' }, {}]) assert.equal((await put(bad)).status, 400, JSON.stringify(bad));
-  assert.match(await (await fetch(base + '/')).text(), /<html lang="zh-CN" data-ui="shelf" data-book-text="130">/);
+  assert.match(await (await fetch(base + '/')).text(), /<html lang="zh-CN" data-ui="shelf" data-book-text="130" data-depth="off">/);
   // v0.53.14: the readers' typography is part of the settings, at its defaults here.
-  assert.deepEqual(await readSettings(config.dataDir), { version: 1, ui: 'shelf', bookText: 130, reader: { fontSize: 19, lineHeight: 205, measure: 'medium', theme: 'paper' } });
+  assert.deepEqual(await readSettings(config.dataDir), { version: 1, ui: 'shelf', bookText: 130, reader: { fontSize: 19, lineHeight: 205, measure: 'medium', theme: 'paper' }, depth: 'off' });
   await fs.writeFile(path.join(config.dataDir, 'settings.json'), JSON.stringify({ version: 1, ui: 'bento' }));
   assert.equal((await readSettings(config.dataDir)).bookText, 100, 'older settings files read as 100%');
   await assert.rejects(writeSettings(config.dataDir, 'shelf', 90.5), { status: 400 });

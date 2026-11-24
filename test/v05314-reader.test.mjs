@@ -158,7 +158,7 @@ test('v05314 settings: reader defaults and range, saved on its own and merged, i
   const file = JSON.parse(await fs.readFile(path.join(config.dataDir, 'settings.json'), 'utf8'));
   assert.deepEqual(file.reader, { fontSize: 22, lineHeight: 240, measure: 'wide', theme: 'night' });
   await fs.writeFile(path.join(config.dataDir, 'settings.json'), JSON.stringify({ version: 1, ui: 'editorial', bookText: 120, reader: { fontSize: 99, lineHeight: 180, measure: 'x', theme: 'gray' } }));
-  assert.deepEqual(await readSettings(config.dataDir), { version: 1, ui: 'editorial', bookText: 120, reader: { fontSize: 19, lineHeight: 180, measure: 'medium', theme: 'gray' } });
+  assert.deepEqual(await readSettings(config.dataDir), { version: 1, ui: 'editorial', bookText: 120, reader: { fontSize: 19, lineHeight: 180, measure: 'medium', theme: 'gray' }, depth: 'off' });
   assert.deepEqual(normalizeReaderPrefs('nonsense'), { fontSize: 19, lineHeight: 205, measure: 'medium', theme: 'paper' });
 });
 

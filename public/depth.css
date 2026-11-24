@@ -1,0 +1,174 @@
+/* 微立体 (2026-11-24): the "micro-3D" look of PowerPoint decks for CO-AGENT's buttons, cards and tags.
+   In PowerPoint it is built from stacked shapes: a light-to-dark gradient fill, a thin highlight on the lit edge, a
+   shade on the far edge and a soft drop shadow; an inner shadow and the reversed gradient make the same shape look
+   pressed. Here every layer is a box-shadow or a background-image over the element's own colour, so each layout keeps
+   its colours, borders and radii. Four looks, chosen in 设置 (settings.json `depth`, <html data-depth>):
+     soft   柔光  the classic deck button: top sheen, edge highlight, soft drop shadow;
+     bevel  棱台  PowerPoint's 3-D bevel: chamfered edges lit from the top left and a short hard step below;
+     neu    新拟态 neumorphism: the surface rises from the page with a light shadow and a dark shadow;
+     clay   黏土  claymorphism: puffy, a floating shadow with inner light and inner shade.
+   `off` (the default) leaves everything as each layout draws it.
+   The recipes read the light and dark of the surface they sit on (--depth-hi, --depth-lo …), set below per layout and
+   for the light panels inside a dark layout; they are recomputed on every element, so a button on paper inside the
+   dark shelf gets paper shadows. The reading modes stay flat: nothing here applies inside them. */
+
+/* Light and dark of the surface. Light layouts by default; the shelf's wood is dark. */
+:root {
+  --depth-hi:rgba(255,255,255,.85);
+  --depth-hi-soft:rgba(255,255,255,.45);
+  --depth-lo:rgba(31,35,40,.18);
+  --depth-lo-soft:rgba(31,35,40,.09);
+  --depth-edge:rgba(31,35,40,.14);
+  --depth-sheen-hi:rgba(255,255,255,.24);
+  --depth-sheen-lo:rgba(0,0,0,.06);
+}
+:root[data-ui="shelf"] {
+  --depth-hi:rgba(255,232,196,.26);
+  --depth-hi-soft:rgba(255,232,196,.12);
+  --depth-lo:rgba(0,0,0,.6);
+  --depth-lo-soft:rgba(0,0,0,.32);
+  --depth-edge:rgba(0,0,0,.38);
+  --depth-sheen-hi:rgba(255,236,205,.16);
+  --depth-sheen-lo:rgba(0,0,0,.14);
+}
+/* The chat page and its rooms are dark wood in every layout; their papers are light (below). */
+.chat-page {
+  --depth-hi:rgba(255,232,196,.26);
+  --depth-hi-soft:rgba(255,232,196,.12);
+  --depth-lo:rgba(0,0,0,.6);
+  --depth-lo-soft:rgba(0,0,0,.32);
+  --depth-edge:rgba(0,0,0,.38);
+  --depth-sheen-hi:rgba(255,236,205,.16);
+  --depth-sheen-lo:rgba(0,0,0,.14);
+}
+/* Light surfaces inside any layout. */
+#settings-dialog,
+.chat-page .room-paper,
+.chat-page .chat-answer,
+.chat-page .chat-slip,
+.concept-map-page,
+[data-ui="shelf"] .shelf-concept-paper,
+[data-ui="shelf"] .shelf-detail,
+[data-ui="shelf"] .shelf-stats-board {
+  --depth-hi:rgba(255,255,255,.85);
+  --depth-hi-soft:rgba(255,255,255,.45);
+  --depth-lo:rgba(42,33,25,.2);
+  --depth-lo-soft:rgba(42,33,25,.1);
+  --depth-edge:rgba(42,33,25,.16);
+  --depth-sheen-hi:rgba(255,255,255,.24);
+  --depth-sheen-lo:rgba(0,0,0,.06);
+}
+
+/* The four recipes. `.depth-preview[data-depth=…]` draws a sample of one look in 设置 whatever look is in use. */
+[data-depth="soft"] *, .depth-preview[data-depth="soft"] * {
+  --d-btn:inset 0 1px 0 var(--depth-hi), inset 0 -1px 0 var(--depth-edge), 0 1px 2px var(--depth-lo), 0 4px 10px -4px var(--depth-lo);
+  --d-btn-sheen:linear-gradient(180deg, var(--depth-sheen-hi), rgba(255,255,255,0) 52%, var(--depth-sheen-lo));
+  --d-press:inset 0 2px 4px var(--depth-lo), inset 0 -1px 0 var(--depth-hi-soft);
+  --d-press-sheen:linear-gradient(0deg, var(--depth-sheen-hi), rgba(255,255,255,0) 60%);
+  --d-card:inset 0 1px 0 var(--depth-hi), 0 1px 2px var(--depth-lo-soft), 0 12px 26px -14px var(--depth-lo);
+  --d-card-sheen:linear-gradient(180deg, var(--depth-sheen-hi), rgba(255,255,255,0) 38%);
+  --d-chip:inset 0 1px 0 var(--depth-hi), inset 0 -1px 0 var(--depth-edge), 0 1px 2px var(--depth-lo-soft);
+  --d-chip-sheen:linear-gradient(180deg, var(--depth-sheen-hi), rgba(255,255,255,0) 60%);
+}
+[data-depth="bevel"] *, .depth-preview[data-depth="bevel"] * {
+  --d-btn:inset 1px 1px 0 var(--depth-hi), inset -1px -1px 0 var(--depth-edge), inset 3px 3px 4px -2px var(--depth-hi-soft), inset -3px -3px 4px -2px var(--depth-lo-soft), 0 2px 0 var(--depth-lo), 0 4px 6px -2px var(--depth-lo-soft);
+  --d-btn-sheen:linear-gradient(135deg, var(--depth-sheen-hi), rgba(255,255,255,0) 45%, var(--depth-sheen-lo));
+  --d-press:inset 1px 1px 0 var(--depth-edge), inset -1px -1px 0 var(--depth-hi-soft), inset 2px 2px 5px var(--depth-lo);
+  --d-press-sheen:linear-gradient(315deg, var(--depth-sheen-hi), rgba(255,255,255,0) 50%, var(--depth-sheen-lo));
+  --d-card:inset 1px 1px 0 var(--depth-hi), inset -1px -1px 0 var(--depth-edge), 0 3px 0 var(--depth-lo-soft), 0 14px 22px -16px var(--depth-lo);
+  --d-card-sheen:linear-gradient(135deg, var(--depth-sheen-hi), rgba(255,255,255,0) 40%);
+  --d-chip:inset 1px 1px 0 var(--depth-hi), inset -1px -1px 0 var(--depth-edge), 0 1px 0 var(--depth-lo-soft);
+  --d-chip-sheen:linear-gradient(135deg, var(--depth-sheen-hi), rgba(255,255,255,0) 55%);
+}
+[data-depth="neu"] *, .depth-preview[data-depth="neu"] * {
+  --d-btn:-3px -3px 7px var(--depth-hi), 3px 3px 7px var(--depth-lo);
+  --d-btn-sheen:linear-gradient(145deg, var(--depth-sheen-hi), rgba(255,255,255,0) 70%);
+  --d-press:inset -2px -2px 5px var(--depth-hi), inset 2px 2px 5px var(--depth-lo);
+  --d-press-sheen:none;
+  --d-card:-8px -8px 18px var(--depth-hi), 8px 8px 18px var(--depth-lo-soft), 0 0 0 transparent;
+  --d-card-sheen:none;
+  --d-chip:-2px -2px 4px var(--depth-hi), 2px 2px 4px var(--depth-lo-soft);
+  --d-chip-sheen:none;
+}
+[data-depth="clay"] *, .depth-preview[data-depth="clay"] * {
+  --d-btn:0 6px 12px -4px var(--depth-lo), inset -3px -4px 6px var(--depth-lo-soft), inset 3px 4px 6px var(--depth-hi-soft);
+  --d-btn-sheen:radial-gradient(120% 90% at 30% 15%, var(--depth-sheen-hi), rgba(255,255,255,0) 60%);
+  --d-press:inset 3px 4px 8px var(--depth-lo-soft), inset -2px -2px 4px var(--depth-hi-soft);
+  --d-press-sheen:none;
+  --d-card:0 18px 30px -18px var(--depth-lo), inset -6px -8px 14px var(--depth-lo-soft), inset 6px 8px 14px var(--depth-hi-soft);
+  --d-card-sheen:radial-gradient(90% 60% at 25% 10%, var(--depth-sheen-hi), rgba(255,255,255,0) 70%);
+  --d-chip:0 3px 6px -3px var(--depth-lo), inset -2px -2px 4px var(--depth-lo-soft), inset 2px 2px 4px var(--depth-hi-soft);
+  --d-chip-sheen:none;
+}
+
+/* What gets a look. Buttons are named one by one: navigation entries, list rows, text links, book spines and other
+   drawn objects stay as they are. The selectors start from the root so they win over each layout's own rules. */
+:root[data-ui]:not([data-depth="off"]):not([data-depth=""]) :is(
+  .actions button, .detail-actions button, .group-actions button, .tile-actions button, .focus-actions button,
+  .desk-actions button, .history-actions button, .concept-response button, .editorial-concept-actions button,
+  .shelf-detail .actions button, .selection-chip button,
+  .compose, .primary-button, .outline-button, .reading-toggle, .running-close-all,
+  .bento-seminar-entry, .bento-concept-button, .bento-stats-button,
+  .shelf-primary, .shelf-outline, .staff-arrow,
+  .chat-send, .chat-new, .chat-layout-option, .room-primary, .room-mode, .chat-side-toggle,
+  .stats-controls button, .concept-map-page button, .agent-open-toast button,
+  #header-tools > button, .header-tools > button, .ask-input-line > button, .bento-ask button[type="submit"],
+  #settings-dialog .drawer-heading button, #settings-dialog .settings-basic button, #settings-dialog .settings-backup button
+):not(:disabled):not(dialog.shelf-reader *) {
+  box-shadow:var(--d-btn);
+  background-image:var(--d-btn-sheen);
+}
+:root[data-ui]:not([data-depth="off"]):not([data-depth=""]) :is(
+  .actions button, .detail-actions button, .group-actions button, .tile-actions button, .focus-actions button,
+  .desk-actions button, .history-actions button, .concept-response button, .editorial-concept-actions button,
+  .shelf-detail .actions button, .selection-chip button,
+  .compose, .primary-button, .outline-button, .reading-toggle, .running-close-all,
+  .bento-seminar-entry, .bento-concept-button, .bento-stats-button,
+  .shelf-primary, .shelf-outline, .staff-arrow,
+  .chat-send, .chat-new, .chat-layout-option, .room-primary, .room-mode, .chat-side-toggle,
+  .stats-controls button, .concept-map-page button, .agent-open-toast button,
+  #header-tools > button, .header-tools > button, .ask-input-line > button, .bento-ask button[type="submit"],
+  #settings-dialog .drawer-heading button, #settings-dialog .settings-basic button, #settings-dialog .settings-backup button
+):not(:disabled):not(dialog.shelf-reader *):is(:active, [aria-pressed="true"], [aria-checked="true"], [aria-current="true"], [aria-current="page"]) {
+  box-shadow:var(--d-press);
+  background-image:var(--d-press-sheen);
+}
+/* Cards: tiles, answer papers and the layout cards of 设置. */
+:root[data-ui]:not([data-depth="off"]):not([data-depth=""]) :is(
+  [data-ui="bento"] .agent-tile, [data-ui="bento"] .metric-tile, [data-ui="bento"] .bento-tile,
+  [data-ui="bento"] .bento-ask, [data-ui="bento"] .bento-concept-tile,
+  .chat-answer, #settings-dialog .theme-option, .depth-option
+) {
+  box-shadow:var(--d-card);
+  background-image:var(--d-card-sheen);
+}
+/* Tags and chips. */
+:root[data-ui]:not([data-depth="off"]):not([data-depth=""]) :is(
+  .detail-chip, .chat-chip, .category-pill, .agent-badge, .put-on-desk
+):not(:disabled):not(dialog.shelf-reader *) {
+  box-shadow:var(--d-chip);
+  background-image:var(--d-chip-sheen);
+}
+:root[data-ui]:not([data-depth="off"]):not([data-depth=""]) :is(.chat-chip, .category-pill):is(:active, [aria-pressed="true"]) {
+  box-shadow:var(--d-press);
+  background-image:none;
+}
+
+/* 设置 → 微立体: five choices, each with a sample drawn in its own look. */
+#settings-dialog .settings-depth { margin:22px 0 4px; font-family:var(--picker-ui); color:var(--text); }
+#settings-dialog .settings-depth > p { margin:6px 0 10px; color:var(--muted); font-size:13px; }
+#settings-dialog .depth-options { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
+#settings-dialog .depth-option { position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:12px; border:1px solid var(--picker-line); border-radius:14px; background:#fafbfc; cursor:pointer; }
+#settings-dialog .depth-option:has(input:checked) { border-color:var(--picker-accent); background:var(--picker-soft); }
+#settings-dialog .depth-option:has(input:focus-visible) { outline:3px solid var(--focus); outline-offset:2px; }
+#settings-dialog .depth-option input { position:absolute; opacity:0; pointer-events:none; }
+#settings-dialog .depth-option strong { font-size:14px; }
+#settings-dialog .depth-option small { color:var(--muted); font-size:12px; line-height:1.45; }
+#settings-dialog .depth-preview { display:flex; gap:8px; align-items:center; padding:6px 2px 4px;
+  --depth-hi:rgba(255,255,255,.85); --depth-hi-soft:rgba(255,255,255,.45); --depth-lo:rgba(31,35,40,.2); --depth-lo-soft:rgba(31,35,40,.1);
+  --depth-edge:rgba(31,35,40,.16); --depth-sheen-hi:rgba(255,255,255,.24); --depth-sheen-lo:rgba(0,0,0,.06); }
+#settings-dialog .depth-sample { display:inline-block; padding:6px 12px; border-radius:9px; background-color:#0b57d0; color:#fff; font-size:12px; line-height:1.2; }
+#settings-dialog .depth-sample.is-plain { background-color:#eef1f4; color:#1f2328; border-radius:999px; padding:4px 10px; }
+#settings-dialog .depth-preview:not([data-depth="off"]) .depth-sample { box-shadow:var(--d-btn); background-image:var(--d-btn-sheen); }
+#settings-dialog .depth-preview:not([data-depth="off"]) .depth-sample.is-plain { box-shadow:var(--d-chip); background-image:var(--d-chip-sheen); }
+#settings-dialog .settings-depth-status { min-height:1.4em; margin:6px 0 0; color:var(--muted); font-size:12px; }

@@ -149,6 +149,25 @@ export function mountSettings(doc, fetchImpl, token, onLayout = () => {},
   }); return bookTextWork; };
   if (bookText) { bookText.value = String(savedBookText); bookText.addEventListener('input', previewBookText); bookText.addEventListener('change', saveBookText); }
   showBookText(savedBookText);
+  // 2026-11-24 微立体: a choice shows at once on the whole page and is then saved; a failed save puts the saved look back.
+  const depthStatus = get('settings-depth-status'), depthInputs = Array.from(doc.querySelectorAll?.('input[name="settings-depth"]') || []);
+  let savedDepth = doc.documentElement.getAttribute('data-depth') || 'off', depthWork = Promise.resolve();
+  const showDepth = value => { doc.documentElement.setAttribute('data-depth', value); for (const input of depthInputs) input.checked = input.value === value; };
+  const saveDepth = event => { const value = event.target.value; showDepth(value); depthWork = depthWork.then(async () => {
+    if (disposed || value === savedDepth) return;
+    if (depthStatus) depthStatus.textContent = '正在保存…';
+    try {
+      const response = await fetchImpl('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Co-Agent-Token': token }, body: JSON.stringify({ depth: value }) });
+      const result = await response.json(); if (disposed) return;
+      if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+      savedDepth = result.depth; if (depthStatus) depthStatus.textContent = '已保存';
+    } catch (error) {
+      if (disposed) return;
+      showDepth(savedDepth); if (depthStatus) depthStatus.textContent = `保存失败，已恢复原样式：${error.message}`;
+    }
+  }); return depthWork; };
+  for (const input of depthInputs) input.addEventListener('change', saveDepth);
+  showDepth(savedDepth);
   // v0.49 备份 (2026-11-08): the server writes one ZIP and selects it in Explorer; the user moves it to the cloud drive.
   const backupButton = get('settings-backup'), backupStatus = get('settings-backup-status');
   const runBackup = async () => {
@@ -170,5 +189,5 @@ export function mountSettings(doc, fetchImpl, token, onLayout = () => {},
   const trigger = bindTrigger ? get('settings-open') : null, openFromEvent = event => open(event.currentTarget), close = () => controller.close();
   trigger?.addEventListener('click', openFromEvent); get('settings-close').addEventListener('click', close);
   return { ...controller, open, dispose() { disposed = true; clearTimer(timer); trigger?.removeEventListener('click', openFromEvent); get('settings-close').removeEventListener('click', close);
-    bookText?.removeEventListener('input', previewBookText); bookText?.removeEventListener('change', saveBookText); backupButton?.removeEventListener('click', runBackup); }, saveBookText, runBackup };
+    bookText?.removeEventListener('input', previewBookText); bookText?.removeEventListener('change', saveBookText); for (const input of depthInputs) input.removeEventListener('change', saveDepth); backupButton?.removeEventListener('click', runBackup); }, saveBookText, runBackup };
 }
