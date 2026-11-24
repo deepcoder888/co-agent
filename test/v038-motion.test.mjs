@@ -237,9 +237,11 @@ test('v0.44.1 the book flies home in one eased flight, lands flat on its spine a
   // v0.53.18: the flight is sampled along a curve; it ends turned spine-out above the slot and drops straight in.
   const frames = calls[0].frames, from = frames[0], to = frames.at(-1);
   assert.ok(frames.length > 10 && frames.every((f, i) => i === 0 || f.offset > frames[i - 1].offset), 'keyframes in order');
-  assert.match(from.transform, /scale\(1\) translateZ\(0px\) rotateZ\(0deg\) rotateX\(5deg\) rotateY\(215deg\)$/, '−145° goes home as 215°, 125° from 90° instead of 235°');
+  assert.match(from.transform, /scale\(1\) translateZ\(0px\) scaleZ\(1\) rotateZ\(0deg\) rotateX\(5deg\) rotateY\(215deg\)$/, '−145° goes home as 215°, 125° from 90° instead of 235°');
   const late = frames.filter(f => f.offset >= 0.8);
-  for (const frame of late) assert.match(frame.transform, /translateZ\(-129px\) rotateZ\([^)]*\) rotateX\(0deg\) rotateY\(90deg\)$/, `spine-out at ${frame.offset}`);
+  for (const frame of late) assert.match(frame.transform, /scaleZ\([^)]*\) rotateZ\([^)]*\) rotateX\(0deg\) rotateY\(90deg\)$/, `spine-out at ${frame.offset}`);
+  // 2026-11-24: pressed flat by the time it reaches the slot, so no slanted cover shows beside it and the flat spine takes over seamlessly.
+  assert.match(to.transform, /translateZ\(-2\.58px\) scaleZ\(0\.02\) rotateZ/);
   const at = f => f.transform.match(/^translate\(([-\d.]+)px,([-\d.]+)px\)/).slice(1).map(Number);
   const xs = late.filter(f => f.offset >= 0.9).map(f => at(f)[0]);
   assert.ok(Math.max(...xs) - Math.min(...xs) < 5, `the last stretch comes (nearly) straight down into the slot: ${xs}`);
@@ -279,8 +281,8 @@ test('v05318 a book comes out in one flight: up out of the row, then a curve to 
   assert.equal(book.options.duration, 900); assert.match(book.options.easing, /^linear\(/);
   assert.deepEqual([shadow.options.duration, shadow.options.easing], [book.options.duration, book.options.easing], 'the shadow keeps time with the book');
   const keys = book.keys, rising = keys.filter(k => k.offset <= 0.1);
-  assert.match(keys[0].transform, /^translate\(-3px,230px\) scale\(0\.631578947368421\) translateZ\(-129px\) rotateZ\(0deg\) rotateX\(0deg\) rotateY\(90deg\)$/, 'it leaves from the spine as it stands');
-  assert.match(keys.at(-1).transform, /scale\(1\) translateZ\(0px\) rotateZ\(0deg\) rotateX\(5deg\) rotateY\(20deg\)$/, 'and arrives at its cover');
+  assert.match(keys[0].transform, /^translate\(-3px,230px\) scale\(0\.631578947368421\) translateZ\(-2\.58px\) scaleZ\(0\.02\) rotateZ\(0deg\) rotateX\(0deg\) rotateY\(90deg\)$/, 'it leaves from the spine as it stands, flat');
+  assert.match(keys.at(-1).transform, /scale\(1\) translateZ\(0px\) scaleZ\(1\) rotateZ\(0deg\) rotateX\(5deg\) rotateY\(20deg\)$/, 'and arrives at its cover');
   assert.ok(rising.every((k, i) => i === 0 || (xy(k)[1] < xy(rising[i - 1])[1] && Math.abs(xy(k)[0] - xy(keys[0])[0]) < 6)), 'first straight up out of the row');
   assert.ok(keys.filter(k => k.offset <= 0.12).every(k => angle(k, 'Y') === 90), 'turning only once clear of the row');
   const steps = keys.slice(1).map((k, i) => Math.hypot(xy(k)[0] - xy(keys[i])[0], xy(k)[1] - xy(keys[i])[1]));

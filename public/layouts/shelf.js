@@ -684,19 +684,28 @@ const SPRING = springEasing();
 const FLIGHT_STEPS = 24;
 const smooth = (u, a, b) => { const t = Math.min(1, Math.max(0, (u - a) / (b - a))); return t * t * (3 - 2 * t); };
 const mix = (a, b, t) => a + (b - a) * t;
-export function flightFrames(from, to, { p1, p2, turn, lean, scale, shadow }) {
+// Near its slot the book is pressed flat (w, a scale of the screen depth, which for a spine-out book is its width):
+// the stage's perspective looks at an off-centre slot from the side, so a full-width book there showed its cover as a
+// slanted panel over the neighbouring books, and that panel vanished the moment the flat shelf spine took over
+// (2026-11-24: the last moment, putting it back into the shelf, looked unnatural). `push` is the moment it is
+// nearest the reader, about 6% larger: pulled forward out of the row, or just before it is pushed back in.
+const FLAT_W = 0.02, PUSH = 0.06;
+const hump = (u, c) => smooth(u, Math.max(0, c - 0.15), c) * (1 - smooth(u, c, Math.min(1, c + 0.25)));
+export function flightFrames(from, to, { p1, p2, turn, lean, scale, flat, push, shadow }) {
   const frames = [];
   for (let i = 0; i <= FLIGHT_STEPS; i++) {
     const u = i / FLIGHT_STEPS, v = 1 - u, bez = (a, b, c, d) => v * v * v * a + 3 * v * v * u * b + 3 * v * u * u * c + u * u * u * d;
-    const r = smooth(u, ...turn), l = smooth(u, ...lean), k = smooth(u, ...scale);
-    const p = { x: bez(from.x, p1.x, p2.x, to.x), y: bez(from.y, p1.y, p2.y, to.y), s: mix(from.s, to.s, k), z: mix(from.z, to.z, r),
-      rz: mix(from.rz, to.rz, l), rx: mix(from.rx, to.rx, r), ry: mix(from.ry, to.ry, r) };
+    const r = smooth(u, ...turn), l = smooth(u, ...lean), k = smooth(u, ...scale), f = smooth(u, ...flat);
+    const p = { x: bez(from.x, p1.x, p2.x, to.x), y: bez(from.y, p1.y, p2.y, to.y), s: mix(from.s, to.s, k) * (1 + PUSH * hump(u, push)),
+      rz: mix(from.rz, to.rz, l), rx: mix(from.rx, to.rx, r), ry: mix(from.ry, to.ry, r), w: mix(from.w, to.w, f), out: mix(from.out, to.out, r) };
     frames.push({ offset: u, pose: p, opacity: shadow(u) });
   }
   return frames;
 }
-// One transform list for every pose, so neighbouring keyframes interpolate function by function.
-const poseCss = p => `translate(${p.x - BOOK_W / 2}px,${p.y - BOOK_H / 2}px) scale(${p.s}) translateZ(${p.z}px) rotateZ(${p.rz}deg) rotateX(${p.rx}deg) rotateY(${p.ry}deg)`;
+// One transform list for every pose, so neighbouring keyframes interpolate function by function. Spine-out (out = 1) the
+// spine face stands half the (pressed) width nearer the viewer; translateZ sets it back into the screen plane, so it lands
+// exactly on the real spine.
+const poseCss = p => `translate(${p.x - BOOK_W / 2}px,${p.y - BOOK_H / 2}px) scale(${p.s}) translateZ(${+(-BOOK_W / 2 * p.w * p.out).toFixed(4)}px) scaleZ(${+p.w.toFixed(4)}) rotateZ(${p.rz}deg) rotateX(${p.rx}deg) rotateY(${p.ry}deg)`;
 const groundCss = p => `translate(${p.x - BOOK_W / 2}px,${p.y + BOOK_H * p.s / 2 - 12}px) scale(${p.s},1)`;
 const hashOf = text => { let hash = 0; for (const char of String(text)) hash = (hash * 31 + char.codePointAt(0)) >>> 0; return hash; };
 // One of three cover designs, fixed per book; the cloth is the spine's own colour.
@@ -759,17 +768,14 @@ function buildBookStage(ctx) {
   };
   const detailAt = () => side() ? [Math.max(BOOK_W * 0.6, view.innerWidth * 0.27), view.innerHeight / 2, 0.86] : coverAt();
   // spin: the reader's own turn of the book (2026-11-01: drag to rotate it), on top of the cover and detail poses.
-  // Turned spine-out, the spine face stands half a book width nearer the viewer and the stage's perspective would show it
-  // 8% larger and pushed off-centre; translateZ sets it back into the screen plane so it lands exactly on the real spine.
-  const SPINE_Z = -BOOK_W / 2;
-  // Poses as numbers ({ x, y, s, z, rz, rx, ry }); `lifted` is the spine as it stands hovered or focused on the shelf
+  // Poses as numbers ({ x, y, s, rz, rx, ry, w, out }: w the pressed width, out 1 spine-out); `lifted` is the spine as it stands hovered or focused on the shelf
   // (10 px up, top tipped 8° toward the reader), so the book leaves from and lands on what is actually shown there.
   const posesOf = (g, spin = { x: 0, y: 0 }, lifted = false) => {
     const [cx, cy, cs] = coverAt(), [dx, dy, ds] = detailAt(), wide = ds === 1;
     return {
-      shelf: { x: g.cx, y: g.cy - (lifted ? 10 : 0), s: g.s, z: SPINE_Z, rz: parseFloat(g.lean) || 0, rx: lifted ? -8 : 0, ry: 90 },
-      cover: { x: cx, y: cy, s: cs, z: 0, rz: 0, rx: 5 + spin.x, ry: 20 + spin.y },
-      detail: { x: dx, y: dy, s: ds, z: 0, rz: 0, rx: (wide ? 5 : 4) + spin.x, ry: (wide ? 20 : 28) + spin.y },
+      shelf: { x: g.cx, y: g.cy - (lifted ? 10 : 0), s: g.s, rz: parseFloat(g.lean) || 0, rx: lifted ? -8 : 0, ry: 90, w: FLAT_W, out: 1 },
+      cover: { x: cx, y: cy, s: cs, rz: 0, rx: 5 + spin.x, ry: 20 + spin.y, w: 1, out: 0 },
+      detail: { x: dx, y: dy, s: ds, rz: 0, rx: (wide ? 5 : 4) + spin.x, ry: (wide ? 20 : 28) + spin.y, w: 1, out: 0 },
     };
   };
   const poses = (g, spin) => Object.fromEntries(Object.entries(posesOf(g, spin)).map(([k, p]) => [k, poseCss(p)]));
@@ -873,9 +879,10 @@ function buildBookStage(ctx) {
     if (hovered) { el.classList.add('from-hover'); view.requestAnimationFrame?.(() => view.requestAnimationFrame(() => el.classList.remove('from-hover'))); }
     // One flight: straight up out of the row, then a curve to the centre; it turns to its cover once clear of the row, and its
     // shadow gathers under it as it arrives (until 2026-11-24 it stopped dead in front of the row and sprang off again).
-    const rise = { x: from.x, y: from.y - 120 };
+    // It is pulled forward (nearest the reader at 12%) and only then grows to its full width, turns and flies.
+    const rise = { x: from.x, y: from.y - 70 };
     await run(flightFrames(from, to, { p1: rise, p2: { x: mix(to.x, rise.x, 0.3), y: mix(to.y, rise.y, 0.3) },
-      turn: [0.12, 0.9], lean: [0, 0.18], scale: [0.05, 0.95], shadow: u => smooth(u, 0.55, 1) }), 900, SPRING);
+      turn: [0.12, 0.9], lean: [0, 0.18], scale: [0.05, 0.95], flat: [0.04, 0.32], push: 0.12, shadow: u => smooth(u, 0.55, 1) }), 900, SPRING);
     if (!book) return; book.state = 'cover';
     if (book.pendingClose) return closeBook();
     stage.classList.add('is-cover'); reposition(); el.focus({ preventScroll: true });
@@ -902,11 +909,11 @@ function buildBookStage(ctx) {
     const landing = (s => s ? geometry(s) : book.g)(spineOf(book.key)), lifted = keyed;
     // A book turned past its back goes home the short way round to the spine-out 90°, not the long way.
     const start = posesOf(book.g, { ...book.spin, y: book.spin.y < -110 ? book.spin.y + 360 : book.spin.y })[from];
-    const home = posesOf(landing, undefined, lifted).shelf, above = { x: home.x, y: home.y - 120 };
-    // One flight, eased in from rest and out into the slot: it curves to above its slot, already turned spine-out, and
-    // comes straight down into it; its shadow fades on the way.
+    const home = posesOf(landing, undefined, lifted).shelf, above = { x: home.x, y: home.y - 44 };
+    // One flight, eased in from rest and out into the slot: it curves to just above and in front of its slot, turned
+    // spine-out and pressed flat, and is pushed back in (shrinking the 6% it stood nearer); its shadow fades on the way.
     await run(flightFrames(start, home, { p1: { x: mix(start.x, above.x, 0.35), y: mix(start.y, above.y, 0.35) }, p2: above,
-      turn: [0, 0.78], lean: [0.8, 1], scale: [0, 0.9], shadow: u => 1 - smooth(u, 0, 0.4) }), from === 'detail' ? 840 : 780, HOME);
+      turn: [0, 0.74], lean: [0.8, 1], scale: [0, 0.9], flat: [0.56, 0.88], push: 0.86, shadow: u => 1 - smooth(u, 0, 0.4) }), from === 'detail' ? 840 : 780, HOME);
     if (book) finish(true, lifted);
   }
   function finish(focus, lifted = false) {
