@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import { appDocument } from './fixtures/app.mjs';
 import { documentFrom } from './fixtures/dom.mjs';
 import { mountApp } from '../public/app.js';
-import { bookCover } from '../public/layouts/shelf.js';
+import { bookCover, springEasing } from '../public/layouts/shelf.js';
 import { enter, mountMotion } from '../public/motion.js';
 
 const member = (id, kind = 'book', primary = '学习') => ({ id, name: id, kind, primary: kind === 'book' ? primary : '功能性 Agent',
@@ -107,12 +107,13 @@ test('v038 styles: restrained durations, reduced motion switches entry and press
   assert.match(shelfCss, /\.book-spine\.is-out \{ visibility:hidden;/);
   // v0.38.1: the hovered spine (z-index 2) no longer covers 放上书桌, which tilts with a leaning book.
   assert.match(shelfCss, /\.shelf-item \.put-on-desk \{\s*z-index:3;\s*transform-origin:-4px calc\(100% \+ 8px\);\s*transform:rotate\(var\(--lean,0deg\)\);/);
-  for (const [name, ms] of [['pull', 260], ['fly', 860], ['detail', 560]]) assert.ok((await fs.readFile('public/layouts/shelf.js', 'utf8')).includes(`, ${ms}, `), name);
+  // v0.53.18: one 900 ms flight out (no stop in front of the row), a 600 ms move beside the detail.
+  for (const [name, ms] of [['fly', 900], ['detail', 600]]) assert.ok((await fs.readFile('public/layouts/shelf.js', 'utf8')).includes(`, ${ms}, SPRING)`), name);
 });
 
 // v0.41.6 (2026-11-01): the pulled-out book turns under a drag or the arrow keys. A small WAAPI and layout shim lets
 // the stage run in the recording DOM; reduced motion makes every flight instant.
-async function turningShelf(t, { reduced = true, frames = null, facts = null } = {}) {
+async function turningShelf(t, { reduced = true, frames = null, facts = null, record = null } = {}) {
   const { doc } = await appDocument('shelf'); doc.createTextNode = text => { const n = doc.createElement('text'); n.textContent = text; return n; };
   const create = doc.createElement;
   doc.createElement = tag => {
@@ -121,7 +122,7 @@ async function turningShelf(t, { reduced = true, frames = null, facts = null } =
     el.classList = { add: (...c) => write([...new Set([...classes(), ...c])]), remove: (...c) => write(classes().filter(x => !c.includes(x))),
       toggle: (c, on) => { const has = classes().includes(c), want = on ?? !has; write(want ? [...new Set([...classes(), c])] : classes().filter(x => x !== c)); return want; },
       replace: (a, b) => write(classes().map(x => x === a ? b : x)), contains: c => classes().includes(c) };
-    el.animate = () => ({ finished: Promise.resolve(), cancel() {} });
+    el.animate = (keys, options) => { record?.push({ el, keys, options }); return { finished: Promise.resolve(), cancel() {} }; };
     el.getBoundingClientRect = () => ({ left: 100, top: 300, width: 52, height: 240, right: 152, bottom: 540 });
     Object.defineProperty(el, 'offsetHeight', { value: 240 }); Object.defineProperty(el, 'offsetWidth', { value: 52 });
     el.setPointerCapture = () => {};
@@ -233,14 +234,117 @@ test('v0.44.1 the book flies home in one eased flight, lands flat on its spine a
   assert.match(book.style.transform, /rotateY\(-145deg\)$/, 'turned to its back');
   await doc.querySelector('.shelf-book-close').fire('click'); for (let i = 0; i < 2; i++) await new Promise(r => setTimeout(r, 0));
   assert.equal(calls.length, 1, 'no stop in front of the slot: a single animation');
-  const [from, via, to] = calls[0].frames;
-  assert.equal(calls[0].frames.length, 3);
-  assert.match(from.transform, /scale\(1\) translateZ\(0px\) rotateX\(5deg\) rotateY\(215deg\)$/, '−145° goes home as 215°, 125° from 90° instead of 235°');
-  assert.ok(via.offset >= 0.6 && via.offset <= 0.92, `waypoint at ${via.offset}`);
-  for (const frame of [via, to]) assert.match(frame.transform, /translateZ\(-129px\) rotateZ\([^)]*\) rotateY\(90deg\)$/);
+  // v0.53.18: the flight is sampled along a curve; it ends turned spine-out above the slot and drops straight in.
+  const frames = calls[0].frames, from = frames[0], to = frames.at(-1);
+  assert.ok(frames.length > 10 && frames.every((f, i) => i === 0 || f.offset > frames[i - 1].offset), 'keyframes in order');
+  assert.match(from.transform, /scale\(1\) translateZ\(0px\) rotateZ\(0deg\) rotateX\(5deg\) rotateY\(215deg\)$/, '−145° goes home as 215°, 125° from 90° instead of 235°');
+  const late = frames.filter(f => f.offset >= 0.8);
+  for (const frame of late) assert.match(frame.transform, /translateZ\(-129px\) rotateZ\([^)]*\) rotateX\(0deg\) rotateY\(90deg\)$/, `spine-out at ${frame.offset}`);
+  const at = f => f.transform.match(/^translate\(([-\d.]+)px,([-\d.]+)px\)/).slice(1).map(Number);
+  const xs = late.filter(f => f.offset >= 0.9).map(f => at(f)[0]);
+  assert.ok(Math.max(...xs) - Math.min(...xs) < 5, `the last stretch comes (nearly) straight down into the slot: ${xs}`);
+  assert.deepEqual(at(to), [126 - 129, 420 - 190], 'and lands on the spine (centre 126, 420)');
   assert.equal(calls[0].options.easing, 'cubic-bezier(.4,0,.2,1)', 'eased in from rest and out into the slot');
   assert.match(stage.className, /is-closing/, 'the room brightens during the flight');
   assert.equal(doc.querySelector('.book-3d'), null, 'and the book is back on the shelf');
   const css = await fs.readFile('public/layouts/shelf.css', 'utf8');
   assert.match(css, /\.shelf-book-stage\.is-closing::backdrop \{ opacity:0; transition:opacity \.7s/);
+});
+
+// v0.53.18 (2026-11-24: make taking a book out and putting it back smoother). The flight out no longer stops dead in
+// front of the row and springs off again; the shadow flies with the book; the detail slides out when closed.
+const flightOf = (record, cls) => record.filter(c => c.el.className.split(/\s+/).includes(cls));
+const xy = key => key.transform.match(/^translate\(([-\d.]+)px,([-\d.]+)px\)/).slice(1).map(Number);
+const angle = (key, axis) => Number(key.transform.match(new RegExp(`rotate${axis}\\((-?[\\d.]+)deg\\)`))[1]);
+const ticks = async (n = 4) => { for (let i = 0; i < n; i++) await new Promise(r => setTimeout(r, 0)); };
+// The recording DOM's matches() ignores pseudo-classes; a test says whether the spine is hovered.
+const hover = (el, on) => { const matches = el.matches.bind(el); el.matches = s => s === ':hover' ? on : matches(s); };
+const flush = frames => { for (const fn of frames.splice(0)) fn?.(0); }; // runs one animation frame's callbacks
+
+test('v05318 the spring easing starts from rest, overshoots about 1% and settles', () => {
+  const easing = springEasing(), points = easing.slice(7, -1).split(', ').map(Number);
+  assert.match(easing, /^linear\(0, /); assert.equal(points.at(-1), 1); assert.equal(points.length, 41);
+  assert.ok(points[1] < 0.03, `no kick at the start: ${points[1]}`);
+  const peak = Math.max(...points), top = points.indexOf(peak);
+  assert.ok(peak > 1.004 && peak < 1.02, `a small overshoot: ${peak}`);
+  assert.ok(points.slice(0, top + 1).every((p, i) => i === 0 || p >= points[i - 1]), 'it rises without a stop up to its peak');
+});
+
+test('v05318 a book comes out in one flight: up out of the row, then a curve to the centre, turning once clear; its shadow gathers as it arrives', async t => {
+  const record = [], { doc } = await turningShelf(t, { reduced: false, record });
+  const spine = doc.querySelectorAll('.book-spine')[0]; hover(spine, false); // not hovered
+  await spine.fire('click'); await ticks(2);
+  const [book] = flightOf(record, 'book-3d'), [shadow] = flightOf(record, 'book-ground');
+  assert.equal(flightOf(record, 'book-3d').length, 1, 'no stop in front of the row: one animation');
+  assert.equal(book.options.duration, 900); assert.match(book.options.easing, /^linear\(/);
+  assert.deepEqual([shadow.options.duration, shadow.options.easing], [book.options.duration, book.options.easing], 'the shadow keeps time with the book');
+  const keys = book.keys, rising = keys.filter(k => k.offset <= 0.1);
+  assert.match(keys[0].transform, /^translate\(-3px,230px\) scale\(0\.631578947368421\) translateZ\(-129px\) rotateZ\(0deg\) rotateX\(0deg\) rotateY\(90deg\)$/, 'it leaves from the spine as it stands');
+  assert.match(keys.at(-1).transform, /scale\(1\) translateZ\(0px\) rotateZ\(0deg\) rotateX\(5deg\) rotateY\(20deg\)$/, 'and arrives at its cover');
+  assert.ok(rising.every((k, i) => i === 0 || (xy(k)[1] < xy(rising[i - 1])[1] && Math.abs(xy(k)[0] - xy(keys[0])[0]) < 6)), 'first straight up out of the row');
+  assert.ok(keys.filter(k => k.offset <= 0.12).every(k => angle(k, 'Y') === 90), 'turning only once clear of the row');
+  const steps = keys.slice(1).map((k, i) => Math.hypot(xy(k)[0] - xy(keys[i])[0], xy(k)[1] - xy(keys[i])[1]));
+  assert.ok(steps.every(d => d > 0), 'it never stands still on the way');
+  assert.deepEqual([shadow.keys[0].opacity, shadow.keys.at(-1).opacity], [0, 1]);
+  assert.ok(shadow.keys.filter(k => k.offset <= 0.55).every(k => k.opacity === 0), 'the shadow appears only as the book arrives');
+  assert.ok(shadow.keys.every((k, i) => xy(k)[0] === xy(keys[i])[0]), 'right under the book all the way');
+  assert.equal(doc.querySelector('.book-ground').style.opacity, '1');
+});
+
+test('v05318 a hovered spine: the book leaves lifted and bright, as the spine was shown', async t => {
+  const record = [], frames = [], { doc } = await turningShelf(t, { reduced: false, record, frames });
+  const spine = doc.querySelectorAll('.book-spine')[0]; hover(spine, true);
+  await spine.fire('click'); await ticks(2);
+  const [book] = flightOf(record, 'book-3d');
+  assert.match(book.keys[0].transform, /^translate\(-3px,220px\) .* rotateX\(-8deg\) rotateY\(90deg\)$/, '10 px up, tipped 8° like the hovered spine');
+  const el = doc.querySelector('.book-3d');
+  assert.match(el.className, /from-hover/, 'as bright as the hovered spine');
+  flush(frames); assert.match(el.className, /from-hover/, 'for the first frame');
+  flush(frames); assert.doesNotMatch(el.className, /from-hover/, 'then dims to its own colour on the way');
+});
+
+test('v05318 opening the detail: one smooth move beside it, the detail built after the first frame', async t => {
+  const record = [], frames = [], { doc, app } = await turningShelf(t, { reduced: false, record, frames });
+  const spine = doc.querySelectorAll('.book-spine')[0]; hover(spine, false);
+  await spine.fire('click'); await ticks(2); frames.length = 0; record.length = 0;
+  await doc.querySelector('.book-3d').fire('click');
+  const [move] = flightOf(record, 'book-3d'), [shadow] = flightOf(record, 'book-ground');
+  assert.equal(move.options.duration, 600); assert.match(move.options.easing, /^linear\(/);
+  assert.equal(shadow.keys.length, 2, 'the shadow moves with the book instead of jumping ahead of it');
+  assert.equal(app.snapshot().state.detailOpen, false, 'not built in the frame the move starts');
+  flush(frames); assert.equal(app.snapshot().state.detailOpen, false, 'nor in the frame that starts it');
+  flush(frames);
+  assert.equal(app.snapshot().state.detailOpen, true, 'built right after');
+});
+
+test('v05318 put back after a key, the book lands on the focused (lifted) spine and the spine takes over without rising again', async t => {
+  const record = [], frames = [], { doc } = await turningShelf(t, { reduced: false, record, frames });
+  const spine = doc.querySelectorAll('.book-spine')[0], key = spine.getAttribute('data-focus-key'); hover(spine, false);
+  const putBack = async () => {
+    await spine.fire('click'); await ticks(2); record.length = 0;
+    await doc.querySelector('.shelf-book-close').fire('click'); await ticks(2);
+    return flightOf(record, 'book-3d')[0].keys.at(-1).transform;
+  };
+  await doc.fire('pointerdown', {});
+  assert.match(await putBack(), /^translate\(-3px,230px\) .* rotateX\(0deg\) rotateY\(90deg\)$/, 'after a pointer: flat into the slot');
+  assert.ok(doc.querySelectorAll('.book-spine').every(n => !/is-landing/.test(n.className)));
+  frames.length = 0;
+  await doc.fire('keydown', { key: 'Shift' });
+  assert.match(await putBack(), /^translate\(-3px,220px\) .* rotateX\(-8deg\) rotateY\(90deg\)$/, 'after a key: onto the lifted spine');
+  const landed = doc.querySelectorAll('.book-spine').find(n => n.getAttribute('data-focus-key') === key); // the shelf may have re-rendered
+  assert.match(landed.className, /is-landing/, 'the spine shows at once, without its own transition');
+  flush(frames); assert.match(landed.className, /is-landing/);
+  flush(frames); assert.doesNotMatch(landed.className, /is-landing/, 'and gets it back two frames later');
+});
+
+test('v05318 styles: the shadow has no transition of its own, the card is gone before the detail comes, the detail slides out', async () => {
+  const css = (await fs.readFile('public/layouts/shelf.css', 'utf8')).replace(/\r\n/g, '\n');
+  const ground = css.match(/\[data-ui="shelf"\] \.book-ground \{([^}]*)\}/)[1];
+  assert.doesNotMatch(ground, /transition/); assert.doesNotMatch(css, /\.book-ground\.on/);
+  assert.match(css, /\.shelf-book-stage:not\(\.is-cover\) \.book-inspect \{ transition:opacity \.12s/);
+  assert.match(css, /\.shelf-detail\.beside-book \{\s*transition:opacity \.2s[^;]*overlay \.22s allow-discrete, display \.22s allow-discrete;/);
+  assert.match(css, /\.shelf-detail\.beside-book:not\(\[open\]\) \{ opacity:0; translate:28px 0; \}/);
+  assert.match(css, /\.book-spine\.is-landing,\s*\[data-ui="shelf"\] \.book-spine\.is-landing \.spine-edge \{ transition:none; \}/);
+  const reduce = css.slice(css.lastIndexOf('@media (prefers-reduced-motion:reduce) {\n  [data-ui="shelf"] .book-spine { transition:none; }'));
+  for (const rule of ['.shelf-detail.beside-book,', '.book-3d .book-spine-face,', '.shelf-book-stage:not(.is-cover) .book-inspect,']) assert.ok(reduce.includes(rule), rule);
 });

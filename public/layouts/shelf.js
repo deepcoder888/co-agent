@@ -665,7 +665,39 @@ function bookDimensions(agent) {
 // to the centre and turns it to a generated cover; a second click opens the detail beside it; closing the detail,
 // Esc, × or the dimmed room flies it back into its slot. Without WAAPI or layout boxes (tests) a click opens the detail.
 const BOOK_H = 380, BOOK_W = Math.round(BOOK_H * 0.68);
-const SPRING = 'cubic-bezier(.3,1.32,.46,1)', OUT = 'cubic-bezier(.22,1,.36,1)', HOME = 'cubic-bezier(.4,0,.2,1)';
+const HOME = 'cubic-bezier(.4,0,.2,1)';
+// 2026-11-24 (smoother pull-out): a damped spring released from rest, as a CSS linear() easing. It starts at
+// zero speed, overshoots about 1% and settles by the end, so a flight neither jerks into motion nor bounces back.
+// Time runs as t^1.5: a bare spring did most of its travel in the first quarter and then crept; this way the fastest
+// moment is about a third of the way in and 90% of the way is done at a little over half the time.
+export function springEasing(zeta = 0.82, steps = 40, warp = 1.5) {
+  const w = Math.log(500) / zeta, wd = w * Math.sqrt(1 - zeta * zeta), points = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = (i / steps) ** warp, x = i === steps ? 1 : 1 - Math.exp(-zeta * w * t) * (Math.cos(wd * t) + (zeta * w / wd) * Math.sin(wd * t));
+    points.push(+x.toFixed(4));
+  }
+  return `linear(${points.join(', ')})`;
+}
+const SPRING = springEasing();
+// A flight is one animation along a cubic Bézier, sampled into keyframes: the position glides without a stop, while the
+// turn, the lean and the scale each run in their own window of the same flight.
+const FLIGHT_STEPS = 24;
+const smooth = (u, a, b) => { const t = Math.min(1, Math.max(0, (u - a) / (b - a))); return t * t * (3 - 2 * t); };
+const mix = (a, b, t) => a + (b - a) * t;
+export function flightFrames(from, to, { p1, p2, turn, lean, scale, shadow }) {
+  const frames = [];
+  for (let i = 0; i <= FLIGHT_STEPS; i++) {
+    const u = i / FLIGHT_STEPS, v = 1 - u, bez = (a, b, c, d) => v * v * v * a + 3 * v * v * u * b + 3 * v * u * u * c + u * u * u * d;
+    const r = smooth(u, ...turn), l = smooth(u, ...lean), k = smooth(u, ...scale);
+    const p = { x: bez(from.x, p1.x, p2.x, to.x), y: bez(from.y, p1.y, p2.y, to.y), s: mix(from.s, to.s, k), z: mix(from.z, to.z, r),
+      rz: mix(from.rz, to.rz, l), rx: mix(from.rx, to.rx, r), ry: mix(from.ry, to.ry, r) };
+    frames.push({ offset: u, pose: p, opacity: shadow(u) });
+  }
+  return frames;
+}
+// One transform list for every pose, so neighbouring keyframes interpolate function by function.
+const poseCss = p => `translate(${p.x - BOOK_W / 2}px,${p.y - BOOK_H / 2}px) scale(${p.s}) translateZ(${p.z}px) rotateZ(${p.rz}deg) rotateX(${p.rx}deg) rotateY(${p.ry}deg)`;
+const groundCss = p => `translate(${p.x - BOOK_W / 2}px,${p.y + BOOK_H * p.s / 2 - 12}px) scale(${p.s},1)`;
 const hashOf = text => { let hash = 0; for (const char of String(text)) hash = (hash * 31 + char.codePointAt(0)) >>> 0; return hash; };
 // One of three cover designs, fixed per book; the cloth is the spine's own colour.
 export function bookCover(doc, agent) {
@@ -717,7 +749,6 @@ function buildBookStage(ctx) {
   };
   // Beside the detail only when both fit; a narrow window keeps the book centred under the detail.
   const side = () => view.innerWidth >= 960;
-  const place = (x, y, extra) => `translate(${x - BOOK_W / 2}px,${y - BOOK_H / 2}px) ${extra}`;
   // v0.42: the book stands left of its card (the card starts at the middle), or above it in a narrow window.
   const coverAt = () => {
     if (side()) return [Math.max(BOOK_W * 0.75, view.innerWidth * 0.3), view.innerHeight / 2 - 12, 1];
@@ -730,26 +761,32 @@ function buildBookStage(ctx) {
   // spin: the reader's own turn of the book (2026-11-01: drag to rotate it), on top of the cover and detail poses.
   // Turned spine-out, the spine face stands half a book width nearer the viewer and the stage's perspective would show it
   // 8% larger and pushed off-centre; translateZ sets it back into the screen plane so it lands exactly on the real spine.
-  const SPINE_Z = `translateZ(${-BOOK_W / 2}px)`, FLAT = 'translateZ(0px)';
-  const poses = (g, spin = { x: 0, y: 0 }) => {
-    const [cx, cy, cs] = coverAt(), [dx, dy, ds] = detailAt(), turn = (x, y) => `rotateX(${x + spin.x}deg) rotateY(${y + spin.y}deg)`;
+  const SPINE_Z = -BOOK_W / 2;
+  // Poses as numbers ({ x, y, s, z, rz, rx, ry }); `lifted` is the spine as it stands hovered or focused on the shelf
+  // (10 px up, top tipped 8° toward the reader), so the book leaves from and lands on what is actually shown there.
+  const posesOf = (g, spin = { x: 0, y: 0 }, lifted = false) => {
+    const [cx, cy, cs] = coverAt(), [dx, dy, ds] = detailAt(), wide = ds === 1;
     return {
-      shelf: place(g.cx, g.cy, `scale(${g.s}) ${SPINE_Z} rotateZ(${g.lean}) rotateY(90deg)`),
-      pull: place(g.cx, g.cy - 28, `scale(${g.s * 1.06}) ${SPINE_Z} rotateZ(0deg) rotateY(90deg)`),
-      cover: place(cx, cy, `scale(${cs}) ${FLAT} ${turn(5, 20)}`),
-      detail: place(dx, dy, ds === 1 ? `scale(1) ${FLAT} ${turn(5, 20)}` : `scale(${ds}) ${FLAT} ${turn(4, 28)}`),
+      shelf: { x: g.cx, y: g.cy - (lifted ? 10 : 0), s: g.s, z: SPINE_Z, rz: parseFloat(g.lean) || 0, rx: lifted ? -8 : 0, ry: 90 },
+      cover: { x: cx, y: cy, s: cs, z: 0, rz: 0, rx: 5 + spin.x, ry: 20 + spin.y },
+      detail: { x: dx, y: dy, s: ds, z: 0, rz: 0, rx: (wide ? 5 : 4) + spin.x, ry: (wide ? 20 : 28) + spin.y },
     };
   };
-  const ground = pose => { // the soft contact shadow under the book in the cover and detail poses
-    const [x, y, scale] = pose === 'detail' ? detailAt() : coverAt();
-    book.ground.style.transform = `translate(${x - BOOK_W / 2}px,${y + BOOK_H * scale / 2 - 12}px) scale(${scale},1)`;
-  };
-  // frames: transforms, or { transform, offset } for a waypoint inside one continuous flight.
-  const run = async (frames, ms, easing) => {
-    const keys = frames.map(f => typeof f === 'string' ? { transform: f } : f), to = keys.at(-1).transform;
-    const animation = book.el.animate(keys, { duration: reduce() ? 0 : ms, easing, fill: 'forwards' });
+  const poses = (g, spin) => Object.fromEntries(Object.entries(posesOf(g, spin)).map(([k, p]) => [k, poseCss(p)]));
+  const ground = pose => { book.ground.style.transform = groundCss(posesOf(book.g)[pose]); }; // the contact shadow under the book
+  // Plays the book's flight and, beside it, its shadow's, with the same timing; then holds the end as inline styles.
+  const play = async (el, keys, ms, easing) => {
+    const animation = el.animate(keys, { duration: reduce() ? 0 : ms, easing, fill: 'forwards' });
     try { await animation.finished; } catch { /* cancelled by dispose */ }
-    if (!book) return; book.el.style.transform = to; animation.cancel();
+    return animation;
+  };
+  const run = async (frames, ms, easing) => {
+    const keys = frames.map(f => ({ offset: f.offset, transform: poseCss(f.pose) }));
+    const shade = frames.map(f => ({ offset: f.offset, transform: groundCss(f.pose), opacity: f.opacity }));
+    const [a, b] = await Promise.all([play(book.el, keys, ms, easing), play(book.ground, shade, ms, easing)]);
+    if (!book) return;
+    book.el.style.transform = keys.at(-1).transform; book.ground.style.transform = shade.at(-1).transform;
+    book.ground.style.opacity = String(shade.at(-1).opacity); a.cancel(); b.cancel();
   };
   // Applies the reader's turn at once, in the cover or the detail pose; a turn wraps to −180°…180° so the flight home stays short.
   function turn(x, y) {
@@ -829,10 +866,16 @@ function buildBookStage(ctx) {
     fillInspect(agent, title);
     r.bookOutKey = key; markOut(key, true);
     stage.className = 'shelf-book-stage'; stage.showModal(); stage.focus();
-    measureInspect(); const p = poses(g); el.style.transform = p.shelf;
-    await run([p.shelf, p.pull], 260, OUT);                     // 1. pulled forward out of the row
-    if (!book) return; ground('cover'); shadow.classList.add('on');
-    await run([p.pull, p.cover], 860, SPRING);                  // 2. flies to the centre, turning to its cover
+    measureInspect();
+    // It leaves from the spine as shown: a hovered spine stands lifted and brightened, and the book keeps both at first.
+    const hovered = !!spine.matches?.(':hover'), p = posesOf(g, undefined, hovered), from = p.shelf, to = p.cover;
+    el.style.transform = poseCss(from); shadow.style.opacity = '0';
+    if (hovered) { el.classList.add('from-hover'); view.requestAnimationFrame?.(() => view.requestAnimationFrame(() => el.classList.remove('from-hover'))); }
+    // One flight: straight up out of the row, then a curve to the centre; it turns to its cover once clear of the row, and its
+    // shadow gathers under it as it arrives (until 2026-11-24 it stopped dead in front of the row and sprang off again).
+    const rise = { x: from.x, y: from.y - 120 };
+    await run(flightFrames(from, to, { p1: rise, p2: { x: mix(to.x, rise.x, 0.3), y: mix(to.y, rise.y, 0.3) },
+      turn: [0.12, 0.9], lean: [0, 0.18], scale: [0.05, 0.95], shadow: u => smooth(u, 0.55, 1) }), 900, SPRING);
     if (!book) return; book.state = 'cover';
     if (book.pendingClose) return closeBook();
     stage.classList.add('is-cover'); reposition(); el.focus({ preventScroll: true });
@@ -840,31 +883,46 @@ function buildBookStage(ctx) {
   async function toDetail() {
     if (book?.state !== 'cover') return;
     coastStop(); book.state = 'moving'; stage.classList.replace('is-cover', 'is-detail');
-    r.detail.classList.toggle('beside-book', side()); ground('detail');
-    const p = poses(book.g, book.spin), move = run([p.cover, p.detail], 560, SPRING);
-    ctx.actions.openDetail(book.agent.id, book.el);
+    r.detail.classList.toggle('beside-book', side());
+    const p = posesOf(book.g, book.spin);
+    const move = run([{ offset: 0, pose: p.cover, opacity: 1 }, { offset: 1, pose: p.detail, opacity: 1 }], 600, SPRING);
+    // The detail is built a frame after the move starts, once that frame is out, so building it (about 60 ms) does not
+    // hold it back; the compositor runs the move meanwhile.
+    const agentId = book.agent.id, trigger = book.el, openIt = () => ctx.actions.openDetail(agentId, trigger);
+    if (view.requestAnimationFrame) view.requestAnimationFrame(() => view.requestAnimationFrame(openIt)); else openIt();
     await move; if (!book) return; book.state = 'detail';
     if (book.pendingClose || !r.detail.open) closeBook();
   }
   async function closeBook() {
     if (!book || !['cover', 'detail'].includes(book.state)) return;
     coastStop(); const from = book.state; book.state = 'closing'; book.pendingClose = false;
-    stage.classList.replace('is-cover', 'is-closing'); stage.classList.replace('is-detail', 'is-closing'); book.ground.classList.remove('on');
-    const g = (s => s ? geometry(s) : book.g)(spineOf(book.key)), p = poses(g); // re-measure: the shelf may have re-rendered
+    stage.classList.replace('is-cover', 'is-closing'); stage.classList.replace('is-detail', 'is-closing');
+    // Re-measure: the shelf may have re-rendered. Put back from the keyboard, the spine will show focused (lifted), so the
+    // book lands on that pose and nothing jumps when it takes over.
+    const landing = (s => s ? geometry(s) : book.g)(spineOf(book.key)), lifted = keyed;
     // A book turned past its back goes home the short way round to the spine-out 90°, not the long way.
-    const turned = poses(book.g, { ...book.spin, y: book.spin.y < -110 ? book.spin.y + 360 : book.spin.y });
-    // One flight, eased in from rest and out into the slot: it glides to just in front of its slot and slides in without
-    // stopping there. The waypoint sits where the spine face (the side that lands) moves at the same speed on both legs.
-    const [x, y, s] = from === 'detail' ? detailAt() : coverAt(), fly = Math.hypot(x - BOOK_W / 2 * s - g.cx, y - g.cy + 28);
-    await run([turned[from], { transform: p.pull, offset: Math.min(0.92, Math.max(0.6, fly / (fly + 28))) }, p.shelf], from === 'detail' ? 840 : 780, HOME);
-    if (book) finish(true);
+    const start = posesOf(book.g, { ...book.spin, y: book.spin.y < -110 ? book.spin.y + 360 : book.spin.y })[from];
+    const home = posesOf(landing, undefined, lifted).shelf, above = { x: home.x, y: home.y - 120 };
+    // One flight, eased in from rest and out into the slot: it curves to above its slot, already turned spine-out, and
+    // comes straight down into it; its shadow fades on the way.
+    await run(flightFrames(start, home, { p1: { x: mix(start.x, above.x, 0.35), y: mix(start.y, above.y, 0.35) }, p2: above,
+      turn: [0, 0.78], lean: [0.8, 1], scale: [0, 0.9], shadow: u => 1 - smooth(u, 0, 0.4) }), from === 'detail' ? 840 : 780, HOME);
+    if (book) finish(true, lifted);
   }
-  function finish(focus) {
+  function finish(focus, lifted = false) {
     coastStop(); const key = book.key; book.el.remove(); book.ground.remove(); book = null; r.bookOutKey = null;
+    // The spine takes over in the pose the book landed in: without its own transition for two frames, so a focused
+    // spine does not rise again from the bottom of its slot.
+    const spine = spineOf(key), raf = view?.requestAnimationFrame?.bind(view);
+    if (focus && lifted && spine && raf) { spine.classList.add('is-landing'); raf(() => raf(() => spine.classList.remove('is-landing'))); }
     markOut(key, false); r.detail.classList.remove('beside-book');
     if (stage.open) stage.close();
-    if (focus) spineOf(key)?.focus({ preventScroll: true });
+    if (focus) spine?.focus({ preventScroll: true });
   }
+  // Whether the last input was a key: a spine focused after it shows focused (lifted), after a pointer it does not.
+  let keyed = false;
+  const onKey = () => { keyed = true; }, onPointer = () => { keyed = false; };
+  doc.addEventListener?.('keydown', onKey, true); doc.addEventListener?.('pointerdown', onPointer, true);
   // Esc, × or a click on the dim room; during a flight the request waits until the book has landed.
   function closeAny() {
     if (!book) return;
@@ -886,7 +944,10 @@ function buildBookStage(ctx) {
     book.el.style.transform = poses(book.g, book.spin)[book.state]; ground(book.state);
   }
   view?.addEventListener?.('resize', reposition);
-  r.bookStage = { open, dispose: () => { if (book) finish(false); } };
+  r.bookStage = { open, dispose: () => {
+    if (book) finish(false);
+    doc.removeEventListener?.('keydown', onKey, true); doc.removeEventListener?.('pointerdown', onPointer, true);
+  } };
   return stage;
 }
 function catalogItem(ctx, agent) {
