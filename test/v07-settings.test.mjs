@@ -74,7 +74,7 @@ test('v07 settings acceptance: settings footer version is injected from package 
   const ctx=await running(t);
   const manifest=JSON.parse(await fs.readFile('package.json','utf8'));
   const lock=JSON.parse(await fs.readFile('package-lock.json','utf8'));
-  assert.equal(manifest.version,'0.53.13');
+  assert.equal(manifest.version,'0.53.14');
   assert.equal(lock.version,manifest.version);assert.equal(lock.packages[''].version,manifest.version);
   const source=await fs.readFile('public/index.html','utf8');assert.match(source,/<!-- CO_AGENT_VERSION -->/);
   for(const entry of await fs.readdir('public',{recursive:true,withFileTypes:true})) {
@@ -127,7 +127,7 @@ test('v07 settings valid PUT is durable and injects first-paint theme on both in
   const ctx=await running(t), {config}=ctx;
   for(const ui of themes) {
     const response=await ctx.send({ui});assert.equal(response.status,200);assert.equal((await response.json()).ui,ui);
-    assert.deepEqual(JSON.parse(await fs.readFile(path.join(config.dataDir,'settings.json'),'utf8')),{version:1,ui,bookText:100}); // v0.42 description size
+    assert.deepEqual(JSON.parse(await fs.readFile(path.join(config.dataDir,'settings.json'),'utf8')),{version:1,ui,bookText:100,reader:{fontSize:19,lineHeight:205,measure:'medium',theme:'paper'}}); // v0.42 description size; v0.53.14 reader typography
     for(const route of ['/', '/index.html']) {
       const html=await (await fetch(ctx.base+route)).text();assert.match(html,new RegExp(`<html[^>]+data-ui="${ui}"`));assert.match(html,new RegExp(ctx.app.token));
     }

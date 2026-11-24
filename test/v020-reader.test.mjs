@@ -89,10 +89,12 @@ test('v020 the whole outline sidebar collapses to a rail, and stays collapsed wh
   assert.match(exit.className, /is-compact/); assert.equal(exit.getAttribute('aria-label'), '退出阅读模式');
   assert.match(await fs.readFile('public/layouts/shelf.css', 'utf8'), /\.shelf-reader-exit\.is-compact \.shelf-reader-exit-label,\s*\[data-ui="shelf"\] \.shelf-reader-exit\.is-compact kbd \{\s*display:none;/);
   assert.match(h.doc.getElementById('concept-reader-grid').className, /is-toc-collapsed/);
-  // The collapsed grid narrows the sidebar column and widens the page column.
+  // The collapsed grid narrows the sidebar column; since v0.53.14 the page column keeps its measure (characters per
+  // line of the body text) instead of widening to 920px.
   const css = await fs.readFile('public/layouts/shelf.css', 'utf8');
   assert.match(css, /\.shelf-reader-grid\.is-toc-collapsed \{\s*grid-template-columns:52px minmax\(0,1fr\);/);
-  assert.match(css, /\.is-toc-collapsed \.shelf-reader-page \{\s*max-width:920px;/);
+  assert.doesNotMatch(css, /\.is-toc-collapsed \.shelf-reader-page \{/);
+  assert.match(css, /\.shelf-reader-page \{[^}]*max-width:calc\(var\(--reader-font-size\) \* var\(--reader-measure\)\);/);
   h.reader.close(); await h.entry.fire('click');
   assert.equal(list.hidden, true); assert.equal(toggle.getAttribute('aria-expanded'), 'false');
   await toggle.fire('click'); assert.equal(list.hidden, false);

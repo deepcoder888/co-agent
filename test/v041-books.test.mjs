@@ -50,7 +50,8 @@ test('v041 EPUB: package, spine, nav outline, title and chapters convert to the 
   const book = openEpub(epubBytes());
   assert.equal(book.title, '习惯的力量 & Co');
   assert.equal(book.chapters.length, 2);
-  assert.deepEqual(book.toc, [{ title: '第一章 开始', chapter: 0, depth: 0 }, { title: '一、小节', chapter: 0, depth: 1 }, { title: '第二章 习惯', chapter: 1, depth: 0 }], 'external links are dropped');
+  // v0.53.14: each entry carries the anchor of its link ('' without a fragment).
+  assert.deepEqual(book.toc, [{ title: '第一章 开始', chapter: 0, depth: 0, anchor: '' }, { title: '一、小节', chapter: 0, depth: 1, anchor: 's2' }, { title: '第二章 习惯', chapter: 1, depth: 0, anchor: '' }], 'external links are dropped');
   const md = book.chapter(0, name => '/api/books/x/0/assets?path=' + encodeURIComponent(name));
   assert.match(md, /^## 第一章 开始$/m, 'a no-break space in the book folds like any other space');
   assert.match(md, /正文 \*强调\* 与 \*\*加粗\*\*，\\<script\\>不执行\\<\/script\\> 和 \\\*星号\\\*。/);
@@ -74,7 +75,7 @@ test('v041 EPUB 2: the NCX outline is used when there is no nav, and void tags w
     ['toc.ncx', '<ncx><navMap><navPoint><navLabel><text>序</text></navLabel><content src="a.html#top"/></navPoint></navMap></ncx>'],
     ['a.html', '<html><body><p>一行<br>二行</p></body></html>'],
   ]));
-  assert.deepEqual(book.toc, [{ title: '序', chapter: 0, depth: 0 }]);
+  assert.deepEqual(book.toc, [{ title: '序', chapter: 0, depth: 0, anchor: 'top' }]);
   assert.match(book.chapter(0), /一行\n二行/);
   assert.match(chapterMarkdown('<body><p>a&mdash;b&hellip;</p></body>', 'x.html'), /a—b…/);
 });

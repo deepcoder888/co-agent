@@ -8,7 +8,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { atomicWrite } from '../fsutil.mjs';
 import { openEpub } from './epub.mjs';
-import { measureText, markdownText, pdfPageCount, bookFacts } from './facts.mjs';
+import { measureText, markdownText, pdfPageCount, bookFacts, READ_SPEED } from './facts.mjs';
 import { derivedReadingCopy } from '../../public/display.js';
 
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
@@ -24,6 +24,17 @@ export function bookLang(agent) {
 }
 // Away from the keyboard for this long and the reading clock stops.
 export const IDLE_LIMIT_S = 300;
+// v0.53.14 进度: the characters (Chinese book) or words (English book) of each chapter, for the reader's progress line.
+// Measured once per parsed book and kept on it, so it lives in the same small cache; nothing is written.
+export function chapterUnits(book) {
+  if (!book.units) {
+    const measured = book.chapters.map((_, n) => measureText(markdownText(book.chapter(n, () => ''))));
+    const chars = measured.reduce((sum, m) => sum + m.chars, 0), words = measured.reduce((sum, m) => sum + m.words, 0);
+    const lang = chars > words ? 'zh' : 'en';
+    book.units = { lang, units: measured.map(m => lang === 'zh' ? m.chars : m.words) };
+  }
+  return book.units;
+}
 
 export function createBooks({ dataDir, getRegistry, io = fs, cacheSize = 3, now = () => new Date(), systemIdle = null }) {
   const cache = new Map(), progressFile = path.join(dataDir, 'reading-progress.json');
@@ -89,8 +100,8 @@ export function createBooks({ dataDir, getRegistry, io = fs, cacheSize = 3, now 
       const base = { agentId, index, label: file.label || path.basename(file.path), format, files };
       if (format === 'pdf') return { ...base, pdf: `/api/books/${encodeURIComponent(agentId)}/${index}/pdf` };
       if (format !== 'epub') return { ...base, unsupported: true };
-      const book = await epub(agentId, index);
-      return { ...base, title: book.title, chapters: book.chapters, toc: book.toc };
+      const book = await epub(agentId, index), { lang, units } = chapterUnits(book);
+      return { ...base, title: book.title, chapters: book.chapters.map((chapter, n) => ({ ...chapter, units: units[n] })), toc: book.toc, lang, speed: READ_SPEED[lang] };
     },
     async chapter(agentId, index, n) {
       const book = await epub(agentId, index);
@@ -115,13 +126,19 @@ export function createBooks({ dataDir, getRegistry, io = fs, cacheSize = 3, now 
     },
     async saveProgress(agentId, body) {
       const { agent } = fileOf(agentId, 0);
-      const { index, chapter, ratio } = body || {};
+      const { index, chapter, ratio, block, offset, page } = body || {};
       if (!Number.isSafeInteger(index) || index < 0 || !agent.bookFiles[index]) fail(400, '原书序号无效');
       if (!Number.isSafeInteger(chapter) || chapter < 0 || chapter > 100000) fail(400, '章节无效');
       if (typeof ratio !== 'number' || !(ratio >= 0 && ratio <= 1)) fail(400, '阅读位置无效');
+      // v0.53.14: optionally the paragraph (top-level block of the chapter) and how far it is scrolled, and a PDF's page.
+      if (block !== undefined && !(Number.isSafeInteger(block) && block >= 0 && block <= 1000000)) fail(400, '段落位置无效');
+      if (offset !== undefined && !(typeof offset === 'number' && offset >= 0 && offset <= 1)) fail(400, '段落位置无效');
+      if (page !== undefined && !(Number.isSafeInteger(page) && page >= 1 && page <= 100000)) fail(400, '页码无效');
       return queue(async () => {
         const all = await loadProgress();
-        all.books[agentId] = { index, chapter, ratio: Math.round(ratio * 10000) / 10000, updatedAt: now().toISOString() };
+        all.books[agentId] = { index, chapter, ratio: Math.round(ratio * 10000) / 10000,
+          ...(block !== undefined && { block }), ...(offset !== undefined && { offset: Math.round(offset * 10000) / 10000 }), ...(page !== undefined && { page }),
+          updatedAt: now().toISOString() };
         await atomicWrite(progressFile, JSON.stringify(all, null, 2) + '\n');
         return all.books[agentId];
       });

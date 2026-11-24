@@ -83,10 +83,10 @@ test('v045 PDF tool preserves text lines, blank pages, nested bookmarks, XML and
   assert.equal(book.title, 'Fixture <&> 中文');
   assert.equal(book.chapters.length, 2);
   assert.deepEqual(book.toc, [
-    { title: 'Parent <&>', chapter: 0, depth: 0 },
-    { title: 'Child', chapter: 1, depth: 1 },
-    { title: 'Promoted child', chapter: 1, depth: 0 },
-  ]);
+    { title: 'Parent <&>', chapter: 0, depth: 0, anchor: '' },
+    { title: 'Child', chapter: 1, depth: 1, anchor: '' },
+    { title: 'Promoted child', chapter: 1, depth: 0, anchor: '' },
+  ]); // v0.53.14: outline entries carry their link's anchor ('' without a fragment)
   assert.match(book.chapter(0), /First \\<line\\> & text\nSecond line/);
   assert.equal(book.chapter(1), '### PDF 第 2 页\n');
   const plain = openEpub(await fs.readFile(path.join(root, 'plain/reading-copy.epub')));

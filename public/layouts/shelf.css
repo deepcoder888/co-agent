@@ -1333,6 +1333,18 @@
   --reader-muted:#5c4b38;
   --reader-accent:#b5653b;
   --reader-rule:#c9b89c;
+  /* 2026-11-16: colours that were written into single rules, now per 配色 (data-reader-theme) */
+  --reader-shade:#efe4cf;
+  --reader-hover:#eadfc8;
+  --reader-link:#9a4f27;
+  --reader-eyebrow:#8a6a2f;
+  --reader-quote:#4a3b2b;
+  --reader-line:#2a211933;
+  --reader-faint:#2a21191a;
+  /* 2026-11-16 排版: body size, line height and measure (characters per line); public/reader-prefs.js sets them */
+  --reader-font-size:19px;
+  --reader-line-height:2.05;
+  --reader-measure:36;
   --reader-song:"Songti SC","Noto Serif SC","Source Han Serif SC","SimSun",serif;
   position:fixed;
   inset:0;
@@ -1406,7 +1418,7 @@
   overflow:auto;
   padding:84px 14px 40px;
   border-right:1px solid var(--reader-rule);
-  background:#efe4cf;
+  background:var(--reader-shade);
   font:14px/1.4 var(--font-ui);
 }
 [data-ui="shelf"] .is-toc-collapsed .shelf-reader-toc {
@@ -1451,7 +1463,7 @@
   letter-spacing:.2em;
 }
 [data-ui="shelf"] .shelf-reader-toc-toggle:hover {
-  background:#eadfc8;
+  background:var(--reader-hover);
   color:var(--reader-ink);
 }
 [data-ui="shelf"] .shelf-reader-toc-item {
@@ -1473,25 +1485,23 @@
 [data-ui="shelf"] .shelf-reader-toc-item:hover,
 [data-ui="shelf"] .shelf-reader-toc-item[aria-current="true"] {
   border-left-color:var(--reader-accent);
-  background:#eadfc8;
+  background:var(--reader-hover);
   color:var(--reader-ink);
 }
+/* 2026-11-16 版心: the column is measured in characters of the body text, the same with the outline open or collapsed. */
 [data-ui="shelf"] .shelf-reader-page {
   box-sizing:content-box;
   min-width:0;
-  max-width:700px;
+  max-width:calc(var(--reader-font-size) * var(--reader-measure));
   margin:0 auto;
   padding:120px 48px 140px;
   transition:max-width .25s ease;
-}
-[data-ui="shelf"] .is-toc-collapsed .shelf-reader-page {
-  max-width:920px;
 }
 [data-ui="shelf"] .shelf-reader-masthead {
   text-align:center;
   padding-bottom:56px;
   margin-bottom:56px;
-  border-bottom:1px solid #2a211933;
+  border-bottom:1px solid var(--reader-line);
 }
 [data-ui="shelf"] .shelf-reader-masthead p {
   margin:0;
@@ -1499,7 +1509,7 @@
 [data-ui="shelf"] .shelf-reader-eyebrow {
   font:15px var(--reader-song);
   letter-spacing:.25em;
-  color:#8a6a2f;
+  color:var(--reader-eyebrow);
 }
 [data-ui="shelf"] .shelf-reader-title {
   margin:30px 0 14px;
@@ -1529,7 +1539,9 @@
   color:var(--reader-muted);
 }
 [data-ui="shelf"] .shelf-reader-body .concept-markdown {
-  font:19px/2.05 var(--reader-song);
+  font-family:var(--reader-song);
+  font-size:var(--reader-font-size);
+  line-height:var(--reader-line-height);
 }
 [data-ui="shelf"] .shelf-reader-body p {
   margin:0 0 .6em;
@@ -1543,7 +1555,7 @@
 [data-ui="shelf"] .shelf-reader-body h2 {
   margin:72px 0 28px;
   text-align:center;
-  font:24px var(--reader-song);
+  font:1.26em var(--reader-song);
   letter-spacing:.12em;
   scroll-margin-top:32px;
 }
@@ -1557,19 +1569,19 @@
 }
 [data-ui="shelf"] .shelf-reader-body h3 {
   margin:44px 0 14px;
-  font:700 21px var(--reader-song);
+  font:700 1.1em var(--reader-song);
   scroll-margin-top:32px;
 }
 [data-ui="shelf"] .shelf-reader-body h4 {
   margin:34px 0 12px;
-  font:700 18px var(--reader-song);
+  font:700 .95em var(--reader-song);
   scroll-margin-top:32px;
 }
 [data-ui="shelf"] .shelf-reader-body h5,
 [data-ui="shelf"] .shelf-reader-body h6 {
   margin:26px 0 10px;
   color:var(--reader-muted);
-  font:700 16px var(--font-ui);
+  font:700 .84em var(--font-ui);
 }
 [data-ui="shelf"] .shelf-reader-lead:empty,
 [data-ui="shelf"] .shelf-reader-source:empty {
@@ -1594,7 +1606,7 @@
   border-collapse:collapse;
   border-top:2px solid var(--reader-ink);
   border-bottom:2px solid var(--reader-ink);
-  font:15px/1.7 var(--font-ui);
+  font:.79em/1.7 var(--font-ui);
 }
 [data-ui="shelf"] .shelf-reader-body .concept-markdown {
   overflow-wrap:break-word;
@@ -1612,12 +1624,41 @@
 [data-ui="shelf"] .shelf-reader-body td {
   padding:8px 10px;
   vertical-align:top;
-  border-bottom:1px solid #2a21191a;
+  border-bottom:1px solid var(--reader-faint);
 }
 [data-ui="shelf"] .shelf-reader-body blockquote {
   margin:24px 2em;
-  color:#4a3b2b;
+  color:var(--reader-quote);
   font-style:italic;
+}
+/* 2026-11-16: superscripts and subscripts leave the line height alone; links inside a book read as links in the text. */
+[data-ui="shelf"] .shelf-reader-body sup,
+[data-ui="shelf"] .shelf-reader-body sub {
+  font-size:.72em;
+  line-height:0;
+}
+[data-ui="shelf"] .shelf-reader-body a,
+[data-ui="shelf"] .shelf-reader-body .book-link {
+  color:var(--reader-link);
+}
+[data-ui="shelf"] .shelf-reader-body .book-link {
+  display:inline;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:2px;
+  background:none;
+  font:inherit;
+  line-height:inherit;
+  text-indent:0;
+  text-decoration:underline;
+  text-decoration-thickness:1px;
+  text-underline-offset:.18em;
+  vertical-align:baseline;
+  cursor:pointer;
+}
+[data-ui="shelf"] .shelf-reader-body .book-link:hover {
+  color:var(--reader-ink);
 }
 [data-ui="shelf"] .shelf-reader-body code {
   font-family:var(--font-mono);
@@ -1629,11 +1670,11 @@
   padding:14px 18px;
   border:1px solid var(--reader-rule);
   border-radius:6px;
-  font:15px/1.8 var(--font-ui);
+  font:.79em/1.8 var(--font-ui);
 }
 [data-ui="shelf"] .shelf-reader-fold > summary {
   color:var(--reader-muted);
-  font:600 15px var(--font-ui);
+  font:600 1em var(--font-ui);
   letter-spacing:.08em;
   cursor:pointer;
   scroll-margin-top:32px;
@@ -2116,11 +2157,11 @@
 [data-ui="shelf"] .book-reader-file-label { color:var(--reader-muted); font-size:13px; }
 [data-ui="shelf"] .book-reader .book-reader-file { max-width:min(360px, 40vw); min-height:32px; padding:0 8px; border:1px solid var(--reader-rule); border-radius:6px; background:var(--reader-paper); color:var(--reader-ink); font:13px var(--font-ui); }
 [data-ui="shelf"] .book-reader .book-reader-external { min-height:32px; padding:0 12px; border:1px solid var(--reader-rule); border-radius:6px; background:transparent; color:var(--reader-muted); font:13px var(--font-ui); cursor:pointer; }
-[data-ui="shelf"] .book-reader .book-reader-external:hover { background:#eadfc8; color:var(--reader-ink); }
+[data-ui="shelf"] .book-reader .book-reader-external:hover { background:var(--reader-hover); color:var(--reader-ink); }
 [data-ui="shelf"] .book-reader-pager { display:flex; gap:16px; margin-top:64px; padding-top:24px; border-top:1px solid var(--reader-rule); }
 [data-ui="shelf"] .book-reader .book-reader-turn { max-width:48%; padding:10px 14px; border:1px solid var(--reader-rule); border-radius:8px; background:transparent; color:var(--reader-muted); font:14px/1.5 var(--font-ui); text-align:left; cursor:pointer; }
 [data-ui="shelf"] .book-reader .book-reader-turn.is-next { margin-left:auto; text-align:right; }
-[data-ui="shelf"] .book-reader .book-reader-turn:hover { background:#eadfc8; color:var(--reader-ink); }
+[data-ui="shelf"] .book-reader .book-reader-turn:hover { background:var(--reader-hover); color:var(--reader-ink); }
 [data-ui="shelf"] .book-reader .book-image { display:block; max-width:100%; height:auto; margin:24px auto; }
 /* A PDF keeps its own pages: the viewer fills the paper below a compact masthead. */
 [data-ui="shelf"] .book-reader.is-pdf .shelf-reader-grid { grid-template-columns:minmax(0,1fr); }
@@ -2143,6 +2184,52 @@
   [data-ui="shelf"] dialog.shelf-reader .shelf-reader-exit,
   [data-ui="shelf"] dialog.shelf-reader .shelf-reader-grid { transition:none; }
 }
+/* 2026-11-16 阅读体验. 配色: gray and night reset the reader's colours (paper is the palette above); a PDF stays on white. */
+[data-ui="shelf"] dialog.shelf-reader[data-reader-theme="gray"] {
+  --reader-paper:#ececea; --reader-ink:#222222; --reader-muted:#555555; --reader-accent:#9a5a34; --reader-rule:#c8c8c4;
+  --reader-shade:#e2e2df; --reader-hover:#d8d8d4; --reader-link:#8a4e2b; --reader-eyebrow:#6e5a36; --reader-quote:#333333;
+  --reader-line:#2222222e; --reader-faint:#2222221a;
+}
+[data-ui="shelf"] dialog.shelf-reader[data-reader-theme="night"] {
+  --reader-paper:#1c1a17; --reader-ink:#d8cfc0; --reader-muted:#a39681; --reader-accent:#d08a5f; --reader-rule:#3a352d;
+  --reader-shade:#23201c; --reader-hover:#2f2b25; --reader-link:#e09a6e; --reader-eyebrow:#c9a66b; --reader-quote:#c8bead;
+  --reader-line:#d8cfc033; --reader-faint:#d8cfc01f;
+  color-scheme:dark;
+}
+/* 「Aa 排版」 sits at the top right, away from the text column; with the outline rail hidden it fades until wanted. */
+[data-ui="shelf"] .reader-prefs { position:fixed; top:22px; right:22px; z-index:3; font:14px var(--font-ui); transition:opacity .2s ease; }
+[data-ui="shelf"] dialog.shelf-reader.is-rail-hidden .reader-prefs:not(.is-open) { opacity:.3; }
+[data-ui="shelf"] dialog.shelf-reader.is-rail-hidden .reader-prefs:hover,
+[data-ui="shelf"] dialog.shelf-reader.is-rail-hidden .reader-prefs:focus-within { opacity:1; }
+[data-ui="shelf"] .book-reader.is-pdf .reader-prefs { display:none; }
+[data-ui="shelf"] .reader-prefs-toggle { min-height:32px; padding:4px 10px; border:1px solid var(--reader-rule); border-radius:6px; background:var(--reader-paper); color:var(--reader-muted); font:500 14px var(--font-ui); cursor:pointer; }
+[data-ui="shelf"] .reader-prefs-toggle:hover,
+[data-ui="shelf"] .reader-prefs-toggle[aria-expanded="true"] { background:var(--reader-hover); color:var(--reader-ink); }
+[data-ui="shelf"] .reader-prefs-glyph { font:600 15px Georgia,var(--reader-song); }
+[data-ui="shelf"] .reader-prefs-panel { position:absolute; top:calc(100% + 8px); right:0; display:grid; gap:10px; width:272px; padding:14px 16px; border:1px solid var(--reader-rule); border-radius:8px; background:var(--reader-paper); color:var(--reader-ink); box-shadow:0 10px 28px #0000002e; }
+[data-ui="shelf"] .reader-prefs-panel[hidden] { display:none; }
+[data-ui="shelf"] .reader-prefs-row { display:flex; align-items:center; gap:8px; }
+[data-ui="shelf"] .reader-prefs-name { flex:none; width:3em; color:var(--reader-muted); font-size:13px; }
+[data-ui="shelf"] .reader-prefs-value { min-width:3.2em; text-align:center; font-variant-numeric:tabular-nums; }
+[data-ui="shelf"] .reader-prefs-choices { display:flex; flex:1; gap:4px; }
+[data-ui="shelf"] .reader-prefs-step,
+[data-ui="shelf"] .reader-prefs-choice,
+[data-ui="shelf"] .reader-prefs-reset { min-height:30px; padding:2px 10px; border:1px solid var(--reader-rule); border-radius:6px; background:transparent; color:var(--reader-ink); font:13px var(--font-ui); cursor:pointer; }
+[data-ui="shelf"] .reader-prefs-choice { flex:1; padding:2px 4px; }
+[data-ui="shelf"] .reader-prefs-step:hover,
+[data-ui="shelf"] .reader-prefs-choice:hover,
+[data-ui="shelf"] .reader-prefs-reset:hover { background:var(--reader-hover); }
+[data-ui="shelf"] .reader-prefs-choice[aria-pressed="true"] { border-color:var(--reader-accent); box-shadow:inset 0 0 0 1px var(--reader-accent); font-weight:600; }
+[data-ui="shelf"] .reader-prefs-step:disabled { opacity:.4; cursor:default; }
+[data-ui="shelf"] .reader-prefs-reset { justify-self:start; color:var(--reader-muted); }
+[data-ui="shelf"] .reader-prefs-status { margin:0; color:var(--reader-muted); font-size:12px; text-indent:0; }
+[data-ui="shelf"] .reader-prefs-status:empty { display:none; }
+/* 读到第几页 (PDF only), 回到刚才的位置 after a link inside the book, and the quiet progress line at the bottom. */
+[data-ui="shelf"] .book-reader-page-label { color:var(--reader-muted); font-size:13px; }
+[data-ui="shelf"] .book-reader .book-reader-page { width:6.5em; min-height:32px; padding:0 8px; border:1px solid var(--reader-rule); border-radius:6px; background:var(--reader-paper); color:var(--reader-ink); font:13px var(--font-ui); }
+[data-ui="shelf"] .book-reader .book-reader-back { position:fixed; left:50%; bottom:40px; z-index:3; transform:translateX(-50%); padding:8px 18px; border:1px solid var(--reader-rule); border-radius:999px; background:var(--reader-paper); color:var(--reader-ink); font:14px var(--font-ui); box-shadow:0 6px 18px #00000024; cursor:pointer; }
+[data-ui="shelf"] .book-reader .book-reader-back:hover { background:var(--reader-hover); }
+[data-ui="shelf"] .book-reader-progress { position:fixed; right:22px; bottom:10px; z-index:2; margin:0; padding:2px 8px; border-radius:4px; background:var(--reader-paper); color:var(--reader-muted); font:12px var(--font-ui); text-indent:0; pointer-events:none; }
 
 /* The pulled-out book turns under the pointer (drag) or the arrow keys (2026-11-01); tilting shows its foot too. */
 [data-ui="shelf"] .book-3d { cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; }

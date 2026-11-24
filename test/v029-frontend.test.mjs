@@ -252,9 +252,9 @@ test('v029 5.5 concept state remains unknown on first failure and becomes empty 
   response.resolve({ items: [], today: null, running: null }); await third;
 });
 
-test('v029 5.6 manifest and both lockfile version fields are 0.53.13', async () => {
+test('v029 5.6 manifest and both lockfile version fields are 0.53.14', async () => {
   const [manifest, lock] = await Promise.all(['package.json', 'package-lock.json'].map(async file => JSON.parse(await fs.readFile(file, 'utf8'))));
-  assert.equal(manifest.version, '0.53.13'); assert.equal(lock.version, '0.53.13'); assert.equal(lock.packages[''].version, '0.53.13');
+  assert.equal(manifest.version, '0.53.14'); assert.equal(lock.version, '0.53.14'); assert.equal(lock.packages[''].version, '0.53.14');
   assert.equal(manifest.dependencies, undefined);
   assert.deepEqual(manifest.devDependencies, { '@electron/packager': '20.3.0', electron: '44.10.2' });
 });

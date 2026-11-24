@@ -158,7 +158,8 @@ function epubFixture(chapters, extra = []) {
 test('v043 #5 EPUB fallback outline deduplicates h1-h3 in source order, ignores empty/long headings and requires three', async t => {
   const headings = ['<h1>第一章</h1><h2> </h2>', '<h2>第二章</h2><h1>第一章</h1>', `<h3>第三章</h3><h2>${'长'.repeat(81)}</h2><h4>不收录</h4>`];
   const bytes = epubFixture(headings), book = openEpub(bytes);
-  assert.deepEqual(book.toc, [{ title: '第一章', chapter: 0, depth: 0 }, { title: '第二章', chapter: 1, depth: 0 }, { title: '第三章', chapter: 2, depth: 1 }]);
+  // v0.53.14: a heading's own id would be its anchor; these headings have none.
+  assert.deepEqual(book.toc, [{ title: '第一章', chapter: 0, depth: 0, anchor: '' }, { title: '第二章', chapter: 1, depth: 0, anchor: '' }, { title: '第三章', chapter: 2, depth: 1, anchor: '' }]);
   assert.deepEqual(book.chapters.map(c => c.title), ['第一章', '第二章', '第三章']);
   assert.deepEqual(openEpub(epubFixture(headings.slice(0, 2))).toc, []);
   const { config, root } = await fixture(t), file = path.join(root, 'cached.epub'); await fs.writeFile(file, bytes);

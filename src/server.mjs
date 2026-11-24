@@ -17,7 +17,7 @@ import { createWorkflows } from './recommend/workflows.mjs';
 import { createSessions } from './launch/history.mjs';
 import { createResume } from './launch/resume.mjs';
 import { createLogger } from './log.mjs';
-import { readSettings, writeSettings, validUi, validBookText, uiOptions, BOOK_TEXT } from './settings.mjs';
+import { readSettings, writeSettings, validUi, validBookText, uiOptions, BOOK_TEXT, READER_PREFS, validReaderPrefs } from './settings.mjs';
 import { readPins, writePins, validPins } from './pins.mjs';
 import { createConcepts } from './concepts/index.mjs';
 import { openAgent, createOpener } from './open.mjs';
@@ -68,7 +68,7 @@ export async function createApp(config, { spawnImpl, opener, recommendSpawnImpl,
   const basicConfig = createBasicConfig(config, basicConfigOptions);
   let settings = await readSettings(config.dataDir, log), settingsWork = Promise.resolve();
   let pins = await readPins(config.dataDir, log), pinsWork = Promise.resolve();
-  const settingsResponse = () => ({ ...settings, uiOptions, bookTextRange: BOOK_TEXT, recommend: { claude: config.recommend.claude, codex: recommendSettings(config, 'codex') },
+  const settingsResponse = () => ({ ...settings, uiOptions, bookTextRange: BOOK_TEXT, readerRange: READER_PREFS, recommend: { claude: config.recommend.claude, codex: recommendSettings(config, 'codex') },
     terminal: { display: config.terminalDisplay, windowMode: config.terminalWindowMode } });
   if (config.dataDirMigration) await log(`迁移：${config.dataDirMigration}`);
   // v0.21: book agents carry their Word reports (newest matching .docx per mapped book).
@@ -342,12 +342,14 @@ export async function createApp(config, { spawnImpl, opener, recommendSpawnImpl,
       }
       if (req.method === 'PUT' && pathname === '/api/settings') {
         const body = await readBody(req);
-        // Either field may come alone: the layout picker sends ui, the text-size slider sends bookText.
-        if (!body || Array.isArray(body) || (body.ui === undefined && body.bookText === undefined)) { send(res, 400, { error: '设置无效' }); return; }
+        // Each field may come alone: the layout picker sends ui, the text-size slider bookText, the readers' 排版 panel reader
+        // (v0.53.14; its fields may come alone too and are merged into the saved ones).
+        if (!body || Array.isArray(body) || (body.ui === undefined && body.bookText === undefined && body.reader === undefined)) { send(res, 400, { error: '设置无效' }); return; }
         if (body.ui !== undefined && !validUi(body.ui)) { send(res, 400, { error: '界面风格无效' }); return; }
         if (body.bookText !== undefined && !validBookText(body.bookText)) { send(res, 400, { error: '书本描述字号无效' }); return; }
+        if (body.reader !== undefined && !validReaderPrefs(body.reader, { partial: true })) { send(res, 400, { error: '阅读排版设置无效' }); return; }
         const work = settingsWork.then(async () => {
-          settings = await writeSettings(config.dataDir, body.ui ?? settings.ui, body.bookText ?? settings.bookText);
+          settings = await writeSettings(config.dataDir, body.ui ?? settings.ui, body.bookText ?? settings.bookText, { ...settings.reader, ...body.reader });
           return settingsResponse();
         });
         settingsWork = work.catch(() => {});

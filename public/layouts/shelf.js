@@ -5,6 +5,7 @@ import { donut, barList, columns } from '../charts.js';
 import { manageDialog } from '../accessibility.js';
 import { enter } from '../motion.js';
 import { autoHideRail } from '../reader-rail.js';
+import { mountReaderPrefs } from '../reader-prefs.js';
 import * as display from '../display.js';
 const { formatDate, summary, bookLabel, spineTitle, authorShort, matchesSearch, conceptStatus, cleanTitle } = display;
 
@@ -314,7 +315,9 @@ function buildReader(ctx) {
     field(ctx, 'div', 'concept-reader-body', undefined, 'shelf-reader-body'));
   // The collapsed outline rail hides after 3 s and comes back from the left edge, as in the book reader (2026-11-01).
   const edge = node(doc, 'div', undefined, 'shelf-reader-edge'); edge.setAttribute('aria-hidden', 'true');
-  reader.append(exit, field(ctx, 'div', 'concept-reader-grid', undefined, 'shelf-reader-grid'), edge);
+  // 2026-11-16: 「Aa 排版」, shared with the original-book reader (public/reader-prefs.js).
+  const prefs = mountReaderPrefs(doc, reader, { idPrefix: 'concept-reader' });
+  reader.append(exit, prefs.element, field(ctx, 'div', 'concept-reader-grid', undefined, 'shelf-reader-grid'), edge);
   r['concept-reader-grid'].append(toc, page);
   r.readerDialog = manageDialog(doc, reader, { labelledby: 'concept-reader-title', initialFocus: exit });
   r.readerRail = autoHideRail(doc, { dialog: reader, rail: toc, exit, edge, isCollapsed: () => !!r.readerTocCollapsed, isActive: () => !toc.hidden,

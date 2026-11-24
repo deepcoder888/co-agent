@@ -13,8 +13,10 @@ export function measureText(text) {
   return { chars, words, lang: chars > words ? 'zh' : 'en' };
 }
 
-// Text of an EPUB chapter's Markdown: image and link targets are not read.
-export const markdownText = markdown => String(markdown).replace(/!\[[^\]]*\]\([^)]*\)/g, ' ').replace(/\]\([^)]*\)/g, ' ');
+// Text of an EPUB chapter's Markdown: image and link targets are not read, nor the book marks of v0.53.14 (anchor names
+// and in-book link targets go with their marks; superscripts, subscripts and link texts stay as text).
+export const markdownText = markdown => String(markdown).replace(/!\[[^\]]*\]\([^)]*\)/g, ' ').replace(/\]\([^)]*\)/g, ' ')
+  .replace(/[^]*/g, '').replace(/[^]*/g, '').replace(/[-]/g, '');
 
 // The page count of a PDF: the largest /Count of a /Type /Pages node, searched in the file and inside its compressed
 // object streams; failing that, the number of /Type /Page leaves.
