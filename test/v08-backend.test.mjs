@@ -1,3 +1,4 @@
+import { agentCwd } from '../src/config.mjs';
 import './fixtures/time-zone.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -54,8 +55,8 @@ test('v08 exact concept prompt and process argv keep prompt off command line', a
 「请从你绑定的书《睡眠》中选出一个核心概念。它应当是读者很可能『不知道自己不知道』的概念：普通读者看书名和简介时意识不到它的存在，但理解它会改变对问题的理解或决策。不得选择以下已讲过的概念：概念甲；concept b。然后使用 $concept-ai-era 技能，用中文讲解这个概念。必须保留该技能规定的开头行和全部 11 个编号小节（### 1. 到 ### 11.）。讲解必须以书中内容为依据，并注明书内出处（章节）。不要执行该技能的 Final Persistence Step，不要写任何文件，文件由 CO-AGENT 保存。最后另起一段，用一句话说明：为什么读者很可能不知道自己不知道这个概念。」
 3. 等它完成后，按输出 schema 返回：concept（概念中文名）、conceptEn（英文名，没有则为 null）、oneLine（一句话说明）、whyUnknown（子 Agent 给出的那句「为什么不知道」）、sourceRefs（书内出处数组）、markdown（子 Agent 的完整概念讲解原文，不得删改或总结；回应单独放 response，正文仍为 11 节）。response 必填，没有回应对象，stance 必须填「无」，text 必须为空字符串，不要回应其他概念。另给出核心概念 term：zh 必须是 concept 中连续的一段（1–8 个汉字），能单独代表这个概念，不能是「概念」「创造」这类泛词；concept 本身不超过 8 个汉字时，zh 就是 concept。例：「会话目标罗盘」（6 字）→「会话目标罗盘」；「内外嵌套的调节工具箱」（10 字）→「调节工具箱」，不能是「嵌套」。en、fr 只翻译 zh 这个词。法文去掉冠词并保留重音符号。`);
   assert.match(conceptPrompt({ ...r, excludedConcepts: [] }), /已讲过的概念：无。/);
-  assert.deepEqual(conceptArgs({ codexProfile: 'gpt', codexModel: 'gpt-test', codexEffort: 'xhigh', launchProject: 'project' }, { schema: 'schema', output: 'out' }),
-    ['exec', '--profile', 'gpt', '-m', 'gpt-test', '-c', 'model_reasoning_effort="xhigh"', '-c', 'agents.max_threads=8', '-s', 'read-only', '--skip-git-repo-check', '-C', 'project', '--json', '--output-schema', 'schema', '-o', 'out', '-']);
+  assert.deepEqual(conceptArgs({ codexProfile: 'gpt', codexModel: 'gpt-test', codexEffort: 'xhigh', launchProject: 'project', dataDir: 'data' }, { schema: 'schema', output: 'out' }),
+    ['exec', '--profile', 'gpt', '-m', 'gpt-test', '-c', 'model_reasoning_effort="xhigh"', '-c', 'agents.max_threads=8', '-s', 'read-only', '--skip-git-repo-check', '-C', 'data\\agent-cwd', '--json', '--output-schema', 'schema', '-o', 'out', '-']);
   assert.equal(conceptSchema.additionalProperties, false);
   assert.deepEqual(conceptSchema.required, Object.keys(result));
   assert.equal(perspectiveSchema.properties.results.items.additionalProperties, false);
@@ -139,7 +140,7 @@ test('v08 runner uses sanitized hidden shell:false spawn, schema/work files and 
   config.concept = { timeoutMs: 1000 };
   const value = await runConceptProcess(r, config, { spawnImpl: spawnOutput(result, calls), env: { PATH: 'keep', CLAUDECODE: '1', ELECTRON_RUN_AS_NODE: '1' } });
   assert.deepEqual(value, { ...result, response: null, responseError: null }); const c = calls[0];
-  assert.equal(c.options.shell, false); assert.equal(c.options.windowsHide, true); assert.equal(c.options.cwd, config.launchProject);
+  assert.equal(c.options.shell, false); assert.equal(c.options.windowsHide, true); assert.equal(c.options.cwd, agentCwd(config)); // v0.53.13: the empty agent-cwd, not launchProject
   assert.equal(c.options.env.CLAUDECODE, undefined); assert.equal(c.options.env.ELECTRON_RUN_AS_NODE, undefined);
   assert.equal(c.prompt, conceptPrompt(r)); assert.ok(!c.args.some(a => a.includes('你是协调者')));
   const dir = path.join(config.dataDir, 'concepts/work', r.conceptId);

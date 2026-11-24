@@ -5,7 +5,7 @@ import { validateSeminar, normalizeQuote } from '../src/seminars/runner.mjs';
 // Shape taken from the first real seminar (Claude acceptance 2026-10-08): the model wrote citations into name fields.
 const book = name => ({ id: name.toLowerCase(), kind: 'book', name, platforms: { codex: { available: true } } });
 const record = { mode: 'auto', input: '为什么人很难改变习惯？', catalog: ['Corvo', 'Dirvo', 'Xiaomo', 'Walvo'].map(book) };
-// v0.53.12: every attribution quotes a sentence of that author's own analysis.
+// v0.53.13: every attribution quotes a sentence of that author's own analysis.
 const analyses = {
   Corvo: '第二部第1章：习惯是环境线索触发的自动反应。\n\nINFERENCE：**改变线索**比依靠意志更可靠。',
   Dirvo: '第9章 Design for Habits 指出，小步骤让新行为更容易开始。',
@@ -26,6 +26,8 @@ const value = () => ({
     { text: '行动二', basis: ['Xiaomo'].map(cite) },
     { text: '行动三', basis: ['Corvo', 'Dirvo'].map(cite) },
   ],
+  // v0.53.13 各书独有: one insight per participant, quoting its own analysis.
+  unique: ['Corvo', 'Dirvo：第9章', 'Xiaomo'].map(agent => ({ agent, insight: `${agent.split('：')[0]}独有的见解`, quote: quote[agent.split('：')[0]] })),
   terms: [{ zh: '习惯', en: 'habit', fr: 'habitude' }],
 });
 
@@ -44,7 +46,6 @@ test('v011 seminar name fields still reject non-participants and duplicates', ()
   for (const mutate of [
     v => { v.actions[1].basis = [{ agent: 'Walvo：第1章', quote: quote.Corvo }]; },
     v => { v.actions[1].basis = [{ agent: 'Xiaolaix', quote: quote.Corvo }]; },
-    v => { v.actions[2].basis = ['Corvo', 'Corvo：第2章'].map(cite); },
     v => { v.commonAnswer.points[0].support = [...['Corvo', 'Dirvo'].map(cite), { agent: 'Stranger', quote: quote.Corvo }]; },
     v => { v.commonAnswer.points[0].support = ['Corvo', 'Dirvo', 'Xiaomo']; },
     v => { v.actions[0].basis = ['Corvo']; },
@@ -55,17 +56,17 @@ test('v011 seminar name fields still reject non-participants and duplicates', ()
   }
 });
 
-test('v0.53.12 原文回查: verbatim quotes are verified, with evidence in support order and a source check', () => {
+test('v0.53.13 原文回查: verbatim quotes are verified, with evidence in support order and a source check', () => {
   const { result } = validateSeminar(value(), record);
   assert.deepEqual(result.commonAnswer.points[0].evidence, ['Corvo', 'Dirvo', 'Xiaomo'].map(agent => ({ agent, quote: quote[agent], verified: true })));
   assert.deepEqual(result.commonAnswer.points[1].evidence.map(e => e.agent), result.commonAnswer.points[1].support);
   assert.deepEqual(result.actions[0].evidence.map(e => [e.agent, e.verified]), [['Corvo', true], ['Dirvo', true]]);
   assert.deepEqual(result.divergences[0].positions[1], { agent: 'Dirvo', view: '乙', quote: quote.Dirvo, verified: true });
   // 3 + 2 support quotes, 2 positions, 2 + 1 + 2 basis quotes.
-  assert.deepEqual(result.sourceCheck, { total: 12, unverified: 0 });
+  assert.deepEqual(result.sourceCheck, { total: 15, unverified: 0 });
 });
 
-test('v0.53.12 原文回查: full/half-width punctuation, whitespace, quote marks and Markdown stars still match', () => {
+test('v0.53.13 原文回查: full/half-width punctuation, whitespace, quote marks and Markdown stars still match', () => {
   const v = value();
   // Corvo's analysis has "**改变线索**比依靠意志更可靠。"; Dirvo's has "Design for Habits 指出，".
   v.commonAnswer.points[0].support[0].quote = '“改变线索比依靠意志更可靠.”';
@@ -75,10 +76,10 @@ test('v0.53.12 原文回查: full/half-width punctuation, whitespace, quote mark
   assert.equal(result.commonAnswer.points[0].evidence[0].verified, true);
   assert.equal(result.actions[2].evidence[1].verified, true);
   assert.equal(result.divergences[0].positions[0].verified, true);
-  assert.deepEqual(result.sourceCheck, { total: 12, unverified: 0 });
+  assert.deepEqual(result.sourceCheck, { total: 15, unverified: 0 });
 });
 
-test('v0.53.12 原文回查: a quote missing from that author\'s analysis is marked, not rejected', () => {
+test('v0.53.13 原文回查: a quote missing from that author\'s analysis is marked, not rejected', () => {
   const v = value();
   v.commonAnswer.points[0].support[1].quote = quote.Xiaomo;          // another author's sentence is not Dirvo's
   v.actions[1].basis[0].quote = '这句话不在任何人的分析里出现';
@@ -88,15 +89,51 @@ test('v0.53.12 原文回查: a quote missing from that author\'s analysis is mar
   assert.deepEqual(result.commonAnswer.points[0].evidence.map(e => e.verified), [true, false, true]);
   assert.deepEqual(result.actions[1].basis, ['Xiaomo']); assert.equal(result.actions[1].evidence[0].verified, false);
   assert.equal(result.divergences[0].positions[1].verified, false); assert.equal(result.divergences[0].positions[1].agent, 'Dirvo');
-  assert.deepEqual(result.sourceCheck, { total: 12, unverified: 3 });
+  assert.deepEqual(result.sourceCheck, { total: 15, unverified: 3 });
   const none = value();
   for (const p of none.commonAnswer.points) for (const s of p.support) s.quote = '完全找不到的一句引文';
   for (const a of none.actions) for (const b of a.basis) b.quote = '完全找不到的一句引文';
   for (const p of none.divergences[0].positions) p.quote = '完全找不到的一句引文';
-  assert.deepEqual(validateSeminar(none, record).result.sourceCheck, { total: 12, unverified: 12 });
+  for (const u of none.unique) u.quote = '完全找不到的一句引文';
+  assert.deepEqual(validateSeminar(none, record).result.sourceCheck, { total: 15, unverified: 15 });
 });
 
-test('v0.53.12 原文回查: a quote that is empty, not a string, under 8 or over 120 characters is invalid JSON', () => {
+test('v0.53.13 the same author cited twice in a support or basis becomes one entry, verified by any of its quotes', () => {
+  const v = value();
+  v.actions[2].basis = [{ agent: 'Corvo', quote: '完全找不到的一句引文' }, { agent: 'Corvo：第二部第1章', quote: quote.Corvo }, cite('Dirvo')];
+  v.commonAnswer.points[0].support = [cite('Corvo'), cite('Dirvo'), { agent: 'Dirvo', quote: quote.Xiaomo }, cite('Xiaomo')];
+  const { result } = validateSeminar(v, record);
+  assert.deepEqual(result.actions[2].basis, ['Corvo', 'Dirvo']);
+  assert.deepEqual(result.actions[2].evidence, [{ agent: 'Corvo', quote: quote.Corvo, verified: true }, { agent: 'Dirvo', quote: quote.Dirvo, verified: true }], 'the found quote is kept');
+  assert.deepEqual(result.commonAnswer.points[0].support, ['Corvo', 'Dirvo', 'Xiaomo']); assert.equal(result.commonAnswer.points[0].strength, '全员一致');
+  assert.deepEqual(result.sourceCheck, { total: 15, unverified: 0 }, 'one attribution per author');
+  const minority = value(); minority.commonAnswer.points[1].support = [cite('Dirvo'), { agent: 'Dirvo：第9章', quote: quote.Dirvo }];
+  assert.throws(() => validateSeminar(minority, record), /无效/, 'a duplicated author does not count twice towards the majority');
+});
+
+test('v0.53.13 各书独有: exactly one quoted insight per participant, resolved like the other attributions', () => {
+  const { result } = validateSeminar(value(), record);
+  assert.deepEqual(result.unique, [
+    { agent: 'Corvo', insight: 'Corvo独有的见解', quote: quote.Corvo, verified: true },
+    { agent: 'Dirvo', insight: 'Dirvo独有的见解', quote: quote.Dirvo, verified: true },
+    { agent: 'Xiaomo', insight: 'Xiaomo独有的见解', quote: quote.Xiaomo, verified: true },
+  ]);
+  const missed = value(); missed.unique[1].quote = quote.Corvo;
+  assert.equal(validateSeminar(missed, record).result.unique[1].verified, false);
+  assert.deepEqual(validateSeminar(missed, record).result.sourceCheck, { total: 15, unverified: 1 });
+  for (const mutate of [
+    v => { v.unique.pop(); },                                                  // one participant missing
+    v => { v.unique[1].agent = 'Corvo'; },                                     // duplicate
+    v => { v.unique[1].agent = 'Stranger'; },                                  // outside the participants
+    v => { v.unique[0].insight = ''; },
+    v => { v.unique[0].insight = '字'.repeat(301); },
+    v => { v.unique[0].quote = '太短'; },
+    v => { delete v.unique[0].quote; },
+    v => { delete v.unique; },
+  ]) { const v = value(); mutate(v); assert.throws(() => validateSeminar(v, record), /无效/); }
+});
+
+test('v0.53.13 原文回查: a quote that is empty, not a string, under 8 or over 120 characters is invalid JSON', () => {
   for (const q of ['', '   ', null, 7, '一二三四五六七', '「一二三四五六七」', '字'.repeat(121)]) {
     for (const mutate of [v => { v.commonAnswer.points[0].support[0].quote = q; }, v => { v.actions[0].basis[0].quote = q; }, v => { v.divergences[0].positions[0].quote = q; }]) {
       const v = value(); mutate(v);
@@ -108,7 +145,7 @@ test('v0.53.12 原文回查: a quote that is empty, not a string, under 8 or ove
   assert.equal(result.commonAnswer.points[0].evidence[0].verified, false); assert.equal(result.actions[0].evidence[0].verified, false);
 });
 
-test('v0.53.12 normalizeQuote removes whitespace, quote marks, dashes and Markdown, unifies punctuation and case', () => {
+test('v0.53.13 normalizeQuote removes whitespace, quote marks, dashes and Markdown, unifies punctuation and case', () => {
   assert.equal(normalizeQuote(' 甲，乙。丙；丁：戊！己？(庚)（辛）、壬… '), '甲,乙.丙;丁:戊!己?(庚)(辛),壬...');
   assert.equal(normalizeQuote('「甲」『乙』“丙”‘丁’"戊"\'己\''), '甲乙丙丁戊己');
   assert.equal(normalizeQuote('a—b–c-d'), 'abcd');

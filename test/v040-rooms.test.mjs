@@ -34,12 +34,15 @@ test('v040 backend: the synthesis becomes background text naming the question, c
   assert.deepEqual(s.agentIds, ['walvo', 'jadra', 'liebo']); assert.equal(s.title, '睡不好的第二天，还要不要运动？');
   for (const text of ['【背景：CO-AGENT 圆桌讨论】', '问题：睡不好的第二天', '共同答案：可以动，但降低强度', '- 降低强度（全员一致', '要不要补觉：cx-walvo：回到规律', '1. 改为散步（依据：cx-liebo）', '依据仍以你的书为准']) assert.ok(s.context.includes(text), text);
   assert.ok(s.context.endsWith('追问：'));
-  // v0.53.12: the 原文回查 fields of newer records leave the follow-up background unchanged.
+  // v0.53.13: the 原文回查 fields of newer records leave the follow-up background unchanged.
   const checked = seminar(), r = checked.result, quote = '原文里的一句话';
   r.commonAnswer.points[0].evidence = r.commonAnswer.points[0].support.map(agent => ({ agent, quote, verified: true }));
   r.divergences[0].positions = r.divergences[0].positions.map(p => ({ ...p, quote, verified: false }));
   r.actions[0].evidence = [{ agent: 'cx-liebo', quote, verified: false }]; r.sourceCheck = { total: 6, unverified: 3 };
   assert.equal(seminarContext(checked).context, s.context);
+  // v0.53.13: 各书独有 goes into the background, between the participants and the common answer.
+  r.unique = [{ agent: 'cx-walvo', insight: '独有一', quote, verified: true }, { agent: 'cx-jadra', insight: '独有二', quote, verified: false }, { agent: 'cx-liebo', insight: '独有三', quote, verified: true }];
+  assert.ok(seminarContext(checked).context.includes('参加者：cx-walvo、cx-jadra、cx-liebo\n各书独有：\n- cx-walvo：独有一\n- cx-jadra：独有二\n- cx-liebo：独有三\n共同答案：'));
   const c = consultContext(consult());
   assert.deepEqual(c.agentIds, ['walvo', 'jadra', 'liebo']);
   for (const text of ['【背景：CO-AGENT 会诊】', '处境：换工作去读研', 'A. 换', '推荐 A（把握程度：中）：先试一年', '- 收入下降', '- 问三位读研的人', '会改变结论的信息：存款能撑多久', '不构成医疗、法律、心理或投资建议']) assert.ok(c.context.includes(text), text);

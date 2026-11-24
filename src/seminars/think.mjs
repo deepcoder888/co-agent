@@ -12,6 +12,8 @@ export function seminarMarkdown(record) {
   return `# 研讨：${record.input}\n\n核心概念：${r.terms.map(t => `${t.zh} · ${t.en} · ${t.fr}`).join('；')}\n\n` +
     `日期：${localTime(new Date(record.createdAt)).day}（本机时区）\n\n参加者：\n` +
     r.selected.map(s => { const a = r.perAgent.find(a => a.agent === s.agent); return `- ${a.name} · ${book(a)} · ${s.reason}`; }).join('\n') +
+    // v0.53.13 各书独有 comes before the common answer; records without it keep their old output.
+    (r.unique ? '\n\n## 各书独有\n\n' + r.unique.map(u => `- ${name(u.agent)}：${u.insight}——「${u.quote}」${unfound(u.verified)}`).join('\n') : '') +
     `\n\n## 共同答案\n\n${check}${r.commonAnswer.summary}\n\n` +
     r.commonAnswer.points.map(p => `- 【${p.strength}】${p.text}（支持：${p.support.map(name).join('、')}）${quotes(p.evidence, '  ')}`).join('\n') +
     '\n\n## 分歧点\n\n' + (r.divergences.map(d => `### ${d.topic}\n\n${d.positions.map(p => `- ${name(p.agent)}：${p.view}${p.quote ? `——「${p.quote}」${unfound(p.verified)}` : ''}`).join('\n')}`).join('\n\n') || '无已列明分歧。') +

@@ -27,6 +27,13 @@ export function requiresTaskFormat(name, config) { return config.taskContracts?.
 // v0.50: how prompts name the user. A Latin name is set off by spaces inside Chinese text (「与 Alex 处境」), a Chinese one is not (「与用户处境」).
 export const inlineName = (name = '用户') => /[A-Za-z0-9]/.test(name) ? ` ${name} ` : name;
 
+// v0.53.13: in-app Codex runs (rooms, concepts, chats, rewrites) start in an empty folder of the data dir instead of
+// launchProject, so Codex injects neither the CO-AGENT repository's AGENTS.md nor its .codex/config.toml MCP servers
+// into every book sub-agent (probe 2026-11-16: 39 614 characters of development rules before the task; 16 992 with
+// an empty folder, all of them ~/.codex/AGENTS.md). Codex finds its agents in ~/.codex/agents regardless of cwd.
+// Claude in-app chats keep launchProject: its .claude/agents links are how Claude finds the book agents.
+export const agentCwd = config => path.join(config.dataDir, 'agent-cwd');
+
 async function exists(file) {
   try { await fs.stat(file); return true; }
   catch (error) { if (error.code === 'ENOENT') return false; throw error; }

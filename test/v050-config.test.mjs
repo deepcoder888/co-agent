@@ -65,17 +65,19 @@ test('v050 nullable settings: plain names only, absolute paths only, null accept
 
 test('v050 every Codex argv: identical to v0.49.1 with Alex values, no flags when left to Codex', () => {
   const launchProject = 'D:\\work\\co-agent', files = { schema: 's.json', output: 'o.json' };
-  const set = { launchProject, codexProfile: 'gpt', codexModel: 'gpt-test', codexEffort: 'xhigh', recommend: { codex: { model: 'gpt-test', effort: 'xhigh' } } };
-  const unset = { launchProject, codexProfile: null, codexModel: null, codexEffort: null, recommend: { codex: { model: null, effort: null } } };
+  // v0.53.13: in-app Codex runs start in <dataDir>\agent-cwd, terminal launches and joint calls still in launchProject.
+  const dataDir = 'D:\\data', agentDir = 'D:\\data\\agent-cwd';
+  const set = { launchProject, dataDir, codexProfile: 'gpt', codexModel: 'gpt-test', codexEffort: 'xhigh', recommend: { codex: { model: 'gpt-test', effort: 'xhigh' } } };
+  const unset = { launchProject, dataDir, codexProfile: null, codexModel: null, codexEffort: null, recommend: { codex: { model: null, effort: null } } };
   const flags = ['--profile', 'gpt', '-m', 'gpt-test', '-c', 'model_reasoning_effort=xhigh'];
   assert.deepEqual(codexArgs('book', 'L', set).slice(0, -1), [...flags, '-C', launchProject]);
   assert.deepEqual(codexArgs('book', 'L', unset).slice(0, -1), ['-C', launchProject]);
-  const chat = ['-s', 'read-only', '--skip-git-repo-check', '-C', launchProject, '--json'];
+  const chat = ['-s', 'read-only', '--skip-git-repo-check', '-C', agentDir, '--json'];
   assert.deepEqual(codexChatArgs({}, set, true), ['exec', ...flags, ...chat, '-']);
   assert.deepEqual(codexChatArgs({ threadId: 'T' }, unset, false), ['exec', ...chat, 'resume', 'T', '-']);
   assert.deepEqual(jointArgs('codex', { jointId: 'J' }, [{ name: 'a' }], set).slice(0, -1), [...flags, '-C', launchProject]);
   assert.deepEqual(jointArgs('codex', { jointId: 'J' }, [{ name: 'a' }], unset).slice(0, -1), ['-C', launchProject]);
-  const tail = ['-c', 'agents.max_threads=8', '-s', 'read-only', '--skip-git-repo-check', '-C', launchProject, '--json', '--output-schema', 's.json', '-o', 'o.json', '-'];
+  const tail = ['-c', 'agents.max_threads=8', '-s', 'read-only', '--skip-git-repo-check', '-C', agentDir, '--json', '--output-schema', 's.json', '-o', 'o.json', '-'];
   assert.deepEqual(conceptArgs(set, files), ['exec', '--profile', 'gpt', '-m', 'gpt-test', '-c', 'model_reasoning_effort="xhigh"', ...tail]);
   assert.deepEqual(conceptArgs(unset, files), ['exec', ...tail]);
   const recommend = ['-s', 'read-only', '--skip-git-repo-check', '--json', '--output-schema', 's.json', '-o', 'o.json', '-'];

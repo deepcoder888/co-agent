@@ -5,6 +5,7 @@ import { atomicWrite } from '../fsutil.mjs';
 import { resolveCli } from '../launch/spec.mjs';
 import { scrubEnvironment } from '../launch/spawner.mjs';
 import { codexModelArgs, codexProfileArgs } from '../launch/codex.mjs';
+import { agentCwd } from '../config.mjs';
 import { responseBody } from '../../public/display.js';
 
 export const termSchema = { type: 'object', additionalProperties: false, required: ['zh','en','fr'], properties: {
@@ -47,7 +48,7 @@ export function perspectivePrompt(concept, run) {
 export const codexThreadLimit = 8;
 export function conceptArgs(config, files) {
   return ['exec', ...codexProfileArgs(config.codexProfile), ...codexModelArgs(config, { quote: true }), '-c', `agents.max_threads=${codexThreadLimit}`,
-    '-s', 'read-only', '--skip-git-repo-check', '-C', config.launchProject, '--json', '--output-schema', files.schema, '-o', files.output, '-'];
+    '-s', 'read-only', '--skip-git-repo-check', '-C', agentCwd(config), '--json', '--output-schema', files.schema, '-o', files.output, '-'];
 }
 
 // Every claude/codex runner ends the whole tree: an npm-installed CLI runs as node.exe, which starts the real exe.
@@ -164,6 +165,7 @@ export async function runJsonProcess({ id, namespace, prompt, schema, timeoutMs,
   const files = { schema: path.join(dir, 'schema.json'), output: path.join(dir, 'out.json') };
   await write(path.join(dir, 'prompt.txt'), prompt);
   await write(files.schema, JSON.stringify(schema, null, 2) + '\n');
+  await fs.mkdir(agentCwd(config), { recursive: true });
   const { exe, prefix } = await resolveCli(config.codexExe, env), clean = scrubEnvironment(env);
   let stdout = '', stderr = '', failure;
   try {
@@ -184,7 +186,7 @@ export async function runJsonProcess({ id, namespace, prompt, schema, timeoutMs,
       if (signal?.aborted) { finish(new Error('进程中断')); return; }
       signal?.addEventListener('abort', abort, { once: true });
       try {
-        child = spawnImpl(exe, [...prefix, ...conceptArgs(config, files)], { cwd: config.launchProject, shell: false, windowsHide: true,
+        child = spawnImpl(exe, [...prefix, ...conceptArgs(config, files)], { cwd: agentCwd(config), shell: false, windowsHide: true,
           ...(process.platform !== 'win32' ? { detached: true } : {}), env: clean.env, stdio: ['pipe','pipe','pipe'] });
         child.once('error', error => { void stop(error); });
         child.stdout?.setEncoding('utf8'); child.stderr?.setEncoding('utf8');

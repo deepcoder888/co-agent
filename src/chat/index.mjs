@@ -6,6 +6,7 @@ import { resolveCli } from '../launch/spec.mjs';
 import { dateDirs } from '../launch/verify.mjs';
 import { claudeRelay } from '../launch/claude.mjs';
 import { missingSourcesFor } from '../../public/display.js';
+import { agentCwd } from '../config.mjs';
 import { claudeChatArgs, codexChatArgs, codexChatPrompt, claudeEvent, codexEvent, runAnswer, claudeName, relayMode } from './runner.mjs';
 import { runRewrite, rewriteLimits } from './rewrite.mjs';
 
@@ -171,7 +172,9 @@ export function createChats(config, { getRegistry, spawnImpl, env = process.env,
       const own = turn.rewrites?.[agentId]?.question ?? turn.question;
       const asked = first && chat.context ? `${chat.context}\n${own}` : own;
       const prompt = claude ? asked : codexChatPrompt(agent, chat.chatId, asked, config, first);
-      const state = await runImpl({ exe, args, prompt, timeoutMs, signal: controller.signal, parse: claude ? claudeEvent : codexEvent,
+      const cwd = claude ? config.launchProject : agentCwd(config);
+      if (!claude) await fs.mkdir(cwd, { recursive: true });
+      const state = await runImpl({ exe, args, prompt, timeoutMs, signal: controller.signal, cwd, parse: claude ? claudeEvent : codexEvent,
         onUpdate: s => {
           answer.text = s.text; if (s.threadId && !member.threadId) member.threadId = s.threadId;
           if (Date.now() - lastSave > 2000) { lastSave = Date.now(); void save(chat); }

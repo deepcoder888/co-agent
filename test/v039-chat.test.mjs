@@ -60,9 +60,11 @@ test('v039 Claude args: the agent answers on stdin with streaming JSON, read-onl
 });
 
 test('v039 Codex args and prompts: read-only sandbox, JSON events, the first turn binds the role and later turns resume the thread', () => {
-  const config = { codexProfile: 'gpt', codexModel: 'm', codexEffort: 'xhigh', launchProject: 'D:\\p', taskContracts: { octopus: ['peter'] } };
+  const config = { codexProfile: 'gpt', codexModel: 'm', codexEffort: 'xhigh', launchProject: 'D:\\p', dataDir: 'D:\\d', taskContracts: { octopus: ['peter'] } };
   const first = codexChatArgs({}, config, true), later = codexChatArgs({ threadId: 'T' }, config, false);
   assert.deepEqual(first.slice(0, 3), ['exec', '--profile', 'gpt']);
+  // v0.53.13: in-app Codex runs start in the data dir's empty agent-cwd, not in launchProject (no AGENTS.md injection).
+  for (const args of [first, later]) assert.deepEqual(args.slice(args.indexOf('-C'), args.indexOf('-C') + 2), ['-C', 'D:\\d\\agent-cwd']);
   for (const args of [first, later]) { assert.deepEqual(args.slice(args.indexOf('-s'), args.indexOf('-s') + 2), ['-s', 'read-only']); assert.ok(args.includes('--json')); assert.equal(args.at(-1), '-'); }
   assert.deepEqual(later.slice(-3), ['resume', 'T', '-']);
   const prompt = codexChatPrompt(agent('jadra'), 'C1', '睡不好怎么办？', config, true);

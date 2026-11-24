@@ -387,7 +387,11 @@ export function renderRooms(ctx, model, host) {
       node(doc, 'span', (d.positions || []).map(p => `${nameOf(p.agent)}：${p.view}${p.verified === false ? '（未在原文中找到）' : ''}`).join('；'))));
     const actions = node(doc, 'ol');
     for (const item of result.actions || []) actions.append(region(doc, 'li', '', node(doc, 'span', item.text), ...cited('依据', item.basis, item.evidence)));
+    // 各书独有 (2026-11-16): one insight per participant, shown before the common answer so a single book's point is not lost.
+    const unique = node(doc, 'ul', undefined, 'room-points');
+    for (const u of result.unique || []) unique.append(region(doc, 'li', '', node(doc, 'strong', `${nameOf(u.agent)}：`), node(doc, 'span', u.insight), ...cited('出处', [u.agent], [u])));
     sheet.append(region(doc, 'div', 'room-synthesis-grid',
+      ...(result.unique ? [section('各书独有', unique)] : []),
       section('共同答案', node(doc, 'p', result.commonAnswer?.summary || '暂无共同答案'), points),
       section('分歧', ...(divergences.length ? divergences : [node(doc, 'p', '未列出分歧点。')])),
       section('行动建议', actions)));

@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { requiresTaskFormat } from '../config.mjs';
+import { requiresTaskFormat, agentCwd } from '../config.mjs';
 import { claudeRelay } from '../launch/claude.mjs';
 import { codexModelArgs, codexProfileArgs } from '../launch/codex.mjs';
 import { killProcessTree } from '../concepts/runner.mjs';
@@ -27,7 +27,7 @@ export function claudeChatArgs(agent, member, config, first) {
 }
 
 export function codexChatArgs(member, config, first) {
-  const common = [...codexProfileArgs(config.codexProfile), ...codexModelArgs(config), '-s', 'read-only', '--skip-git-repo-check', '-C', config.launchProject, '--json'];
+  const common = [...codexProfileArgs(config.codexProfile), ...codexModelArgs(config), '-s', 'read-only', '--skip-git-repo-check', '-C', agentCwd(config), '--json'];
   return first ? ['exec', ...common, '-'] : ['exec', ...common, 'resume', member.threadId, '-'];
 }
 
@@ -68,7 +68,7 @@ export function codexEvent(event, state) {
 }
 
 // One answer: spawn, feed the prompt on stdin, parse JSON lines as they arrive, and stop on timeout or abort.
-export function runAnswer({ exe, args, prompt, parse, timeoutMs, signal, onUpdate = () => {} }, config,
+export function runAnswer({ exe, args, prompt, parse, timeoutMs, signal, cwd, onUpdate = () => {} }, config,
   { spawnImpl = spawn, env = process.env, killTree = killProcessTree } = {}) {
   // A missing injection must never start a real CLI from node:test.
   if (process.env.NODE_TEST_CONTEXT && spawnImpl === spawn) return Promise.reject(new Error('测试必须注入 CLI 进程替身'));
@@ -94,7 +94,7 @@ export function runAnswer({ exe, args, prompt, parse, timeoutMs, signal, onUpdat
       parse(event, state); onUpdate(state);
     };
     try {
-      child = spawnImpl(exe, args, { cwd: config.launchProject, shell: false, windowsHide: true, env: scrubEnvironment(env).env, stdio: ['pipe', 'pipe', 'pipe'],
+      child = spawnImpl(exe, args, { cwd: cwd ?? config.launchProject, shell: false, windowsHide: true, env: scrubEnvironment(env).env, stdio: ['pipe', 'pipe', 'pipe'],
         ...(process.platform !== 'win32' ? { detached: true } : {}) });
       child.once('error', error => { void stop(error); });
       child.stdout?.setEncoding('utf8'); child.stderr?.setEncoding('utf8');

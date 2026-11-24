@@ -21,6 +21,7 @@ export function seminarContext(record) {
       '【背景：CO-AGENT 圆桌讨论】',
       `问题：${record.input}`,
       `参加者：${names.join('、')}`,
+      ...(r.unique?.length ? ['各书独有：', ...r.unique.map(u => `- ${u.agent}：${u.insight}`)] : []),
       `共同答案：${r.commonAnswer.summary}`,
       ...r.commonAnswer.points.map(p => `- ${p.text}（${p.strength}；支持：${p.support.join('、')}）`),
       r.divergences.length ? '分歧：' : '',

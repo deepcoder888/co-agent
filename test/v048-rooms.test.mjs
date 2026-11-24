@@ -38,7 +38,7 @@ test('v048 会诊 engine: 自动选择 takes exactly 3, 5 or 7 books, the host i
 });
 
 test('v048 Codex runs for 会诊 and 圆桌 may open 8 sub-agents (the default stops at 6)', () => {
-  const args = conceptArgs({ codexProfile: 'gpt', codexModel: 'm', codexEffort: 'xhigh', launchProject: 'D:\\p' }, { schema: 's', output: 'o' });
+  const args = conceptArgs({ codexProfile: 'gpt', codexModel: 'm', codexEffort: 'xhigh', launchProject: 'D:\\p', dataDir: 'D:\\d' }, { schema: 's', output: 'o' });
   assert.deepEqual(args.slice(args.indexOf('agents.max_threads=8') - 1, args.indexOf('agents.max_threads=8') + 1), ['-c', 'agents.max_threads=8']);
 });
 
