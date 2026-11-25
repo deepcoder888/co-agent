@@ -255,7 +255,9 @@ test('v0.44.1 the book flies home in one eased flight, lands flat on its spine a
 
 // v0.53.18 (2026-11-24: make taking a book out and putting it back smoother). The flight out no longer stops dead in
 // front of the row and springs off again; the shadow flies with the book; the detail slides out when closed.
-const flightOf = (record, cls) => record.filter(c => c.el.className.split(/\s+/).includes(cls));
+// Moves only: the book's fades in and out of the shelf spine (2026-11-24) are animations of their own.
+const flightOf = (record, cls) => record.filter(c => c.el.className.split(/\s+/).includes(cls) && 'transform' in c.keys[0]);
+const fadesOf = record => record.filter(c => c.el.className.split(/\s+/).includes('book-spine-face'));
 const xy = key => key.transform.match(/^translate\(([-\d.]+)px,([-\d.]+)px\)/).slice(1).map(Number);
 const angle = (key, axis) => Number(key.transform.match(new RegExp(`rotate${axis}\\((-?[\\d.]+)deg\\)`))[1]);
 const ticks = async (n = 4) => { for (let i = 0; i < n; i++) await new Promise(r => setTimeout(r, 0)); };
@@ -349,4 +351,65 @@ test('v05318 styles: the shadow has no transition of its own, the card is gone b
   assert.match(css, /\.book-spine\.is-landing,\s*\[data-ui="shelf"\] \.book-spine\.is-landing \.spine-edge \{ transition:none; \}/);
   const reduce = css.slice(css.lastIndexOf('@media (prefers-reduced-motion:reduce) {\n  [data-ui="shelf"] .book-spine { transition:none; }'));
   for (const rule of ['.shelf-detail.beside-book,', '.book-3d .book-spine-face,', '.shelf-book-stage:not(.is-cover) .book-inspect,']) assert.ok(reduce.includes(rule), rule);
+});
+
+// 2026-11-24 侧窗斜光 (design B of three, docs/design/v0.53.20-shelf-light): one warm light from the upper left; the
+// cabinet's light and shade lie over the books, so the book fades in from and back into the spine in the shade.
+test('v05320 a book fades in over its spine before the slot empties, and fades back into it after landing', async t => {
+  // Each animation records, as it starts, whether the slot is already empty and how visible the book is.
+  let spine = null; const record = [];
+  record.push = c => Array.prototype.push.call(record, { ...c, slotEmpty: /is-out/.test(spine?.className), opacity: c.el.style.opacity,
+    fading: /is-fading/.test(c.el.parent?.className ?? doc.querySelector('.book-3d')?.className) });
+  const { doc } = await turningShelf(t, { reduced: false, record });
+  spine = doc.querySelectorAll('.book-spine')[0]; const key = spine.getAttribute('data-focus-key'); hover(spine, false);
+  await spine.fire('click'); await ticks(2);
+  const [fadeIn] = fadesOf(record), [flight] = flightOf(record, 'book-3d');
+  assert.deepEqual([fadeIn.keys.map(k => k.opacity), fadeIn.options.duration], [[0, 1], 120]);
+  assert.deepEqual([fadeIn.opacity, fadeIn.slotEmpty, flight.slotEmpty], ['0', false, false], 'the book starts invisible over the spine, which still shows');
+  assert.ok(fadeIn.fading, 'only its spine face fades: the other faces are hidden meanwhile');
+  assert.ok(!doc.querySelector('.book-spine-face').style.opacity, 'faded in');
+  assert.doesNotMatch(doc.querySelector('.book-3d').className, /is-fading/, 'and the other faces are back');
+  assert.match(spine.className, /is-out/, 'only then the slot empties');
+  record.length = 0;
+  await doc.querySelector('.shelf-book-close').fire('click'); await ticks(2);
+  const [fadeOut] = fadesOf(record);
+  assert.deepEqual([fadeOut.keys.map(k => k.opacity), fadeOut.options.duration], [[1, 0], 160]);
+  assert.equal(doc.querySelector('.book-3d'), null);
+  assert.ok(doc.querySelectorAll('.book-spine').filter(n => n.getAttribute('data-focus-key') === key).every(n => !/is-out/.test(n.className)));
+});
+
+test('v05320 put back from the keyboard, the spine stands raised under the fading book and settles once focused', async t => {
+  const record = [], frames = [], { doc } = await turningShelf(t, { reduced: false, record, frames });
+  const spine = doc.querySelectorAll('.book-spine')[0], key = spine.getAttribute('data-focus-key'); hover(spine, false);
+  await spine.fire('click'); await ticks(2); flush(frames); flush(frames);
+  await doc.fire('keydown', { key: 'Shift' });
+  const landed = () => doc.querySelectorAll('.book-spine').find(n => n.getAttribute('data-focus-key') === key);
+  let raisedWhileFading = null;
+  const face = doc.querySelector('.book-spine-face'), animate = face.animate;
+  face.animate = (keys, options) => { raisedWhileFading = landed().className; return animate(keys, options); };
+  await doc.querySelector('.shelf-book-close').fire('click'); await ticks(2);
+  assert.match(raisedWhileFading, /is-raised/, 'raised like the focused spine while the book fades into it');
+  assert.match(raisedWhileFading, /is-landing/, 'without its own transition');
+  flush(frames); flush(frames);
+  assert.doesNotMatch(landed().className, /is-raised|is-landing/, 'focused, it keeps that pose by itself');
+});
+
+test('v05320 styles: a top light in front of the cabinet, one shade layer over the books, the same spine shade on the pulled-out book', async () => {
+  const css = (await fs.readFile('public/layouts/shelf.css', 'utf8')).replace(/\r\n/g, '\n');
+  const row = css.match(/\[data-ui="shelf"\] \.book-row \{([^}]*)\}/)[1];
+  assert.match(row, /position:relative;/);
+  // 2026-11-25 design A: the plank's shadow over the heads, the contact shadow at the feet and both corners darkened
+  // alike, in one multiply layer over the books that never takes a click; no added light, no falloff to one side.
+  const after = css.match(/\[data-ui="shelf"\] \.book-row::after \{\n  content:"";\n  position:absolute;\n  inset:0;\n  z-index:1;\n  pointer-events:none;\n  mix-blend-mode:multiply;([^}]*)\}/);
+  assert.ok(after, 'shade multiplies over the books');
+  assert.match(after[1], /linear-gradient\(90deg, rgba\(70,44,24,\.7\), #fff 46px, #fff calc\(100% - 46px\), rgba\(70,44,24,\.7\)\)/, 'both corners alike');
+  assert.doesNotMatch(css, /\.book-row::before|mix-blend-mode:screen/);
+  assert.match(css, /^\[data-ui="shelf"\] \{\n  \/\*[^*]*\*\/\n  --spine-shade:/m, 'one spine shade for the room');
+  assert.match(css, /\.book-spine-face \{[^}]*background:var\(--spine-shade\), var\(--book-color\);/, 'the pulled-out book uses it too');
+  assert.match(css, /\.book-3d\.is-fading \.book-face:not\(\.book-spine-face\) \{ visibility:hidden; \}/, 'only the spine face fades');
+  // Opacity on the 3D box itself would flatten its faces into one plane.
+  assert.doesNotMatch(await fs.readFile('public/layouts/shelf.js', 'utf8'), /play\(el, \[\{ opacity|play\(book\.el, \[\{ opacity/);
+  assert.match(css, /\.book-spine:focus-visible,\n\[data-ui="shelf"\] \.book-spine\.is-raised \{\n  transform:perspective/);
+  // The lifted spine (z-index 2) and 放上书桌 (3) stay above the shade (1).
+  assert.match(css, /\.book-spine\.is-raised \{[^}]*z-index:2;/); assert.match(css, /\.shelf-item \.put-on-desk \{\s*z-index:3;/);
 });

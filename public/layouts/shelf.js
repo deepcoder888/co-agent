@@ -870,7 +870,9 @@ function buildBookStage(ctx) {
     stage.prepend(shadow, el); stage.setAttribute('aria-label', `《${title}》`);
     book = { state: 'opening', agent, key, el, ground: shadow, g, pendingClose: false, spin: { x: 0, y: 0 }, drag: null, dragged: false, coast: null };
     fillInspect(agent, title);
-    r.bookOutKey = key; markOut(key, true);
+    // The shelf spine stands in the cabinet's shade and the book above it in full light (2026-11-24, 侧窗斜光): the book
+    // fades in over the spine before the slot empties, so it comes out of the shade instead of jumping into the light.
+    r.bookOutKey = key; fadeSpine(el, 0, 1, 120).then(() => { if (book?.el === el) markOut(key, true); });
     stage.className = 'shelf-book-stage'; stage.showModal(); stage.focus();
     measureInspect();
     // It leaves from the spine as shown: a hovered spine stands lifted and brightened, and the book keeps both at first.
@@ -914,17 +916,37 @@ function buildBookStage(ctx) {
     // spine-out and pressed flat, and is pushed back in (shrinking the 6% it stood nearer); its shadow fades on the way.
     await run(flightFrames(start, home, { p1: { x: mix(start.x, above.x, 0.35), y: mix(start.y, above.y, 0.35) }, p2: above,
       turn: [0, 0.74], lean: [0.8, 1], scale: [0, 0.9], flat: [0.56, 0.88], push: 0.86, shadow: u => 1 - smooth(u, 0, 0.4) }), from === 'detail' ? 840 : 780, HOME);
-    if (book) finish(true, lifted);
+    if (!book) return;
+    // Landed, the shelf spine shows under the book, which fades into it: it darkens as it goes into the shade.
+    const spine = reveal(book.key, lifted);
+    await fadeSpine(book.el, 1, 0, 160);
+    if (book) finish(true, spine);
   }
-  function finish(focus, lifted = false) {
+  // Only the spine face fades, the other faces hidden meanwhile: opacity below 1 on the 3D box itself would flatten its
+  // faces into its own plane, and the edge-on fore-edge, head and foot then showed as a line down the spine. Pressed flat
+  // at the slot, those faces are edge-on anyway.
+  async function fadeSpine(el, from, to, ms) {
+    const face = el.querySelector('.book-spine-face');
+    el.classList.add('is-fading'); face.style.opacity = String(from);
+    const fade = await play(face, [{ opacity: from }, { opacity: to }], ms, 'linear');
+    face.style.opacity = to === 1 ? '' : String(to); fade.cancel();
+    if (to === 1) el.classList.remove('is-fading');
+  }
+  // The spine takes over in the pose the book landed in: put back from the keyboard it will show focused (lifted), so
+  // it stands raised at once, without its own transition, until it has focus and two more frames have passed.
+  function reveal(key, lifted) {
+    const spine = spineOf(key);
+    if (lifted && spine) spine.classList.add('is-landing', 'is-raised');
+    markOut(key, false);
+    return spine;
+  }
+  function finish(focus, spine) {
     coastStop(); const key = book.key; book.el.remove(); book.ground.remove(); book = null; r.bookOutKey = null;
-    // The spine takes over in the pose the book landed in: without its own transition for two frames, so a focused
-    // spine does not rise again from the bottom of its slot.
-    const spine = spineOf(key), raf = view?.requestAnimationFrame?.bind(view);
-    if (focus && lifted && spine && raf) { spine.classList.add('is-landing'); raf(() => raf(() => spine.classList.remove('is-landing'))); }
-    markOut(key, false); r.detail.classList.remove('beside-book');
+    spine ??= spineOf(key); markOut(key, false); r.detail.classList.remove('beside-book');
     if (stage.open) stage.close();
     if (focus) spine?.focus({ preventScroll: true });
+    const settle = () => spine?.classList.remove('is-landing', 'is-raised'), raf = view?.requestAnimationFrame?.bind(view);
+    if (raf) raf(() => raf(settle)); else settle();
   }
   // Whether the last input was a key: a spine focused after it shows focused (lifted), after a pointer it does not.
   let keyed = false;
